@@ -17,10 +17,10 @@ class ImplicationExpert(Expert[set[str], Implication[str]]):
         self.atoms = atoms
         self.attributes = frozenset(attribute_implications)
 
-    def validate(self, impl, attributes=None):
-        print(f'Validating {impl.premise} => {impl.conclusion}')
-        premise_theory = ImplicationTheory(impl.premise)
-        for i in impl.conclusion:
+    def validate(self, implication, attributes=None):
+        print(f'Validating {implication.premise} => {implication.conclusion}')
+        premise_theory = ImplicationTheory(implication.premise)
+        for i in implication.conclusion:
             true_atoms = frozenset(premise_theory.closure(i.premise))
             if not i.conclusion <= true_atoms:
                 print(f'Counterexample found: {true_atoms}')
