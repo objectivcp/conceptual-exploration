@@ -1,11 +1,43 @@
 from collections.abc import MutableSet, Set, Iterable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, TypeVar, TextIO
+from typing import Generic, TypeVar, TextIO, AbstractSet
 
-from .partial_object import PartialObject
+from core.implication import Implication
 
 A = TypeVar("A")
 O = TypeVar("O")
+
+
+@dataclass(slots=True)
+class PartialObject(Generic[O, A]):
+
+    object: O
+
+    positive: Set[A]
+    negative: Set[A]
+
+    def __post_init__(self):
+        overlap: AbstractSet[A] = self.positive & self.negative
+        if overlap:
+            raise ValueError(
+                f'Positive and negative attributes overlap: {overlap}'
+            )
+
+    def refutes(
+            self,
+            implication: Implication[A],
+    ) -> bool:
+        return (
+                implication.premise <= self.positive
+                and
+                bool(implication.conclusion & self.negative)
+        )
+
+    def __str__(self) -> str:
+        positive = "{" + ", ".join(map(str, self.positive)) + "}"
+        negative = "{" + ", ".join(map(str, self.negative)) + "}"
+        return f"{self.object}[{positive}, {negative}]"
 
 
 class PartialContext(Generic[O, A]):

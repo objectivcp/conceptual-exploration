@@ -3,10 +3,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypeVar, Generic, Iterable
 
-from core.partial_context import PartialContext
+from core.context import PartialContext, PartialObject
 from core.implication import Implication
-from core.partial_object import PartialObject
-from theories.implication_theory import ImplicationTheory
+from core.theory import ImplicationTheory
 
 A = TypeVar("A")
 O = TypeVar("O")

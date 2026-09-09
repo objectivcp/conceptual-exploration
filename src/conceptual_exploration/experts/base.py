@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Generic
 from typing import TypeVar
 
-from core.partial_object import PartialObject
+from core.context import PartialObject
 from core.implication import Implication
 
 A = TypeVar("A")

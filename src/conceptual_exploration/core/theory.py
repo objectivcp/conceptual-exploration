@@ -1,7 +1,7 @@
 from collections.abc import Set, MutableSet, Iterator, Iterable
 from typing import TypeVar
 
-from closures.closure_operator import ClosureOperator
+from algorithms.closure import ClosureOperator
 from core.implication import Implication
 
 A = TypeVar("A")

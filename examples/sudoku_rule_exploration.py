@@ -1,16 +1,14 @@
-import cProfile
-import pstats
 import time
 import z3
 
 from enum import auto
 
-from core.partial_object import PartialObject
-from core.signature import EvaluatablePredicate
-from core.variable import Sort, SortedVariable
-from experts.expert import Expert
-from exploration.rule_exploration import RuleExploration
-from theories.implication_theory import ImplicationTheory
+from core.context import PartialObject
+from logic.predicate import EvaluatablePredicate
+from logic.variable import Sort, SortedVariable
+from experts.base import Expert
+from exploration.rule import RuleExploration
+from core.theory import ImplicationTheory
 
 
 class SudokuSort(Sort):

@@ -1,12 +1,12 @@
 import random
 from typing import TypeVar, Generic
 
-from core.partial_object import PartialObject
-from experts.expert import Expert
+from core.context import PartialObject
+from experts.base import Expert
 from typing import Callable
 
-from exploration.attribute_exploration import AttributeExploration
-from exploration.exploration_base import ExplorationBase
+from exploration.attribute import AttributeExploration
+from exploration.base import ExplorationBase
 
 O = TypeVar("O")
 

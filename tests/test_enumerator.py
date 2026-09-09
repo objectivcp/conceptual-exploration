@@ -4,7 +4,7 @@ from itertools import combinations
 
 from conceptual_exploration.algorithms.next_closure import NextClosure
 from conceptual_exploration.core.implication import Implication
-from conceptual_exploration.theories.implication_theory import ImplicationTheory
+from core.theory import ImplicationTheory
 
 
 def powerset(attributes):

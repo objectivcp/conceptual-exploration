@@ -3,11 +3,11 @@ from itertools import combinations, product
 from typing import Generic, TypeVar
 
 from core.implication import Implication
-from core.partial_object import PartialObject
-from experts.expert import Expert
-from exploration.attribute_exploration import AttributeExploration
-from exploration.exploration_base import ExplorationBase
-from theories.implication_theory import ImplicationTheory
+from core.context import PartialObject
+from experts.base import Expert
+from exploration.attribute import AttributeExploration
+from exploration.base import ExplorationBase
+from core.theory import ImplicationTheory
 
 A = TypeVar("A")
 

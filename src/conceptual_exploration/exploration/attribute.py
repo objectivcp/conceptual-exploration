@@ -1,8 +1,8 @@
 from typing import TypeVar
 
-from experts.expert import Expert
-from .exploration_base import ExplorationBase
-from .exploration_state import ExplorationState
+from experts.base import Expert
+from .base import ExplorationBase
+from .state import ExplorationState
 from algorithms.next_closure import NextClosure
 from core.implication import Implication
 

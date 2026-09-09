@@ -1,14 +1,9 @@
 from collections import defaultdict
-from collections.abc import Callable, Iterable
-from itertools import permutations, product
+from itertools import product, permutations
+from typing import Callable
 
-from core.atom import Atom, atoms_over
-from core.implication import Implication
-from core.signature import Predicate
-from core.variable import Variable, SortedVariable
-from experts.expert import Expert
-from .attribute_exploration import AttributeExploration
-from .exploration_base import ExplorationBase
+from logic.atom import Atom
+from logic.variable import Variable, SortedVariable
 
 
 def variable_symmetries(
@@ -71,36 +66,3 @@ def _atom_renaming(
         variable_map: dict[Variable, Variable],
 ) -> Callable[[Atom], Atom]:
     return lambda atom: atom.rename(lambda variable: variable_map[variable])
-
-
-class RuleExploration(AttributeExploration):
-    """First-order rule exploration over a signature and a set of variables.
-
-    Convenience wrapper: builds the atoms, the variable symmetries, and a
-    :class:`RuleExplorationBase`, then drives the shared
-    :class:`AttributeExploration` engine.
-    """
-
-    def __init__(
-            self,
-            predicates: Iterable[Predicate],
-            variables: Iterable[Variable],
-            expert: Expert,
-            *,
-            background: Iterable[Implication[Atom]] = (),
-            substitutions: bool = False,
-            evaluate_all: bool = False, # ask expert to evaluate all atoms
-    ) -> None:
-        atoms = atoms_over(predicates, variables)
-        variables = tuple(variables)
-        mappings = (
-            sorted_variable_symmetries(variables, substitutions=substitutions)
-            if isinstance(variables[0], SortedVariable)
-            else variable_symmetries(variables, substitutions=substitutions)
-        )
-        base = ExplorationBase(
-            atoms,
-            background_implications=background,
-            mappings=mappings,
-        )
-        super().__init__(base, expert, evaluate_all)
