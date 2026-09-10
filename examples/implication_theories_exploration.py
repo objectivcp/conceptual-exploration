@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from itertools import combinations, product
 from typing import Generic, TypeVar
 
-from core.implication import Implication
-from core.context import PartialObject
-from experts.base import Expert
-from exploration.attribute import AttributeExploration
-from exploration.base import ExplorationBase
-from core.theory import ImplicationTheory
+from conceptual_exploration.core.implication import Implication
+from conceptual_exploration.core.context import PartialObject
+from conceptual_exploration.experts.base import Expert
+from conceptual_exploration.exploration.attribute import AttributeExploration
+from conceptual_exploration.exploration.base import ExplorationBase
+from conceptual_exploration.core.theory import ImplicationTheory
 
 A = TypeVar("A")
 

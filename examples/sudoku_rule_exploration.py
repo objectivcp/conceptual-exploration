@@ -3,12 +3,12 @@ import z3
 
 from enum import auto
 
-from core.context import PartialObject
-from logic.predicate import EvaluatablePredicate
-from logic.variable import Sort, SortedVariable
-from experts.base import Expert
-from exploration.rule import RuleExploration
-from core.theory import ImplicationTheory
+from conceptual_exploration.core.context import PartialObject
+from conceptual_exploration.logic.predicate import EvaluatablePredicate
+from conceptual_exploration.logic.variable import Sort, SortedVariable
+from conceptual_exploration.experts.base import Expert
+from conceptual_exploration.exploration.rule import RuleExploration
+from conceptual_exploration.core.theory import ImplicationTheory
 
 
 class SudokuSort(Sort):

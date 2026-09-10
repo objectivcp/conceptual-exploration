@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 
-from logic.variable import Sort
+from .variable import Sort
 
 
 class Notation(Enum):

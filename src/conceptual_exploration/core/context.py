@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, TypeVar, TextIO, AbstractSet
 
-from core.implication import Implication
+from .implication import Implication
 
 A = TypeVar("A")
 O = TypeVar("O")

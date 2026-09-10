@@ -1,12 +1,12 @@
 from collections.abc import Iterable
 from itertools import product
 
-from core.context import PartialObject
-from logic.predicate import EvaluatablePredicate, Notation
-from logic.variable import Variable
-from experts.base import Expert
-from exploration.rule import RuleExploration
-from core.theory import ImplicationTheory
+from conceptual_exploration.core.context import PartialObject
+from conceptual_exploration.logic.predicate import EvaluatablePredicate, Notation
+from conceptual_exploration.logic.variable import Variable
+from conceptual_exploration.experts.base import Expert
+from conceptual_exploration.exploration.rule import RuleExploration
+from conceptual_exploration.core.theory import ImplicationTheory
 
 
 class NumberExpert(Expert[int, EvaluatablePredicate]):

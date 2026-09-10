@@ -1,8 +1,8 @@
 from collections.abc import Set, MutableSet, Iterator, Iterable
 from typing import TypeVar
 
-from algorithms.closure import ClosureOperator
-from core.implication import Implication
+from ..algorithms.closure import ClosureOperator
+from .implication import Implication
 
 A = TypeVar("A")
 

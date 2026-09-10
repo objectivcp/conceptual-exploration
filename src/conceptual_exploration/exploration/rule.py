@@ -1,11 +1,11 @@
 from collections.abc import Iterable
 
-from logic.atom import Atom, atoms_over
-from core.implication import Implication
-from logic.predicate import Predicate
-from logic.symmetries import variable_symmetries, sorted_variable_symmetries
-from logic.variable import Variable, SortedVariable
-from experts.base import Expert
+from ..logic.atom import Atom, atoms_over
+from ..core.implication import Implication
+from ..logic.predicate import Predicate
+from ..logic.symmetries import variable_symmetries, sorted_variable_symmetries
+from ..logic.variable import Variable, SortedVariable
+from ..experts.base import Expert
 from .attribute import AttributeExploration
 from .base import ExplorationBase
 

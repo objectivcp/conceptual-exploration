@@ -2,8 +2,8 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from itertools import product
 
-from logic.predicate import Predicate, EvaluatablePredicate
-from logic.variable import Variable
+from .predicate import Predicate, EvaluatablePredicate
+from .variable import Variable
 
 
 class EvaluationNotSupportedError(Exception):

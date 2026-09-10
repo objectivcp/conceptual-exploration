@@ -2,8 +2,8 @@ from collections import defaultdict
 from itertools import product, permutations
 from typing import Callable
 
-from logic.atom import Atom
-from logic.variable import Variable, SortedVariable
+from .atom import Atom
+from .variable import Variable, SortedVariable
 
 
 def variable_symmetries(

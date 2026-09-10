@@ -1,10 +1,10 @@
 from typing import TypeVar
 
-from experts.base import Expert
+from ..experts.base import Expert
 from .base import ExplorationBase
 from .state import ExplorationState
-from algorithms.next_closure import NextClosure
-from core.implication import Implication
+from ..algorithms.next_closure import NextClosure
+from ..core.implication import Implication
 
 A = TypeVar("A")
 O = TypeVar("O")

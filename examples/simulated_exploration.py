@@ -1,9 +1,9 @@
 import time
 
-from core.context import PartialContext
-from experts.base import Expert
-from exploration.attribute import AttributeExploration
-from exploration.base import ExplorationBase
+from conceptual_exploration.core.context import PartialContext
+from conceptual_exploration.experts.base import Expert
+from conceptual_exploration.exploration.attribute import AttributeExploration
+from conceptual_exploration.exploration.base import ExplorationBase
 
 
 class SimulatedExpert(Expert[str, str]):
