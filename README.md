@@ -88,42 +88,54 @@ pip install python-sat
 ## Architecture & Core Concepts
 
 ```
-src/conceptual_exploration/
-├── algorithms/
-│   ├── closure.py             # Abstract ClosureOperator protocol
-│   └── next_closure.py        # NextClosure lectic enumeration algorithm
-├── core/
-│   ├── context.py             # PartialObject and PartialContext (with CXT parser)
-│   ├── implication.py         # Implication dataclass and respectedness checks
-│   └── theory.py              # ImplicationTheory for closure & simplification
-├── experts/
-│   └── base.py                # Abstract Expert interface (validate method)
-├── exploration/
-│   ├── base.py                # ExplorationBase with context, mappings & implications
-│   ├── attribute.py           # AttributeExploration coordinator
-│   ├── rule.py                # RuleExploration first-order coordinator
-│   └── state.py               # ExplorationState tracking queries and statistics
-└── logic/
-    ├── atom.py                # Atom, GroundedAtom, and atoms_over generator
-    ├── predicate.py           # Predicate, EvaluatablePredicate, and Notation
-    ├── symmetries.py          # Variable permutations and substitutions
-    └── variable.py            # Variable, SortedVariable, and Sort enum
+conceptual-exploration/
+├── src/conceptual_exploration/       # Core domain-agnostic FCA library
+│   ├── algorithms/
+│   │   ├── closure.py                # Abstract ClosureOperator protocol
+│   │   └── next_closure.py           # NextClosure lectic enumeration algorithm
+│   ├── core/
+│   │   ├── context.py                # PartialObject and PartialContext (with CXT parser)
+│   │   ├── implication.py            # Implication dataclass and respectedness checks
+│   │   └── theory.py                 # ImplicationTheory for closure & simplification
+│   ├── experts/
+│   │   └── base.py                   # Abstract Expert interface (validate method)
+│   ├── exploration/
+│   │   ├── base.py                   # ExplorationBase with context, mappings & implications
+│   │   ├── attribute.py              # AttributeExploration coordinator
+│   │   ├── rule.py                   # RuleExploration first-order coordinator
+│   │   └── state.py                  # ExplorationState tracking queries and statistics
+│   └── logic/
+│       ├── atom.py                   # Atom, GroundedAtom, and atoms_over generator
+│       ├── predicate.py              # Predicate, EvaluatablePredicate, and Notation
+│       ├── symmetries.py             # Variable permutations and substitutions
+│       └── variable.py               # Variable, SortedVariable, and Sort enum
+├── explorations/                     # Domain exploration projects and case studies
+│   └── equational_theories/          # Equational Theories Project (ETP) magma exploration
+│       ├── magma.py                  # Algebraic structures, term ASTs, ETP catalog & MagmaExpert
+│       ├── explore.py                # Exploration runner script
+│       ├── explore.ipynb             # Interactive Jupyter notebook
+│       └── README.md                 # Project background & documentation
+├── examples/                         # Minimal API examples and interactive demonstrations
+└── tests/                            # Unit and integration test suites
 ```
 
 ### Key Classes
 
-| Class | Description |
-|---|---|
-| `AttributeExploration` | Orchestrates standard attribute exploration over a set of attributes and an `Expert`. |
-| `RuleExploration` | Orchestrates first-order rule exploration given predicates, variables, and an `Expert`. |
-| `ExplorationBase` | Manages attributes, background implications, partial contexts, and symmetry mappings. |
-| `Expert` | Abstract base class for domain oracles implementing `validate(implication, attributes)`. |
-| `Implication` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
-| `ImplicationTheory` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
-| `PartialObject` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
-| `PartialContext` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
-| `Predicate` / `EvaluatablePredicate` | Relational symbol with fixed arity, sort constraints, and optional evaluation function. |
-| `Variable` / `SortedVariable` | Variables used in first-order relational atoms. |
+| Class | Location | Description |
+|---|---|---|
+| `AttributeExploration` | `conceptual_exploration` | Orchestrates standard attribute exploration over a set of attributes and an `Expert`. |
+| `RuleExploration` | `conceptual_exploration` | Orchestrates first-order rule exploration given predicates, variables, and an `Expert`. |
+| `ExplorationBase` | `conceptual_exploration` | Manages attributes, background implications, partial contexts, and symmetry mappings. |
+| `Expert` | `conceptual_exploration` | Abstract base class for domain oracles implementing `validate(implication, attributes)`. |
+| `Implication` | `conceptual_exploration` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
+| `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
+| `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
+| `PartialContext` | `conceptual_exploration` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
+| `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, and optional evaluation function. |
+| `Variable` / `SortedVariable` | `conceptual_exploration` | Variables used in first-order relational atoms. |
+| `Magma` / `MagmaExpert` | `explorations.equational_theories` | Finite Cayley table representation and oracle for Equational Theories Project (ETP) exploration. |
+| `Equation` / `Term` | `explorations.equational_theories` | AST for algebraic magma equations and terms with duality symmetry transformations. |
+| `ETP` | `explorations.equational_theories` | Equational Theories Project catalog with curated equation sets and duality mappings. |
 
 ---
 
@@ -271,9 +283,17 @@ For first-order rule exploration, variable symmetries (permutations and non-inje
 
 ---
 
-## Included Examples
+## Explorations & Examples
 
-The `examples/` directory contains complete demonstrations across various domains:
+### Domain Explorations (`explorations/`)
+
+The `explorations/` directory houses specialized mathematical and domain-specific exploration projects:
+
+- **`explorations/equational_theories/`**: Conceptual exploration of equational laws on magmas from the **Equational Theories Project (ETP)**. Includes term ASTs, Cayley table models, duality symmetry mappings, automated counterexample search (`MagmaExpert`), a standalone runner (`explore.py`), and an interactive Jupyter notebook (`explore.ipynb`).
+
+### Lightweight Examples (`examples/`)
+
+The `examples/` directory contains focused demonstrations of core library features:
 
 - `numbers_exploration.py`: Propositional exploration of prime numbers, factorials, parity, and divisibility.
 - `numbers_rule_exploration.py`: First-order exploration of arithmetic inequalities and signs.
@@ -292,10 +312,10 @@ Run the test suite using `pytest`:
 pytest
 ```
 
-Or using the built-in test runner:
+Or using Python directly:
 
 ```bash
-PYTHONPATH=src python3 -c "import tests.test_enumerator as t; t.test_next_closure_one(); t.test_next_closure_complete(); t.test_all_generated_sets_are_closed(); t.test_no_duplicates(); t.test_first_element(); t.test_last_element(); t.test_lectic_order(); print('All tests passed!')"
+PYTHONPATH="src:." python3 -c "import tests.test_enumerator as t, tests.test_magma as m; t.test_next_closure_one(); t.test_next_closure_complete(); m.test_term_parsing_and_eval(); m.test_magma_attribute_exploration(); print('All tests passed!')"
 ```
 
 ---

@@ -16,7 +16,10 @@ class SimulatedExpert(Expert[str, str]):
                 return o
         return None
 
-expert_context = PartialContext.from_cxt('test.cxt')
+from pathlib import Path
+
+expert_cxt_path = Path(__file__).parent / "test.cxt" if (Path(__file__).parent / "test.cxt").exists() else "test.cxt"
+expert_context = PartialContext.from_cxt(str(expert_cxt_path))
 base = ExplorationBase(attributes=expert_context.attributes)
 exploration = AttributeExploration(base, SimulatedExpert(expert_context))
 
