@@ -290,6 +290,7 @@ For first-order rule exploration, variable symmetries (permutations and non-inje
 The `explorations/` directory houses specialized mathematical and domain-specific exploration projects:
 
 - **`explorations/equational_theories/`**: Conceptual exploration of equational laws on magmas from the **Equational Theories Project (ETP)**. Includes term ASTs, Cayley table models, duality symmetry mappings, automated counterexample search (`MagmaExpert`), a standalone runner (`explore.py`), and an interactive Jupyter notebook (`explore.ipynb`).
+- **`explorations/sudoku/`**: Conceptual exploration of Sudoku rules and constraints. Combines SAT-based propositional exploration with PySAT and symmetry mappings (rotations, reflections, digit permutations) and first-order relational rule exploration with the Z3 SMT solver over multi-sorted variables (`SudokuSort.CELL` and `SudokuSort.NUMBER`), including a standalone runner (`explore.py`) and an interactive Jupyter notebook (`explore.ipynb`).
 
 ### Lightweight Examples (`examples/`)
 
@@ -297,8 +298,6 @@ The `examples/` directory contains focused demonstrations of core library featur
 
 - `numbers_exploration.py`: Propositional exploration of prime numbers, factorials, parity, and divisibility.
 - `numbers_rule_exploration.py`: First-order exploration of arithmetic inequalities and signs.
-- `sudoku_exploration.ipynb`: SAT-based (PySAT) Sudoku exploration demonstrating symmetry mappings (rotations and digit permutations) and reduction to CNF formulas.
-- `sudoku_rule_exploration.py`: First-order rule exploration of Sudoku logic using the **Z3 SMT solver** with multi-sorted variables (`SudokuSort.CELL` and `SudokuSort.NUMBER`).
 - `simulated_exploration.py`: Automated benchmarking and simulated exploration over existing `.cxt` formal contexts.
 - `implication_theories_exploration.py`: Meta-exploration of implication theories and inference rules.
 
@@ -315,7 +314,7 @@ pytest
 Or using Python directly:
 
 ```bash
-PYTHONPATH="src:." python3 -c "import tests.test_enumerator as t, tests.test_magma as m; t.test_next_closure_one(); t.test_next_closure_complete(); m.test_term_parsing_and_eval(); m.test_magma_attribute_exploration(); print('All tests passed!')"
+PYTHONPATH="src:." python3 -c "import tests.test_enumerator as t, tests.test_magma as m, tests.test_sudoku as s; t.test_next_closure_one(); t.test_next_closure_complete(); m.test_term_parsing_and_eval(); m.test_magma_attribute_exploration(); s.test_sudoku2sat_and_solve_4x4(); s.test_sudoku_expert_sat(); print('All tests passed!')"
 ```
 
 ---
