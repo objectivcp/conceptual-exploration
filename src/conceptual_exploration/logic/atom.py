@@ -34,24 +34,19 @@ class Atom:
     def __lt__(self, other: "Atom") -> bool:
         if not isinstance(other, Atom):
             return NotImplemented
-        return (
-            self.predicate,
-            self.arguments,
-        ) < (
-            other.predicate,
-            other.arguments,
-        )
+        return (self.predicate, self.arguments) < (other.predicate, other.arguments)
 
-    def __call__(self, assignment) -> "GroundedAtom":
+    def __call__(self, assignment: dict[Variable, object]) -> "GroundedAtom":
         return GroundedAtom(self, assignment)
 
 
 class GroundedAtom:
-    def __init__(self, atom: Atom, assignment: dict[Variable, object]):
-        self.predicate = atom.predicate
-        self.arguments = tuple(
-            assignment[argument]
-            for argument in atom.arguments
+    __slots__ = ("predicate", "arguments")
+
+    def __init__(self, atom: Atom, assignment: dict[Variable, object]) -> None:
+        self.predicate: Predicate = atom.predicate
+        self.arguments: tuple[object, ...] = tuple(
+            assignment[argument] for argument in atom.arguments
         )
 
     def holds(self) -> bool:
