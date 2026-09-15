@@ -126,6 +126,35 @@ def test_magma_expert_timeout_is_inconclusive():
     assert expert.is_conclusive()
 
 
+def test_counterexample_search_sorts_equations():
+    """Equations must reach Z3 in a stable order, or runs stop being reproducible.
+
+    Premises and conclusions normally arrive as frozensets, whose iteration order
+    varies with PYTHONHASHSEED; Z3 can answer a reordered query with a different
+    (equally valid) model, which sends the whole exploration down another path.
+    """
+    import z3
+
+    seen = []
+    expert = MagmaExpert(max_search_size=3, initial_magmas=[])
+
+    def record(size, premises, conclusions):
+        seen.append((list(premises), list(conclusions)))
+        return z3.unsat, None
+
+    expert._find_table_z3 = record
+    expert._search_counterexample(
+        frozenset([ETP.get_equation(43), ETP.get_equation(381), ETP.get_equation(3)]),
+        frozenset([ETP.get_equation(4512), ETP.get_equation(9)]),
+        3,
+    )
+
+    assert seen, "expected the search to consult the solver"
+    for premises, conclusions in seen:
+        assert premises == sorted(premises)
+        assert conclusions == sorted(conclusions)
+
+
 def test_inconclusive_expert_accepts_as_unconfirmed():
     from conceptual_exploration.experts.base import Expert
     from conceptual_exploration.exploration.base import ImplicationSource
@@ -214,6 +243,7 @@ if __name__ == "__main__":
     test_magma_duality()
     test_magma_expert_counterexample()
     test_magma_expert_timeout_is_inconclusive()
+    test_counterexample_search_sorts_equations()
     test_inconclusive_expert_accepts_as_unconfirmed()
     test_etp_catalog()
     test_magma_attribute_exploration()

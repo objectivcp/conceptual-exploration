@@ -520,8 +520,12 @@ class MagmaExpert(Expert[Magma, Equation]):
         Each size is checked via `_find_table_z3`, which delegates the search over
         Cayley tables of that size to the Z3 SMT solver.
         """
-        premises_list = list(premises)
-        conclusions_list = list(conclusions)
+        # Equations usually arrive in a frozenset, whose iteration order varies with
+        # PYTHONHASHSEED. That order reaches Z3 as the order of its constraints, and
+        # Z3 may answer a reordered query with a different (equally valid) model, so
+        # sorting is what makes a whole exploration reproducible across runs.
+        premises_list = sorted(premises)
+        conclusions_list = sorted(conclusions)
 
         inconclusive = False
         for size in range(1, max_size + 1):
