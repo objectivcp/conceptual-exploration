@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from itertools import product
 from typing import ClassVar
 
+import z3
+
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.experts.base import Expert
@@ -23,6 +25,11 @@ class Term:
 
     def eval(self, env: dict[str, int], table: Sequence[Sequence[int]]) -> int:
         """Evaluate the term under a variable assignment and magma operation table."""
+        raise NotImplementedError
+
+    def to_z3(self, env: dict[str, int], op: z3.FuncDeclRef) -> z3.ArithRef | int:
+        """Compile the term into a Z3 arithmetic expression, given a symbolic Z3
+        function `op` standing for the (as yet undetermined) magma operation."""
         raise NotImplementedError
 
     def vars(self) -> frozenset[str]:
@@ -100,6 +107,9 @@ class Var(Term):
     def eval(self, env: dict[str, int], table: Sequence[Sequence[int]]) -> int:
         return env[self.name]
 
+    def to_z3(self, env: dict[str, int], op: z3.FuncDeclRef) -> z3.ArithRef | int:
+        return env[self.name]
+
     def vars(self) -> frozenset[str]:
         return frozenset([self.name])
 
@@ -133,6 +143,9 @@ class Op(Term):
         l_val = self.left.eval(env, table)
         r_val = self.right.eval(env, table)
         return table[l_val][r_val]
+
+    def to_z3(self, env: dict[str, int], op: z3.FuncDeclRef) -> z3.ArithRef | int:
+        return op(self.left.to_z3(env, op), self.right.to_z3(env, op))
 
     def vars(self) -> frozenset[str]:
         return self.left.vars() | self.right.vars()
@@ -377,6 +390,15 @@ class MagmaExpert(Expert[Magma, Equation]):
     Validates hypothetical implications between equational laws.
     If an implication does not hold, searches for a counterexample finite magma
     satisfying all premise equations while violating at least one conclusion equation.
+
+    The dynamic part of the search (beyond the cached magma pool) follows the
+    finite-model-search approach used by the Equational Theories Project
+    (https://github.com/teorth/equational_theories): for each candidate magma
+    size, the existence of a Cayley table satisfying the premises and violating
+    a conclusion is encoded as an SMT problem and handed to Z3, rather than
+    enumerated by brute force. As with any finite-model search, failing to find
+    a counterexample up to `max_search_size` does not prove the implication
+    valid, since a counterexample may only exist at a larger (or infinite) size.
     """
 
     def __init__(
@@ -384,9 +406,11 @@ class MagmaExpert(Expert[Magma, Equation]):
         attributes: Sequence[Equation] | None = None,
         max_search_size: int = 3,
         initial_magmas: Sequence[Magma] | None = None,
+        z3_timeout_ms: int | None = None,
     ) -> None:
         self.attributes = tuple(attributes) if attributes is not None else None
         self.max_search_size = max_search_size
+        self.z3_timeout_ms = z3_timeout_ms
         self.cached_magmas: list[Magma] = []
 
         # Seed pool with standard magmas
@@ -478,34 +502,64 @@ class MagmaExpert(Expert[Magma, Equation]):
         conclusions: Iterable[Equation],
         max_size: int,
     ) -> Magma | None:
-        """Search for a Cayley table of size <= max_size satisfying premises and violating conclusions."""
+        """Search for a magma of size <= max_size satisfying premises and violating conclusions.
+
+        Each size is checked via `_find_table_z3`, which delegates the search over
+        Cayley tables of that size to the Z3 SMT solver.
+        """
         premises_list = list(premises)
         conclusions_list = list(conclusions)
 
         for size in range(1, max_size + 1):
-            if size == 1:
-                m = Magma.trivial()
-                if all(m.holds(eq) for eq in premises_list) and any(not m.holds(eq) for eq in conclusions_list):
-                    return m
-            elif size == 2:
-                for entries in product(range(2), repeat=4):
-                    table = ((entries[0], entries[1]), (entries[2], entries[3]))
-                    m = Magma(2, table, name=f"Counterexample-Size2-{entries}")
-                    if all(m.holds(eq) for eq in premises_list) and any(not m.holds(eq) for eq in conclusions_list):
-                        return m
-            elif size == 3:
-                # Fast search over size 3
-                for entries in product(range(3), repeat=9):
-                    table = (
-                        (entries[0], entries[1], entries[2]),
-                        (entries[3], entries[4], entries[5]),
-                        (entries[6], entries[7], entries[8]),
-                    )
-                    # Quick check premises
-                    if all(eq.holds_in_table(3, table) for eq in premises_list):
-                        if any(not eq.holds_in_table(3, table) for eq in conclusions_list):
-                            return Magma(3, table, name=f"Counterexample-Size3")
+            table = self._find_table_z3(size, premises_list, conclusions_list)
+            if table is not None:
+                print(size)
+                return Magma(size, table, name=f"Z3-Counterexample-Size{size}")
         return None
+
+    def _find_table_z3(
+        self,
+        size: int,
+        premises: Sequence[Equation],
+        conclusions: Sequence[Equation],
+    ) -> tuple[tuple[int, ...], ...] | None:
+        """Use Z3 to find a Cayley table of the given size satisfying all premise
+        equations while violating at least one conclusion equation.
+
+        The magma operation is represented as an uninterpreted Z3 function `op`
+        of type Int, Int -> Int, restricted to the finite domain [0, size).
+        Universally quantified equations are grounded over that domain (there
+        are only `size ** len(vars)` instances), turning validity of the
+        implication for this size into a plain SMT satisfiability query.
+        """
+        op = z3.Function(f"magma_op_{size}", z3.IntSort(), z3.IntSort(), z3.IntSort())
+        solver = z3.Solver()
+        if self.z3_timeout_ms is not None:
+            solver.set("timeout", self.z3_timeout_ms)
+
+        for i, j in product(range(size), repeat=2):
+            solver.add(0 <= op(i, j), op(i, j) < size)
+
+        for eq in premises:
+            vars_list = eq.variables
+            for vals in product(range(size), repeat=len(vars_list)):
+                env = dict(zip(vars_list, vals))
+                solver.add(eq.lhs.to_z3(env, op) == eq.rhs.to_z3(env, op))
+
+        violations = []
+        for eq in conclusions:
+            vars_list = eq.variables
+            for vals in product(range(size), repeat=len(vars_list)):
+                env = dict(zip(vars_list, vals))
+                violations.append(eq.lhs.to_z3(env, op) != eq.rhs.to_z3(env, op))
+        if not violations or solver.check(z3.Or(*violations)) != z3.sat:
+            return None
+
+        model = solver.model()
+        return tuple(
+            tuple(model.eval(op(i, j), model_completion=True).as_long() for j in range(size))
+            for i in range(size)
+        )
 
 
 class ETP:

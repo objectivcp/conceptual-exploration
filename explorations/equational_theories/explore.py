@@ -73,7 +73,7 @@ def run_magma_exploration(use_duality_symmetry: bool = True):
         attributes=equations,
         mappings=mappings,
     )
-    expert = MagmaExpert(attributes=equations, max_search_size=3)
+    expert = MagmaExpert(attributes=equations, max_search_size=5)
     exploration = AttributeExploration(base, expert, evaluate_all=True)
 
     print("\nStarting Attribute Exploration...")
