@@ -2,4 +2,5 @@
 __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
+.idea/
 src/conceptual_exploration/libz3.dylib
