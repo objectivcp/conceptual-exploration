@@ -30,7 +30,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration
+from conceptual_exploration import AttributeExploration, report_every
 from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
@@ -39,11 +39,13 @@ from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaEx
 def run_magma_exploration(
     use_duality_symmetry: bool = True,
     z3_timeout_ms: int | None = None,
+    report_interval: int = 20,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
     print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
+    print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     print("=" * 70)
 
     # Selected representative equational laws from ETP
@@ -85,7 +87,12 @@ def run_magma_exploration(
         max_search_size=5,
         z3_timeout_ms=z3_timeout_ms,
     )
-    exploration = AttributeExploration(base, expert, evaluate_all=True)
+    exploration = AttributeExploration(
+        base,
+        expert,
+        evaluate_all=True,
+        on_question=report_every(report_interval),
+    )
 
     print("\nStarting Attribute Exploration...")
     state = exploration.run()
@@ -152,8 +159,20 @@ if __name__ == "__main__":
             "are neither refuted nor decided, and are reported [UNCONFIRMED]."
         ),
     )
+    parser.add_argument(
+        "--report-every",
+        type=int,
+        default=20,
+        metavar="N",
+        help=(
+            "Print every Nth question and its outcome while exploring "
+            "(default: 20); 0 or less reports nothing. Use 1 to watch every "
+            "question the expert is asked."
+        ),
+    )
     args = parser.parse_args()
     run_magma_exploration(
         use_duality_symmetry=True,
         z3_timeout_ms=args.z3_timeout_ms if args.z3_timeout_ms > 0 else None,
+        report_interval=args.report_every,
     )

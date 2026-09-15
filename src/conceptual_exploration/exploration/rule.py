@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from ..logic.atom import Atom, atoms_over
 from ..core.implication import Implication
@@ -6,7 +6,7 @@ from ..logic.predicate import Predicate
 from ..logic.symmetries import variable_symmetries, sorted_variable_symmetries
 from ..logic.variable import Variable, SortedVariable
 from ..experts.base import Expert
-from .attribute import AttributeExploration
+from .attribute import AttributeExploration, QuestionReport
 from .base import ExplorationBase
 
 
@@ -27,6 +27,7 @@ class RuleExploration(AttributeExploration):
             background: Iterable[Implication[Atom]] = (),
             substitutions: bool = False,
             evaluate_all: bool = False, # ask expert to evaluate all atoms
+            on_question: Callable[[QuestionReport], None] | None = None,
     ) -> None:
         atoms = atoms_over(predicates, variables)
         variables = tuple(variables)
@@ -40,4 +41,4 @@ class RuleExploration(AttributeExploration):
             background_implications=background,
             mappings=mappings,
         )
-        super().__init__(base, expert, evaluate_all)
+        super().__init__(base, expert, evaluate_all, on_question)

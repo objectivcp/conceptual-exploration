@@ -15,7 +15,7 @@ import z3
 from pysat.formula import CNF
 from pysat.solvers import Solver
 
-from conceptual_exploration import AttributeExploration, Implication
+from conceptual_exploration import AttributeExploration, Implication, report_every
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Expert
@@ -551,6 +551,7 @@ def cell_exploration(block_size: int = 2) -> ExplorationBase:
         expert,
         substitutions=True,
         evaluate_all=True,
+        on_question=report_every(20),
     )
     exploration.run()
     return exploration.base
@@ -584,6 +585,7 @@ def cell_number_exploration(block_size: int = 2) -> ExplorationBase:
         expert,
         substitutions=True,
         evaluate_all=True,
+        on_question=report_every(20),
     )
     exploration.run()
     return exploration.base
@@ -605,6 +607,6 @@ def run_sudoku_sat_exploration(
         mappings=mappings,
     )
     expert = SudokuExpert(block_size)
-    exploration = AttributeExploration(base, expert)
+    exploration = AttributeExploration(base, expert, on_question=report_every(20))
     state = exploration.run()
     return state, base
