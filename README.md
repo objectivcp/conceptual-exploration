@@ -35,7 +35,7 @@
 - **Symmetry & Substitution Invariance**: Automatic generation of variable symmetries and variable identification/substitutions to prune redundant queries and map learned implications.
 - **Partial Formal Contexts**: First-class handling of three-valued logic (positive, negative, and unknown attribute values) via `PartialContext` and `PartialObject`.
 - **Burmeister `.cxt` Format Support**: Read and parse standard Formal Concept Analysis context files.
-- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, background, mapped).
+- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, unconfirmed, background, mapped) — so an implication an expert accepted without actually deciding stays distinguishable from one it verified.
 
 ---
 
@@ -83,6 +83,10 @@ pip install -e ".[examples]"
 pip install python-sat
 ```
 
+The `[test]` extra covers the core library and the magma exploration. The Sudoku
+exploration and the tests that exercise it additionally need `python-sat`, which
+is not packaged in any extra, so install it separately to run the whole suite.
+
 ---
 
 ## Architecture & Core Concepts
@@ -110,8 +114,13 @@ conceptual-exploration/
 │       ├── symmetries.py             # Variable permutations and substitutions
 │       └── variable.py               # Variable, SortedVariable, and Sort enum
 ├── explorations/                     # Domain exploration projects and case studies
-│   └── equational_theories/          # Equational Theories Project (ETP) magma exploration
-│       ├── magma.py                  # Algebraic structures, term ASTs, ETP catalog & MagmaExpert
+│   ├── equational_theories/          # Equational Theories Project (ETP) magma exploration
+│   │   ├── magma.py                  # Algebraic structures, term ASTs, ETP catalog & MagmaExpert
+│   │   ├── explore.py                # Exploration runner script
+│   │   ├── explore.ipynb             # Interactive Jupyter notebook
+│   │   └── README.md                 # Project background & documentation
+│   └── sudoku/                       # Sudoku rule and constraint exploration
+│       ├── sudoku.py                 # SAT/SMT models, experts, predicates & symmetries
 │       ├── explore.py                # Exploration runner script
 │       ├── explore.ipynb             # Interactive Jupyter notebook
 │       └── README.md                 # Project background & documentation
@@ -289,7 +298,7 @@ For first-order rule exploration, variable symmetries (permutations and non-inje
 
 The `explorations/` directory houses specialized mathematical and domain-specific exploration projects:
 
-- **`explorations/equational_theories/`**: Conceptual exploration of equational laws on magmas from the **Equational Theories Project (ETP)**. Includes term ASTs, Cayley table models, duality symmetry mappings, automated counterexample search (`MagmaExpert`), a standalone runner (`explore.py`), and an interactive Jupyter notebook (`explore.ipynb`).
+- **`explorations/equational_theories/`**: Conceptual exploration of equational laws on magmas from the **Equational Theories Project (ETP)**. Combines term ASTs, Cayley table models, and duality symmetry mappings with automated counterexample search using the Z3 SMT solver (`MagmaExpert`), which looks for a finite magma satisfying every premise while violating some conclusion and marks an implication `UNCONFIRMED` when its per-size solver budget (`z3_timeout_ms`) runs out, including a standalone runner (`explore.py`) and an interactive Jupyter notebook (`explore.ipynb`).
 - **`explorations/sudoku/`**: Conceptual exploration of Sudoku rules and constraints. Combines SAT-based propositional exploration with PySAT and symmetry mappings (rotations, reflections, digit permutations) and first-order relational rule exploration with the Z3 SMT solver over multi-sorted variables (`SudokuSort.CELL` and `SudokuSort.NUMBER`), including a standalone runner (`explore.py`) and an interactive Jupyter notebook (`explore.ipynb`).
 
 ### Lightweight Examples (`examples/`)
