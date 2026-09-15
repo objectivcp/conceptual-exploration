@@ -13,6 +13,8 @@ Using conceptual exploration:
 3. If an implication is false, the expert provides a finite counterexample Magma (with Cayley table).
 4. Duality symmetries (the anti-automorphism (x * y)^op = y^op * x^op) are leveraged
    to automatically map implications and reduce expert queries.
+5. Queries where the solver runs out of its per-size budget are accepted but
+   flagged [UNCONFIRMED], since they were neither refuted nor decided.
 """
 
 from __future__ import annotations
@@ -29,14 +31,18 @@ if str(REPO_ROOT) not in sys.path:
 
 from conceptual_exploration import AttributeExploration
 from conceptual_exploration.core.theory import ImplicationTheory
-from conceptual_exploration.exploration.base import ExplorationBase
+from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 
 
-def run_magma_exploration(use_duality_symmetry: bool = True):
+def run_magma_exploration(
+    use_duality_symmetry: bool = True,
+    z3_timeout_ms: int | None = None,
+):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
+    print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
     print("=" * 70)
 
     # Selected representative equational laws from ETP
@@ -73,7 +79,11 @@ def run_magma_exploration(use_duality_symmetry: bool = True):
         attributes=equations,
         mappings=mappings,
     )
-    expert = MagmaExpert(attributes=equations, max_search_size=5)
+    expert = MagmaExpert(
+        attributes=equations,
+        max_search_size=5,
+        z3_timeout_ms=z3_timeout_ms,
+    )
     exploration = AttributeExploration(base, expert, evaluate_all=True)
 
     print("\nStarting Attribute Exploration...")
@@ -84,6 +94,7 @@ def run_magma_exploration(use_duality_symmetry: bool = True):
     print("=" * 70)
     print(f"Total Questions Asked:        {state.questions_asked}")
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
+    print(f"  of which unconfirmed:       {len(base.unconfirmed_implications)}")
     print(f"Total Implications in Theory: {len(base.implications.implications)}")
     print(f"Counterexample Magmas Found:  {len(state.counterexamples)}")
 
@@ -94,7 +105,18 @@ def run_magma_exploration(use_duality_symmetry: bool = True):
         simplified = theory.simplify(impl)
         premise_str = " {" + ", ".join(eq.name or str(eq) for eq in simplified.premise) + "}" if simplified.premise else " Ø"
         concl_str = " {" + ", ".join(eq.name or str(eq) for eq in simplified.conclusion) + "}"
-        print(f"  [{idx}] {premise_str}  ==>  {concl_str}")
+        unconfirmed = (
+            base.implication_sources[impl] is ImplicationSource.UNCONFIRMED
+        )
+        marker = "   [UNCONFIRMED]" if unconfirmed else ""
+        print(f"  [{idx}] {premise_str}  ==>  {concl_str}{marker}")
+
+    if base.unconfirmed_implications:
+        print(
+            "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
+            "\n  of time at some magma size, so these implications remain open rather"
+            "\n  than verified up to size 5."
+        )
 
     # Display discovered counterexample magmas
     print("\nSample Counterexample Magmas Generated:")
@@ -115,4 +137,6 @@ def run_magma_exploration(use_duality_symmetry: bool = True):
 
 
 if __name__ == "__main__":
-    run_magma_exploration(use_duality_symmetry=True)
+    # A few pathological size-5 queries can run for a minute or more, while every
+    # other query settles in about two seconds; 5 s per size cuts only the former.
+    run_magma_exploration(use_duality_symmetry=True, z3_timeout_ms=5000)
