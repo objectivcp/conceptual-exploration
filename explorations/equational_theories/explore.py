@@ -19,6 +19,7 @@ Using conceptual exploration:
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -137,6 +138,22 @@ def run_magma_exploration(
 
 
 if __name__ == "__main__":
-    # A few pathological size-5 queries can run for a minute or more, while every
-    # other query settles in about two seconds; 5 s per size cuts only the former.
-    run_magma_exploration(use_duality_symmetry=True, z3_timeout_ms=5000)
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--z3-timeout-ms",
+        type=int,
+        default=5000,
+        metavar="MS",
+        help=(
+            "Per-magma-size solver budget in milliseconds (default: 5000); "
+            "0 or less runs unbounded. A few pathological size-5 queries take a "
+            "minute or more while every other query settles in about two seconds, "
+            "so the default cuts only the former. Queries that run out of budget "
+            "are neither refuted nor decided, and are reported [UNCONFIRMED]."
+        ),
+    )
+    args = parser.parse_args()
+    run_magma_exploration(
+        use_duality_symmetry=True,
+        z3_timeout_ms=args.z3_timeout_ms if args.z3_timeout_ms > 0 else None,
+    )
