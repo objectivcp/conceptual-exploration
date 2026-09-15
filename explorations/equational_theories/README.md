@@ -17,7 +17,8 @@ Given a signature with binary operation $*$ and variables $x, y, z, \dots$, an e
 
 - **AST Representation & Evaluation**: Expressive term trees (`Term`, `Var`, `Op`) and equations (`Equation`) evaluated against finite Cayley tables.
 - **Duality Symmetries**: Anti-automorphism mappings $(x * y)^{\text{op}} = y^{\text{op}} * x^{\text{op}}$ integrated into `ExplorationBase` to reduce redundant expert queries by up to 50%.
-- **Automated Counterexample Oracle (`MagmaExpert`)**: Checks candidate implications against a catalog of standard finite magmas (cyclic groups, projections, tournaments, boolean magmas) and dynamically searches for small Cayley table counterexamples (order $n \le 3$).
+- **Automated Counterexample Oracle (`MagmaExpert`)**: Checks candidate implications against a catalog of standard finite magmas (cyclic groups, projections, tournaments, boolean magmas), then searches for a counterexample Cayley table with the **Z3 SMT solver**, representing the operation as an uninterpreted function over the finite domain of each candidate size $n$.
+- **Unconfirmed Results**: A query whose per-size solver budget runs out was neither refuted nor decided, so its implication is accepted but reported `[UNCONFIRMED]` instead of being presented as verified.
 - **Canonical Implication Basis**: Computes the minimal Duquenne–Guigues implication basis for equational theories.
 
 ## Quick Start
@@ -27,6 +28,14 @@ Run the exploration script:
 ```bash
 python explorations/equational_theories/explore.py
 ```
+
+The per-magma-size solver budget is configurable with `--z3-timeout-ms` (default `5000`; `0` or less runs unbounded):
+
+```bash
+python explorations/equational_theories/explore.py --z3-timeout-ms 500
+```
+
+A tighter budget trades open questions for speed rather than changing the answer. On a full run, `500` finishes in roughly 17 s and leaves 4 implications `[UNCONFIRMED]`, while the `5000` default takes roughly 27 s and leaves 2 — both deriving the same 27 accepted implications. Running unbounded removes the flagging entirely, at the cost of a few pathological size-5 queries that can each take a minute or more.
 
 Or open the interactive Jupyter notebook:
 
