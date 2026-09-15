@@ -23,3 +23,12 @@ class Expert(
             attributes: frozenset[A] | None = None,
     ) -> PartialObject[O, A] | None:
         ...
+
+    def is_conclusive(self) -> bool:
+        """Whether the most recent `validate` call actually decided the question.
+
+        An expert whose search can be cut short (e.g. by a solver timeout) returns
+        False to signal that finding no counterexample means "undecided" rather
+        than "none exists", so the implication is accepted as unconfirmed.
+        """
+        return True

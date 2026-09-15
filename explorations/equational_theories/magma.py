@@ -399,6 +399,10 @@ class MagmaExpert(Expert[Magma, Equation]):
     enumerated by brute force. As with any finite-model search, failing to find
     a counterexample up to `max_search_size` does not prove the implication
     valid, since a counterexample may only exist at a larger (or infinite) size.
+
+    If `z3_timeout_ms` is set and some size runs out of time, that size is
+    neither refuted nor cleared, so `is_conclusive()` reports False and the
+    exploration records the implication as UNCONFIRMED rather than CONFIRMED.
     """
 
     def __init__(
@@ -412,9 +416,10 @@ class MagmaExpert(Expert[Magma, Equation]):
         self.max_search_size = max_search_size
         self.z3_timeout_ms = z3_timeout_ms
         self.cached_magmas: list[Magma] = []
+        self._search_inconclusive = False
 
         # Seed pool with standard magmas
-        if initial_magmas:
+        if initial_magmas is not None:
             self.cached_magmas.extend(initial_magmas)
         else:
             self._seed_default_magmas()
@@ -461,8 +466,11 @@ class MagmaExpert(Expert[Magma, Equation]):
         """Validate if premise equations entail conclusion equations on all magmas.
 
         Returns a PartialObject counterexample if refuted, or None if valid.
+        A None result should be read together with `is_conclusive()`, which is
+        False when the search was cut short by a solver timeout.
         """
         eval_attrs = attributes or self.attributes
+        self._search_inconclusive = False
 
         # 1. Fast check against cached pool of magmas
         for magma in self.cached_magmas:
@@ -481,6 +489,11 @@ class MagmaExpert(Expert[Magma, Equation]):
             return self._build_counterexample(found, eval_attrs, implication)
 
         return None
+
+    def is_conclusive(self) -> bool:
+        """False when some size in the last search ended in a Z3 timeout, so that
+        finding no counterexample means "undecided" rather than "none exists"."""
+        return not self._search_inconclusive
 
     def _build_counterexample(
         self,
@@ -510,11 +523,15 @@ class MagmaExpert(Expert[Magma, Equation]):
         premises_list = list(premises)
         conclusions_list = list(conclusions)
 
+        inconclusive = False
         for size in range(1, max_size + 1):
-            table = self._find_table_z3(size, premises_list, conclusions_list)
+            result, table = self._find_table_z3(size, premises_list, conclusions_list)
             if table is not None:
-                print(size)
+                # A counterexample is a witness, so earlier timeouts no longer matter.
                 return Magma(size, table, name=f"Z3-Counterexample-Size{size}")
+            if result == z3.unknown:
+                inconclusive = True
+        self._search_inconclusive = inconclusive
         return None
 
     def _find_table_z3(
@@ -522,9 +539,13 @@ class MagmaExpert(Expert[Magma, Equation]):
         size: int,
         premises: Sequence[Equation],
         conclusions: Sequence[Equation],
-    ) -> tuple[tuple[int, ...], ...] | None:
+    ) -> tuple[z3.CheckSatResult, tuple[tuple[int, ...], ...] | None]:
         """Use Z3 to find a Cayley table of the given size satisfying all premise
         equations while violating at least one conclusion equation.
+
+        Returns the solver verdict alongside the table, so that `unsat` (no such
+        magma of this size) stays distinguishable from `unknown` (the solver gave
+        up, typically on timeout).
 
         The magma operation is represented as an uninterpreted Z3 function `op`
         of type Int, Int -> Int, restricted to the finite domain [0, size).
@@ -552,11 +573,15 @@ class MagmaExpert(Expert[Magma, Equation]):
             for vals in product(range(size), repeat=len(vars_list)):
                 env = dict(zip(vars_list, vals))
                 violations.append(eq.lhs.to_z3(env, op) != eq.rhs.to_z3(env, op))
-        if not violations or solver.check(z3.Or(*violations)) != z3.sat:
-            return None
+        if not violations:
+            return z3.unsat, None
+
+        result = solver.check(z3.Or(*violations))
+        if result != z3.sat:
+            return result, None
 
         model = solver.model()
-        return tuple(
+        return result, tuple(
             tuple(model.eval(op(i, j), model_completion=True).as_long() for j in range(size))
             for i in range(size)
         )

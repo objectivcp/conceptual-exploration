@@ -1,7 +1,7 @@
 from typing import TypeVar
 
 from ..experts.base import Expert
-from .base import ExplorationBase
+from .base import ExplorationBase, ImplicationSource
 from .state import ExplorationState
 from ..algorithms.next_closure import NextClosure
 from ..core.implication import Implication
@@ -54,9 +54,14 @@ class AttributeExploration:
                         self.state.counterexamples.append(counterexample)
                         closure = self.base.context.closure(premise)
                     else:
+                        source = (
+                            ImplicationSource.CONFIRMED
+                            if self.expert.is_conclusive()
+                            else ImplicationSource.UNCONFIRMED
+                        )
                         if self.state.questions_asked % 20 == 0:
-                            print(f'Confirmed\n')
-                        self.base.accept(implication)
+                            print(f'{source.value.capitalize()}\n')
+                        self.base.accept(implication, source)
                         self.state.accepted_implications.append(implication)
                         premise = premises.send(True)
                         break

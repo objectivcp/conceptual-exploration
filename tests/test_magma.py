@@ -94,6 +94,71 @@ def test_magma_expert_counterexample():
     assert assoc in counterexample.negative
 
 
+def test_magma_expert_timeout_is_inconclusive():
+    import z3
+
+    comm = Equation.parse("x * y = y * x", name="Commutativity")
+    assoc = Equation.parse("(x * y) * z = x * (y * z)", name="Associativity")
+    impl = Implication(frozenset([comm]), frozenset([assoc]))
+
+    # A solver that never decides: no counterexample, but nothing is ruled out either.
+    expert = MagmaExpert([comm, assoc], max_search_size=3, initial_magmas=[])
+    expert._find_table_z3 = lambda size, premises, conclusions: (z3.unknown, None)
+    assert expert.validate(impl) is None
+    assert not expert.is_conclusive()
+
+    # The verdict is per call, so a later decided run clears the earlier timeout.
+    expert._find_table_z3 = lambda size, premises, conclusions: (z3.unsat, None)
+    assert expert.validate(impl) is None
+    assert expert.is_conclusive()
+
+    # A counterexample at a later size is definitive, so a timeout at an
+    # earlier size must not leave the expert stuck reporting "undecided".
+    expert = MagmaExpert([comm, assoc], max_search_size=3, initial_magmas=[])
+    search = expert._find_table_z3
+    expert._find_table_z3 = (
+        lambda size, premises, conclusions:
+        (z3.unknown, None) if size == 1 else search(size, premises, conclusions)
+    )
+    counterexample = expert.validate(impl)
+    assert counterexample is not None
+    assert counterexample.refutes(impl)
+    assert expert.is_conclusive()
+
+
+def test_inconclusive_expert_accepts_as_unconfirmed():
+    from conceptual_exploration.experts.base import Expert
+    from conceptual_exploration.exploration.base import ImplicationSource
+
+    eq_idem = Equation.parse("x = x * x", name="Idempotence", id=3)
+    eq_left_zero = Equation.parse("x = x * y", name="Left-Zero", id=4)
+    attributes = [eq_left_zero, eq_idem]
+
+    class UndecidedExpert(Expert[Magma, Equation]):
+        """Never refutes anything, and never manages to decide either."""
+
+        def validate(self, implication, attributes=None):
+            return None
+
+        def is_conclusive(self) -> bool:
+            return False
+
+    base = ExplorationBase[Magma, Equation](attributes=attributes)
+    AttributeExploration(base, UndecidedExpert()).run()
+
+    assert base.unconfirmed_implications
+    for impl in base.unconfirmed_implications:
+        assert base.implication_sources[impl] is ImplicationSource.UNCONFIRMED
+        # Unconfirmed implications are still accepted, not silently dropped.
+        assert impl in base.accepted_implications
+
+    # The default expert behaviour is unchanged: conclusive means confirmed.
+    base = ExplorationBase[Magma, Equation](attributes=attributes)
+    AttributeExploration(base, MagmaExpert(attributes=attributes, max_search_size=3)).run()
+    assert not base.unconfirmed_implications
+    assert base.accepted_implications
+
+
 def test_etp_catalog():
     famous = ETP.get_famous_equations()
     assert len(famous) >= 15
@@ -148,6 +213,8 @@ if __name__ == "__main__":
     test_equation_parsing_and_holds()
     test_magma_duality()
     test_magma_expert_counterexample()
+    test_magma_expert_timeout_is_inconclusive()
+    test_inconclusive_expert_accepts_as_unconfirmed()
     test_etp_catalog()
     test_magma_attribute_exploration()
     print("All Magma ETP tests passed successfully!")

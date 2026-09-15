@@ -24,6 +24,9 @@ class ImplicationSource(Enum):
     BACKGROUND = "background"
     CONFIRMED = "confirmed"
     MAPPED = "mapped"
+    # Accepted because the expert found no counterexample, but the expert
+    # could not decide the question (e.g. its solver hit a timeout).
+    UNCONFIRMED = "unconfirmed"
 
 
 class ExplorationBase(Generic[O, A]):
@@ -51,11 +54,27 @@ class ExplorationBase(Generic[O, A]):
         return tuple(
             implication
             for implication in self.implications
-            if self.implication_sources[implication] == ImplicationSource.CONFIRMED
+            if self.implication_sources[implication] in (
+                ImplicationSource.CONFIRMED,
+                ImplicationSource.UNCONFIRMED,
+            )
         )
 
-    def accept(self, implication: Implication[A]) -> None:
-        self._add_implication(implication, ImplicationSource.CONFIRMED)
+    @property
+    def unconfirmed_implications(self) -> tuple[Implication[A], ...]:
+        """Accepted implications the expert could not actually decide."""
+        return tuple(
+            implication
+            for implication in self.implications
+            if self.implication_sources[implication] == ImplicationSource.UNCONFIRMED
+        )
+
+    def accept(
+            self,
+            implication: Implication[A],
+            source: ImplicationSource = ImplicationSource.CONFIRMED,
+    ) -> None:
+        self._add_implication(implication, source)
         for mapping in self.mappings:
             mapped_implication = Implication(
                 frozenset(mapping(a) for a in implication.premise),
