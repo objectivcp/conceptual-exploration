@@ -78,14 +78,14 @@ pip install -e ".[test]"
 # For development (pytest, z3-solver)
 pip install -e ".[dev]"
 
-# For examples and Jupyter notebooks (z3-solver, jupyter, python-sat)
+# For examples and Jupyter notebooks (z3-solver, jupyter)
 pip install -e ".[examples]"
 pip install python-sat
 ```
 
-The `[test]` extra covers the core library and the magma exploration. The Sudoku
-exploration and the tests that exercise it additionally need `python-sat`, which
-is not packaged in any extra, so install it separately to run the whole suite.
+The `[test]` extra covers the whole suite, including both domain explorations.
+The `[examples]` extra does not pull in `python-sat`, hence the separate install
+above for running the Sudoku examples and notebooks.
 
 ---
 
