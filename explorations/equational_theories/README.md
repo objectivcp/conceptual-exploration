@@ -37,6 +37,12 @@ python explorations/equational_theories/explore.py --z3-timeout-ms 500
 
 A tighter budget trades open questions for speed rather than changing the answer. On a full run, `500` finishes in roughly 17 s and leaves 4 implications `[UNCONFIRMED]`, while the `5000` default takes roughly 27 s and leaves 2 — both deriving the same 27 accepted implications. Running unbounded removes the flagging entirely, at the cost of a few pathological size-5 queries that can each take a minute or more.
 
+Progress reporting is controlled with `--report-every` (default `20`; `1` shows every question the expert is asked, `0` or less prints nothing):
+
+```bash
+python explorations/equational_theories/explore.py --report-every 1
+```
+
 Or open the interactive Jupyter notebook:
 
 ```bash

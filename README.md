@@ -35,7 +35,7 @@
 - **Symmetry & Substitution Invariance**: Automatic generation of variable symmetries and variable identification/substitutions to prune redundant queries and map learned implications.
 - **Partial Formal Contexts**: First-class handling of three-valued logic (positive, negative, and unknown attribute values) via `PartialContext` and `PartialObject`.
 - **Burmeister `.cxt` Format Support**: Read and parse standard Formal Concept Analysis context files.
-- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, unconfirmed, background, mapped) — so an implication an expert accepted without actually deciding stays distinguishable from one it verified.
+- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, unconfirmed, background, mapped).
 
 ---
 
@@ -136,6 +136,7 @@ conceptual-exploration/
 | `RuleExploration` | `conceptual_exploration` | Orchestrates first-order rule exploration given predicates, variables, and an `Expert`. |
 | `ExplorationBase` | `conceptual_exploration` | Manages attributes, background implications, partial contexts, and symmetry mappings. |
 | `Expert` | `conceptual_exploration` | Abstract base class for domain oracles implementing `validate(implication, attributes)`. |
+| `QuestionReport` / `report_every` | `conceptual_exploration` | Per-question progress event emitted by an exploration, and a ready-made callback printing every nth one. |
 | `Implication` | `conceptual_exploration` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
 | `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
 | `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
@@ -211,6 +212,16 @@ print("Discovered Implications:")
 for impl in base.accepted_implications:
     print(f"  {impl}")
 ```
+
+An exploration runs silently by default. To watch it work, pass a callback — `report_every(n)` prints every nth question together with the expert's verdict:
+
+```python
+from conceptual_exploration import report_every
+
+exploration = AttributeExploration(base, expert, on_question=report_every(20))
+```
+
+The callback receives a `QuestionReport` carrying the question number, the implication asked, the counterexample (or `None` when accepted), the resulting `ImplicationSource`, and the size of the theory at that moment. Any other rendering — a progress bar, a log record, a CSV row — is a matter of passing a different callable. `RuleExploration` takes the same `on_question` argument.
 
 ### 2. First-Order Rule Exploration
 
