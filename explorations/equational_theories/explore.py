@@ -84,7 +84,7 @@ def run_magma_exploration(
     )
     expert = MagmaExpert(
         attributes=equations,
-        max_search_size=5,
+        max_search_size=6,
         z3_timeout_ms=z3_timeout_ms,
     )
     exploration = AttributeExploration(
@@ -123,7 +123,7 @@ def run_magma_exploration(
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
             "\n  of time at some magma size, so these implications remain open rather"
-            "\n  than verified up to size 5."
+            f"\n  than verified up to size {expert.max_search_size}."
         )
 
     # Display discovered counterexample magmas
@@ -162,11 +162,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--report-every",
         type=int,
-        default=20,
+        default=1,
         metavar="N",
         help=(
             "Print every Nth question and its outcome while exploring "
-            "(default: 20); 0 or less reports nothing. Use 1 to watch every "
+            "(default: 1); 0 or less reports nothing. Use 1 to watch every "
             "question the expert is asked."
         ),
     )

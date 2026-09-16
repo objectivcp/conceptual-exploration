@@ -35,9 +35,9 @@ class PartialObject(Generic[O, A]):
         )
 
     def __str__(self) -> str:
-        positive = "{" + ", ".join(map(str, self.positive)) + "}"
-        negative = "{" + ", ".join(map(str, self.negative)) + "}"
-        return f"{self.object}[{positive}, {negative}]"
+        positive = ", ".join(map(str, self.positive))
+        negative = ", ".join(map(str, self.negative))
+        return f"{self.object}\nSatisfies: {positive}\nDoes not satisfy: {negative}"
 
 
 class PartialContext(Generic[O, A]):
