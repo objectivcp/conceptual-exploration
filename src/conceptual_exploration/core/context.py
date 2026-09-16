@@ -138,7 +138,13 @@ class PartialContext(Generic[O, A]):
     def add(
             self,
             obj: PartialObject[O, A],
-    ) -> None:
+    ) -> PartialObject[O, A]:
+        """Merge `obj` into the object already stored under the same name, or
+        store it when it is new, and return whichever object the context holds.
+
+        Returning the stored object lets callers keep working with the merged
+        one rather than the argument, which is discarded when a merge happens.
+        """
         if obj.object in self.objects:
             old_obj = self.objects[obj.object]
             new_positive = old_obj.positive | obj.positive
@@ -149,8 +155,10 @@ class PartialContext(Generic[O, A]):
                 )
             old_obj.positive = new_positive
             old_obj.negative = new_negative
-        else:
-            self.objects[obj.object] = obj
+            return old_obj
+
+        self.objects[obj.object] = obj
+        return obj
 
     def closure(
             self,

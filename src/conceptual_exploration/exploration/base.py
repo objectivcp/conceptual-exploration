@@ -40,14 +40,15 @@ class ExplorationBase(Generic[O, A]):
         self.attributes = tuple(attributes)
         self.context = PartialContext[VersionedObject[O], A](attributes)
         self.mappings = tuple(mappings)
-        self.implications = ImplicationTheory[A](background_implications)
-        self.implication_sources: dict[Implication[A], ImplicationSource] = {
-            implication: ImplicationSource.BACKGROUND
-            for implication in background_implications
-        }
+        self.implications = ImplicationTheory[A]()
+        self.implication_sources: dict[Implication[A], ImplicationSource] = {}
+
+        for implication in background_implications:
+            self.add_background(implication)
 
     def add_background(self, implication: Implication[A]) -> None:
         self._add_implication(implication, ImplicationSource.BACKGROUND)
+        self._add_mapped(implication)
 
     @property
     def accepted_implications(self) -> tuple[Implication[A], ...]:
@@ -75,6 +76,15 @@ class ExplorationBase(Generic[O, A]):
             source: ImplicationSource = ImplicationSource.CONFIRMED,
     ) -> None:
         self._add_implication(implication, source)
+        self._add_mapped(implication)
+
+    def _add_mapped(self, implication: Implication[A]) -> None:
+        """Add the images of an implication under the symmetry mappings.
+
+        Keeping the theory closed under the mappings is what lets a mapped copy
+        of a completed object be completed itself, so background implications
+        are mapped for the same reason confirmed ones are.
+        """
         for mapping in self.mappings:
             mapped_implication = Implication(
                 frozenset(mapping(a) for a in implication.premise),
@@ -104,16 +114,22 @@ class ExplorationBase(Generic[O, A]):
             )
 
     def _add_object(self, example: PartialObject[VersionedObject[O], A]):
-        obj = PartialObject(
-            example.object,
-            example.positive,
-            example.negative
-        )
-        self._update_object(obj)
-        if self.implications.closure(obj.positive) & obj.negative:
-            raise ValueError(f"Implications conflict with object: {obj}")
-        self.context.add(obj)
-        return obj
+        """Merge an observation into what is already known, complete it under
+        the implications, and store it; return the object the context holds.
+
+        Takes ownership of `example`, whose attribute sets are replaced with the
+        merged and completed ones. Merging comes first because an attribute
+        derivable from the union need not be derivable from either observation
+        alone, and nothing is stored until completion succeeds, so a conflicting
+        observation leaves the context as it was rather than half-absorbed.
+        """
+        stored = self.context.objects.get(example.object)
+        if stored is not None:
+            example.positive = example.positive | stored.positive
+            example.negative = example.negative | stored.negative
+
+        self._update_object(example)
+        return self.context.add(example)
 
     def _make_version(
             self,
@@ -133,7 +149,17 @@ class ExplorationBase(Generic[O, A]):
             self._update_object(obj)
 
     def _update_object(self, obj: PartialObject[O, A]):
-        obj.positive = self.implications.closure(obj.positive)
+        """Complete an object's attribute sets under the current implications.
+
+        Raises ValueError if the implications force an attribute the object is
+        known not to have. Completing the positive side is what can produce that
+        clash, so the check lives here, where the closure is computed anyway.
+        """
+        positive = self.implications.closure(obj.positive)
+        if positive & obj.negative:
+            raise ValueError(f"Implications conflict with object: {obj}")
+
+        obj.positive = positive
         changed = True
         new_negative = set(obj.negative)
         while changed:
@@ -143,7 +169,6 @@ class ExplorationBase(Generic[O, A]):
                     changed = True
                     new_negative.add(a)
         obj.negative = new_negative
-        assert len(obj.positive & obj.negative) == 0
 
     def _add_implication(
             self,
