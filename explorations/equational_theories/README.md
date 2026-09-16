@@ -35,9 +35,9 @@ The per-magma-size solver budget is configurable with `--z3-timeout-ms` (default
 python explorations/equational_theories/explore.py --z3-timeout-ms 500
 ```
 
-A tighter budget trades open questions for speed rather than changing the answer. On a full run, `500` finishes in roughly 17 s and leaves 4 implications `[UNCONFIRMED]`, while the `5000` default takes roughly 27 s and leaves 2 — both deriving the same 27 accepted implications. Running unbounded removes the flagging entirely, at the cost of a few pathological size-5 queries that can each take a minute or more.
+A tighter budget trades open questions for speed rather than changing the answer: a query that runs out of time is reported `[UNCONFIRMED]` instead of being decided, so a smaller budget finishes sooner and leaves more implications open. Running unbounded removes the flagging entirely, at the cost of a few pathological searches at the larger magma sizes, which can dominate the running time.
 
-Progress reporting is controlled with `--report-every` (default `20`; `1` shows every question the expert is asked, `0` or less prints nothing):
+Progress reporting is controlled with `--report-every` (default `1`, showing every question the expert is asked; `0` or less prints nothing):
 
 ```bash
 python explorations/equational_theories/explore.py --report-every 1

@@ -153,10 +153,10 @@ if __name__ == "__main__":
         metavar="MS",
         help=(
             "Per-magma-size solver budget in milliseconds (default: 5000); "
-            "0 or less runs unbounded. A few pathological size-5 queries take a "
-            "minute or more while every other query settles in about two seconds, "
-            "so the default cuts only the former. Queries that run out of budget "
-            "are neither refuted nor decided, and are reported [UNCONFIRMED]."
+            "0 or less runs unbounded. A few pathological searches at the "
+            "larger magma sizes can dominate the running time, and the budget "
+            "cuts those short. Queries that run out of budget are neither "
+            "refuted nor decided, and are reported [UNCONFIRMED]."
         ),
     )
     parser.add_argument(
