@@ -1,6 +1,7 @@
 import random
 from typing import TypeVar, Generic
 
+from conceptual_exploration import report_every
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from typing import Callable
@@ -35,8 +36,6 @@ class NumberExpert(Expert[int, NamedPredicate[int]]):
         self.predicates = predicates
         
     def validate(self, impl, attributes=None):
-        print(f'Validating {impl}')
-
         for i in range(1, self.max + 1):
 
             if all(a(i) for a in impl.premise) and any(not a(i) for a in impl.conclusion):
@@ -91,7 +90,7 @@ attributes = [
 ]
 
 base = ExplorationBase(attributes=attributes)
-exploration = AttributeExploration(base, NumberExpert(100, attributes))
+exploration = AttributeExploration(base, NumberExpert(100, attributes), on_question=report_every())
 exploration.run()
 
 print()
