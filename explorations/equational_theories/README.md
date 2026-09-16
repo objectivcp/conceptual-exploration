@@ -29,7 +29,7 @@ Run the exploration script:
 python explorations/equational_theories/explore.py
 ```
 
-The per-magma-size solver budget is configurable with `--z3-timeout-ms` (default `5000`; `0` or less runs unbounded):
+The per-magma-size solver budget is configurable with `--z3-timeout-ms` (default `30000`; `0` or less runs unbounded):
 
 ```bash
 python explorations/equational_theories/explore.py --z3-timeout-ms 500

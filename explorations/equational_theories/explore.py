@@ -149,10 +149,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--z3-timeout-ms",
         type=int,
-        default=5000,
+        default=30000,
         metavar="MS",
         help=(
-            "Per-magma-size solver budget in milliseconds (default: 5000); "
+            "Per-magma-size solver budget in milliseconds (default: 30000); "
             "0 or less runs unbounded. A few pathological searches at the "
             "larger magma sizes can dominate the running time, and the budget "
             "cuts those short. Queries that run out of budget are neither "
