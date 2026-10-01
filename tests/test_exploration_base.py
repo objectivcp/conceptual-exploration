@@ -136,6 +136,39 @@ def test_mapped_versions_are_already_complete():
     assert mapped.positive == before
 
 
+def test_duplicate_mapped_versions_are_not_stored():
+    """A mapping that leaves an object where it was adds no new version.
+
+    Substitutions are not injective, so several of them can ground to the same
+    object; the copies they produce would only repeat work in every later
+    closure.
+    """
+    identify = {"a": "a", "b": "a", "c": "c"}
+    swap = {"a": "b", "b": "a", "c": "c"}
+    base = ExplorationBase(
+        attributes=["a", "b", "c"],
+        mappings=[lambda x: identify[x], lambda x: swap[x]],
+    )
+    base.add_counterexample(PartialObject("g", {"a", "b"}, {"c"}))
+
+    # The substitution fixes the object, the swap fixes it too; one copy is
+    # enough for the pair.
+    assert [str(o.object) for o in base.context.objects.values()] == ["g#0"]
+
+    # A version stays in the context once it is there, even when a later
+    # sighting makes it a duplicate.
+    base = ExplorationBase(
+        attributes=["a", "b", "c"],
+        mappings=[lambda x: swap[x]],
+    )
+    base.add_counterexample(PartialObject("g", {"a"}, set()))
+    base.add_counterexample(PartialObject("g", {"b"}, set()))
+
+    versions = {str(o.object): o for o in base.context.objects.values()}
+    assert set(versions) == {"g#0", "g#1"}
+    assert versions["g#1"].positive == {"a", "b"}
+
+
 def test_add_returns_the_stored_object():
     base = ExplorationBase(attributes=["a", "b"])
 
@@ -155,5 +188,6 @@ if __name__ == "__main__":
     test_implication_conflict_raises_rather_than_asserts()
     test_background_implications_are_mapped()
     test_mapped_versions_are_already_complete()
+    test_duplicate_mapped_versions_are_not_stored()
     test_add_returns_the_stored_object()
     print("All exploration base tests passed successfully!")

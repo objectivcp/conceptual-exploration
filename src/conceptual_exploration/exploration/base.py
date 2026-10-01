@@ -97,6 +97,18 @@ class ExplorationBase(Generic[O, A]):
                 )
 
     def add_counterexample(self, example: PartialObject[O, A]) -> None:
+        """Add a counterexample along with its images under the mappings.
+
+        An image that repeats one already added is skipped. A non-injective
+        mapping can send an object onto an earlier version of itself — with
+        x = y = z every substitution grounds to the same object, so all its
+        images coincide — and such a copy constrains nothing its twin does not
+        while costing time in every later closure. A version the context
+        already holds is re-added even so, to keep it in step with the object
+        it is derived from. Versions are numbered by mapping rather than
+        consecutively, so that a second sighting of the same object merges into
+        the images of the first.
+        """
         obj = self._add_object(
             PartialObject(
                 VersionedObject(example.object, 0),
@@ -104,14 +116,20 @@ class ExplorationBase(Generic[O, A]):
                 example.negative
             )
         )
+        seen = {self._fingerprint(obj)}
         for version, mapping in enumerate(self.mappings, start=1):
-            self._add_object(
-                self._make_version(
-                    obj,
-                    mapping,
-                    version
-                )
-            )
+            copy = self._make_version(obj, mapping, version)
+            fingerprint = self._fingerprint(copy)
+            if fingerprint in seen and copy.object not in self.context.objects:
+                continue
+            seen.add(fingerprint)
+            self._add_object(copy)
+
+    @staticmethod
+    def _fingerprint(
+            example: PartialObject[VersionedObject[O], A],
+    ) -> tuple[frozenset[A], frozenset[A]]:
+        return frozenset(example.positive), frozenset(example.negative)
 
     def _add_object(self, example: PartialObject[VersionedObject[O], A]):
         """Merge an observation into what is already known, complete it under
