@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from itertools import combinations, product
 from typing import Generic, TypeVar
 
+from conceptual_exploration import report_every
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
@@ -18,12 +19,10 @@ class ImplicationExpert(Expert[set[str], Implication[str]]):
         self.attributes = frozenset(attribute_implications)
 
     def validate(self, implication, attributes=None):
-        print(f'Validating {implication.premise} => {implication.conclusion}')
         premise_theory = ImplicationTheory(implication.premise)
         for i in implication.conclusion:
             true_atoms = frozenset(premise_theory.closure(i.premise))
             if not i.conclusion <= true_atoms:
-                print(f'Counterexample found: {true_atoms}')
                 positive = frozenset(
                     a
                     for a in self.attributes
@@ -97,7 +96,8 @@ base = ExplorationBase[frozenset[str], Implication[str]](
 )
 exploration = AttributeExploration(
     base,
-    ImplicationExpert(variables, attributes)
+    ImplicationExpert(variables, attributes),
+    on_question=report_every()
 )
 
 exploration.run()

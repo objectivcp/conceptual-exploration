@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from itertools import product
 
+from conceptual_exploration import report_every
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.logic.predicate import EvaluatablePredicate, Notation
 from conceptual_exploration.logic.variable import Variable
@@ -19,21 +20,20 @@ class NumberExpert(Expert[int, EvaluatablePredicate]):
         self.predicates = predicates
         self.variables = variables
 
-    def validate(self, impl, attributes=None):
-        # print(f'Validating {impl}')
+    def validate(self, implication, attributes=None):
         for values in product(
                 self.domain,
                 repeat=len(self.variables)
         ):
             assignment = dict(zip(self.variables, values))
             positive = set()
-            for a in impl.premise:
+            for a in implication.premise:
                 if a(assignment).holds():
                     positive.add(a)
                 else:
                     break
             else:
-                for a in impl.conclusion:
+                for a in implication.conclusion:
                     if a(assignment).holds():
                         positive.add(a)
                     else:
@@ -42,7 +42,6 @@ class NumberExpert(Expert[int, EvaluatablePredicate]):
                             positive,
                             {a}
                         )
-                        # print(f'Counterexample found: {counterexample}')
                         return counterexample
         return None
 
@@ -87,7 +86,8 @@ expert = NumberExpert(range(-10, 11), predicates, variables)
 exploration = RuleExploration(predicates,
                               variables,
                               expert,
-                              substitutions=True)
+                              substitutions=True,
+                              on_question=report_every())
 exploration.run()
 
 base = exploration.base
