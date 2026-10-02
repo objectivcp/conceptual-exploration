@@ -341,4 +341,4 @@ PYTHONPATH="src:." python3 -c "import tests.test_enumerator as t, tests.test_mag
 
 ## License
 
-This project is licensed under the MIT License — see the [pyproject.toml](pyproject.toml) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
