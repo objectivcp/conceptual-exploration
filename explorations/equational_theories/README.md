@@ -8,10 +8,10 @@ The **Equational Theories Project (ETP)** explores the complete landscape of imp
 
 Given a signature with binary operation $*$ and variables $x, y, z, \dots$, an equational law $L = R$ is an identity universally quantified over all occurring variables. Examples include:
 - **Commutativity (Eq 43)**: $x * y = y * x$
-- **Associativity (Eq 381)**: $(x * y) * z = x * (y * z)$
+- **Associativity (Eq 4512)**: $(x * y) * z = x * (y * z)$
 - **Idempotence (Eq 3)**: $x = x * x$
-- **Medial / Entropic (Eq 4512)**: $(x * y) * (z * w) = (x * z) * (y * w)$
-- **Steiner Law 1 (Eq 4687)**: $x * (x * y) = y$
+- **Medial / Entropic**: $(x * y) * (z * w) = (x * z) * (y * w)$
+- **Steiner Law 1 (Eq 16)**: $x * (x * y) = y$
 
 ## Features
 

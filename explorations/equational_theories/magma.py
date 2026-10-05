@@ -596,30 +596,31 @@ class MagmaExpert(Expert[Magma, Equation]):
 class ETP:
     """Catalog and utilities for the Equational Theories Project (ETP)."""
 
-    # Curated dictionary of prominent equational laws from ETP with canonical names and IDs
-    FAMOUS_EQUATIONS: ClassVar[list[tuple[int, str, str]]] = [
+    # Curated dictionary of prominent equational laws from ETP with canonical names and IDs.
+    # IDs follow the ETP catalog of laws with at most four operations; larger laws have none.
+    FAMOUS_EQUATIONS: ClassVar[list[tuple[int | None, str, str]]] = [
         (1, "Trivial / Reflexivity", "x = x"),
         (2, "Singleton / Degenerate", "x = y"),
         (3, "Idempotence", "x = (x * x)"),
         (4, "Left-Absorption / Left-Zero", "x = (x * y)"),
         (5, "Right-Absorption / Right-Zero", "x = (y * x)"),
-        (6, "Central-Identity", "x = ((x * y) * x)"),
-        (7, "Left-Alternative", "((x * x) * y) = (x * (x * y))"),
-        (8, "Right-Alternative", "((y * x) * x) = (y * (x * x))"),
-        (9, "Flexible", "((x * y) * x) = (x * (y * x))"),
-        (10, "Left-Distributive", "(x * (y * z)) = ((x * y) * (x * z))"),
-        (11, "Right-Distributive", "((x * y) * z) = ((x * z) * (y * z))"),
-        (12, "Self-Distributive", "((x * y) * (x * z)) = ((x * (y * z)))"),
-        (14, "Central-Groupoid", "((x * y) * (y * z)) = y"),
-        (23, "Left-Projection-Composition", "x = (x * (y * x))"),
-        (39, "Right-Projection-Composition", "x = ((x * y) * x)"),
+        (10, "Left-Projection-Composition", "x = (x * (y * x))"),
+        (16, "Steiner Law 1", "(x * (x * y)) = y"),
+        (25, "Central-Identity", "x = ((x * y) * x)"),
+        (25, "Right-Projection-Composition", "x = ((x * y) * x)"),
+        (26, "Steiner Law 2", "((y * x) * x) = y"),
         (43, "Commutativity", "(x * y) = (y * x)"),
-        (46, "Left-Idempotent-Composition", "(x * y) = (x * (x * y))"),
-        (47, "Right-Idempotent-Composition", "((y * x) * x) = (y * x)"),
-        (381, "Associativity", "((x * y) * z) = (x * (y * z))"),
-        (4512, "Medial / Entropic", "((x * y) * (z * w)) = ((x * z) * (y * w))"),
-        (4687, "Steiner Law 1", "(x * (x * y)) = y"),
-        (4688, "Steiner Law 2", "((y * x) * x) = y"),
+        (168, "Central-Groupoid", "((x * y) * (y * z)) = y"),
+        (323, "Left-Idempotent-Composition", "(x * y) = (x * (x * y))"),
+        (378, "Right-Idempotent-Composition", "((y * x) * x) = (y * x)"),
+        (4396, "Left-Alternative", "((x * x) * y) = (x * (x * y))"),
+        (4435, "Flexible", "((x * y) * x) = (x * (y * x))"),
+        (4473, "Right-Alternative", "((y * x) * x) = (y * (x * x))"),
+        (4512, "Associativity", "((x * y) * z) = (x * (y * z))"),
+        (None, "Left-Distributive", "(x * (y * z)) = ((x * y) * (x * z))"),
+        (None, "Right-Distributive", "((x * y) * z) = ((x * z) * (y * z))"),
+        (None, "Self-Distributive", "((x * y) * (x * z)) = ((x * (y * z)))"),
+        (None, "Medial / Entropic", "((x * y) * (z * w)) = ((x * z) * (y * w))"),
     ]
 
     @classmethod

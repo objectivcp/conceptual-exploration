@@ -144,8 +144,8 @@ def test_counterexample_search_sorts_equations():
 
     expert._find_table_z3 = record
     expert._search_counterexample(
-        frozenset([ETP.get_equation(43), ETP.get_equation(381), ETP.get_equation(3)]),
-        frozenset([ETP.get_equation(4512), ETP.get_equation(9)]),
+        frozenset([ETP.get_equation(43), ETP.get_equation(4512), ETP.get_equation(3)]),
+        frozenset([Equation.parse("(x * y) * (z * w) = (x * z) * (y * w)"), ETP.get_equation(4435)]),
         3,
     )
 
@@ -193,7 +193,7 @@ def test_etp_catalog():
     assert len(famous) >= 15
     eq_comm = ETP.get_equation(43)
     assert "Commutativity" in (eq_comm.name or "")
-    eq_assoc = ETP.get_equation(381)
+    eq_assoc = ETP.get_equation(4512)
     assert "Associativity" in (eq_assoc.name or "")
 
 
