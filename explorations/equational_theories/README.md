@@ -29,6 +29,12 @@ Run the exploration script:
 python explorations/equational_theories/explore.py
 ```
 
+The equations explored as attributes are listed in [`equations.json`](equations.json); each entry has an `equation` string and optional `name` and `id` fields, and the set must be closed under duality. Use `--equations` to explore a different file:
+
+```bash
+python explorations/equational_theories/explore.py --equations my_equations.json
+```
+
 The per-magma-size solver budget is configurable with `--z3-timeout-ms` (default `30000`; `0` or less runs unbounded):
 
 ```bash

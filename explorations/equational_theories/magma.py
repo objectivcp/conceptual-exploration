@@ -7,10 +7,12 @@ as studied in the Equational Theories Project (ETP).
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from itertools import product
+from pathlib import Path
 from typing import ClassVar
 
 import z3
@@ -626,6 +628,19 @@ class ETP:
         return [
             Equation.parse(eq_str, name=name, id=eq_id)
             for eq_id, name, eq_str in cls.FAMOUS_EQUATIONS
+        ]
+
+    @staticmethod
+    def load_equations(path: str | Path) -> list[Equation]:
+        """Load equations from a JSON file.
+
+        The file holds a list of objects with an "equation" string and
+        optional "name" and "id" fields.
+        """
+        entries = json.loads(Path(path).read_text(encoding="utf-8"))
+        return [
+            Equation.parse(entry["equation"], name=entry.get("name"), id=entry.get("id"))
+            for entry in entries
         ]
 
     @classmethod

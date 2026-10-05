@@ -36,37 +36,24 @@ from conceptual_exploration.exploration.base import ExplorationBase, Implication
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 
 
+DEFAULT_EQUATIONS_PATH = Path(__file__).resolve().parent / "equations.json"
+
+
 def run_magma_exploration(
+    equations_path: str | Path = DEFAULT_EQUATIONS_PATH,
     use_duality_symmetry: bool = True,
     z3_timeout_ms: int | None = None,
     report_interval: int = 20,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
+    print(f"Equations File:           {Path(equations_path).name}")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
     print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     print("=" * 70)
 
-    # Selected representative equational laws from ETP
-    equations = [
-        Equation.parse("x = y", name="Singleton / Degenerate", id=2),
-        Equation.parse("x = (x * x)", name="Idempotence", id=3),
-        Equation.parse("x = (x * y)", name="Left-Zero / Left-Absorption", id=4),
-        Equation.parse("x = (y * x)", name="Right-Zero / Right-Absorption", id=5),
-        Equation.parse("x = ((x * y) * x)", name="Central-Identity", id=6),
-        Equation.parse("x = (x * (y * x))", name="Left-Central-Identity", id=23),
-        Equation.parse("((x * x) * y) = (x * (x * y))", name="Left-Alternative", id=7),
-        Equation.parse("((y * x) * x) = (y * (x * x))", name="Right-Alternative", id=8),
-        Equation.parse("((x * y) * x) = (x * (y * x))", name="Flexible", id=9),
-        Equation.parse("(x * y) = (y * x)", name="Commutativity", id=43),
-        Equation.parse("(x * y) = (x * (x * y))", name="Left-Idempotent-Composition", id=46),
-        Equation.parse("((y * x) * x) = (y * x)", name="Right-Idempotent-Composition", id=47),
-        Equation.parse("((x * y) * z) = (x * (y * z))", name="Associativity", id=381),
-        Equation.parse("((x * y) * (z * w)) = ((x * z) * (y * w))", name="Medial / Entropic", id=4512),
-        Equation.parse("(x * (x * y)) = y", name="Steiner Law 1", id=4687),
-        Equation.parse("((y * x) * x) = y", name="Steiner Law 2", id=4688),
-    ]
+    equations = ETP.load_equations(equations_path)
 
     print(f"\nExploring {len(equations)} Equational Laws:")
     for eq in equations:
@@ -147,6 +134,18 @@ def run_magma_exploration(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
+        "--equations",
+        type=Path,
+        default=DEFAULT_EQUATIONS_PATH,
+        metavar="PATH",
+        help=(
+            "JSON file listing the equations to explore as attributes "
+            "(default: equations.json next to this script). Each entry has an "
+            '"equation" string and optional "name" and "id" fields; the set '
+            "must be closed under duality."
+        ),
+    )
+    parser.add_argument(
         "--z3-timeout-ms",
         type=int,
         default=30000,
@@ -172,6 +171,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     run_magma_exploration(
+        equations_path=args.equations,
         use_duality_symmetry=True,
         z3_timeout_ms=args.z3_timeout_ms if args.z3_timeout_ms > 0 else None,
         report_interval=args.report_every,
