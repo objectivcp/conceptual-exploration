@@ -1,5 +1,7 @@
 """Unit tests for the Magma and Equational Theories Project (ETP) exploration domain."""
 
+import pytest
+
 from conceptual_exploration import AttributeExploration, Implication
 from conceptual_exploration.exploration.base import ExplorationBase
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert, Op, Term, Var
@@ -124,6 +126,25 @@ def test_magma_expert_timeout_is_inconclusive():
     assert counterexample is not None
     assert counterexample.refutes(impl)
     assert expert.is_conclusive()
+
+
+def test_counterexample_search_respects_size_range():
+    import z3
+
+    comm = Equation.parse("x * y = y * x", name="Commutativity")
+    assoc = Equation.parse("(x * y) * z = x * (y * z)", name="Associativity")
+    impl = Implication(frozenset([comm]), frozenset([assoc]))
+
+    sizes = []
+    expert = MagmaExpert([comm, assoc], min_search_size=2, max_search_size=4, initial_magmas=[])
+    expert._find_table_z3 = lambda size, premises, conclusions: (sizes.append(size), (z3.unsat, None))[1]
+    assert expert.validate(impl) is None
+    assert sizes == [2, 3, 4]
+
+    with pytest.raises(ValueError):
+        MagmaExpert(min_search_size=4, max_search_size=3)
+    with pytest.raises(ValueError):
+        MagmaExpert(min_search_size=0)
 
 
 def test_counterexample_search_sorts_equations():

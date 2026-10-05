@@ -398,9 +398,11 @@ class MagmaExpert(Expert[Magma, Equation]):
     (https://github.com/teorth/equational_theories): for each candidate magma
     size, the existence of a Cayley table satisfying the premises and violating
     a conclusion is encoded as an SMT problem and handed to Z3, rather than
-    enumerated by brute force. As with any finite-model search, failing to find
-    a counterexample up to `max_search_size` does not prove the implication
-    valid, since a counterexample may only exist at a larger (or infinite) size.
+    enumerated by brute force. The solver tries the sizes from `min_search_size`
+    to `max_search_size`; the cached pool is checked whatever the sizes of its
+    magmas. As with any finite-model search, failing to find a counterexample
+    in that range does not prove the implication valid, since a counterexample
+    may only exist at a size outside it (or be infinite).
 
     If `z3_timeout_ms` is set and some size runs out of time, that size is
     neither refuted nor cleared, so `is_conclusive()` reports False and the
@@ -413,8 +415,15 @@ class MagmaExpert(Expert[Magma, Equation]):
         max_search_size: int = 3,
         initial_magmas: Sequence[Magma] | None = None,
         z3_timeout_ms: int | None = None,
+        min_search_size: int = 1,
     ) -> None:
+        if not 1 <= min_search_size <= max_search_size:
+            raise ValueError(
+                f"Search sizes must satisfy 1 <= min_search_size <= max_search_size, "
+                f"got {min_search_size} and {max_search_size}"
+            )
         self.attributes = tuple(attributes) if attributes is not None else None
+        self.min_search_size = min_search_size
         self.max_search_size = max_search_size
         self.z3_timeout_ms = z3_timeout_ms
         self.cached_magmas: list[Magma] = []
@@ -480,11 +489,12 @@ class MagmaExpert(Expert[Magma, Equation]):
                 if any(not magma.holds(eq) for eq in implication.conclusion):
                     return self._build_counterexample(magma, eval_attrs, implication)
 
-        # 2. Dynamic search for a counterexample magma of size 1..max_search_size
+        # 2. Dynamic search for a counterexample magma of size min_search_size..max_search_size
         found = self._search_counterexample(
             implication.premise,
             implication.conclusion,
             self.max_search_size,
+            self.min_search_size,
         )
         if found is not None:
             self.cached_magmas.append(found)
@@ -516,8 +526,9 @@ class MagmaExpert(Expert[Magma, Equation]):
         premises: Iterable[Equation],
         conclusions: Iterable[Equation],
         max_size: int,
+        min_size: int = 1,
     ) -> Magma | None:
-        """Search for a magma of size <= max_size satisfying premises and violating conclusions.
+        """Search for a magma of size min_size..max_size satisfying premises and violating conclusions.
 
         Each size is checked via `_find_table_z3`, which delegates the search over
         Cayley tables of that size to the Z3 SMT solver.
@@ -530,7 +541,7 @@ class MagmaExpert(Expert[Magma, Equation]):
         conclusions_list = sorted(conclusions)
 
         inconclusive = False
-        for size in range(1, max_size + 1):
+        for size in range(min_size, max_size + 1):
             result, table = self._find_table_z3(size, premises_list, conclusions_list)
             if table is not None:
                 # A counterexample is a witness, so earlier timeouts no longer matter.

@@ -44,11 +44,14 @@ def run_magma_exploration(
     use_duality_symmetry: bool = True,
     z3_timeout_ms: int | None = None,
     report_interval: int = 20,
+    min_search_size: int = 1,
+    max_search_size: int = 6,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
+    print(f"Search Sizes:             {min_search_size}..{max_search_size}")
     print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     print("=" * 70)
@@ -71,7 +74,8 @@ def run_magma_exploration(
     )
     expert = MagmaExpert(
         attributes=equations,
-        max_search_size=6,
+        min_search_size=min_search_size,
+        max_search_size=max_search_size,
         z3_timeout_ms=z3_timeout_ms,
     )
     exploration = AttributeExploration(
@@ -110,7 +114,7 @@ def run_magma_exploration(
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
             "\n  of time at some magma size, so these implications remain open rather"
-            f"\n  than verified up to size {expert.max_search_size}."
+            f"\n  than verified for sizes {expert.min_search_size}..{expert.max_search_size}."
         )
 
     # Display discovered counterexample magmas
@@ -146,6 +150,29 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--min-search-size",
+        type=int,
+        default=1,
+        metavar="N",
+        help=(
+            "Smallest magma size the solver searches for counterexamples "
+            "(default: 1). The built-in pool of small standard magmas is "
+            "still checked first, whatever this is set to."
+        ),
+    )
+    parser.add_argument(
+        "--max-search-size",
+        type=int,
+        default=6,
+        metavar="N",
+        help=(
+            "Largest magma size the solver searches for counterexamples "
+            "(default: 6). An implication with no counterexample in the "
+            "searched range is accepted, though a larger counterexample "
+            "may exist."
+        ),
+    )
+    parser.add_argument(
         "--z3-timeout-ms",
         type=int,
         default=30000,
@@ -170,9 +197,13 @@ if __name__ == "__main__":
         ),
     )
     args = parser.parse_args()
+    if not 1 <= args.min_search_size <= args.max_search_size:
+        parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
     run_magma_exploration(
         equations_path=args.equations,
         use_duality_symmetry=True,
         z3_timeout_ms=args.z3_timeout_ms if args.z3_timeout_ms > 0 else None,
         report_interval=args.report_every,
+        min_search_size=args.min_search_size,
+        max_search_size=args.max_search_size,
     )

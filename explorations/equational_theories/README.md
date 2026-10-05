@@ -43,6 +43,12 @@ python explorations/equational_theories/explore.py --z3-timeout-ms 500
 
 A tighter budget trades open questions for speed rather than changing the answer: a query that runs out of time is reported `[UNCONFIRMED]` instead of being decided, so a smaller budget finishes sooner and leaves more implications open. Running unbounded removes the flagging entirely, at the cost of a few pathological searches at the larger magma sizes, which can dominate the running time.
 
+The solver searches for counterexample magmas of sizes `--min-search-size` to `--max-search-size` (defaults `1` and `6`); the built-in pool of small standard magmas is checked first regardless:
+
+```bash
+python explorations/equational_theories/explore.py --min-search-size 4 --max-search-size 7
+```
+
 Progress reporting is controlled with `--report-every` (default `1`, showing every question the expert is asked; `0` or less prints nothing):
 
 ```bash
