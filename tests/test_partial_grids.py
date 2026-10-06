@@ -4,13 +4,17 @@ import random
 
 import pytest
 
-from conceptual_exploration import Implication
+from itertools import product
+
+from conceptual_exploration import Implication, reduced_basis
 from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku import (
+    GEOMETRIC_PREDICATES,
     PARTIAL_GRID_PRESETS,
     PartialGridExpert,
     SudokuSort,
+    geometry_basis,
     partial_grid_exploration,
     sudoku_background,
     sudoku_predicates,
@@ -151,6 +155,37 @@ def test_naked_and_hidden_singles_are_found():
     background_only = partial_grid_exploration("row").base.implications
     assert not background_only.entails(hidden_single)
     assert not background_only.entails(elimination)
+
+
+def test_geometry_basis_holds_on_every_placement():
+    variables, names = PARTIAL_GRID_PRESETS["units"]
+    cells = [v for v in variables if v.sort is SudokuSort.CELL]
+    basis = geometry_basis(variables, names)
+    assert basis
+    assert all(a.predicate.name in GEOMETRIC_PREDICATES for i in basis for a in i.premise | i.conclusion)
+    empty = ((0,) * 4,) * 4
+    for positions in product(product(range(4), repeat=2), repeat=len(cells)):
+        assignment = tuple((v.name, p) for v, p in zip(cells, positions))
+        for implication in basis:
+            if all(_holds(a, empty, assignment) for a in implication.premise):
+                assert all(_holds(a, empty, assignment) for a in implication.conclusion)
+
+
+def test_exploring_geometry_first_reports_only_deductions():
+    """The two-stage exploration has the same theory as the one-stage one,
+    but leaves the geometry to the background."""
+    one = partial_grid_exploration("units", geometry_first=False)
+    two = partial_grid_exploration("units", geometry_first=True)
+    one.run()
+    two.run()
+    assert all(two.base.implications.entails(i) for i in one.base.implications)
+    assert all(one.base.implications.entails(i) for i in two.base.implications)
+
+    geometric = lambda rule: not any(
+        a.predicate.name in ("Forced", "Excluded") for a in rule.premise | rule.conclusion
+    )
+    assert any(map(geometric, reduced_basis(one.base)))
+    assert not any(map(geometric, reduced_basis(two.base)))
 
 
 def test_only_4x4_grids_are_supported():

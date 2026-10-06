@@ -7,6 +7,7 @@ relational predicates for conceptual exploration.
 
 from .sudoku import (
     CELL_EQUIVALENCES,
+    GEOMETRIC_PREDICATES,
     PARTIAL_GRID_PRESETS,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
@@ -23,6 +24,7 @@ from .sudoku import (
     cell_exploration,
     cell_number_exploration,
     column_cells,
+    geometry_basis,
     get_coords,
     get_sudoku_attributes,
     get_sudoku_background_implications,
@@ -50,6 +52,7 @@ from .sudoku import (
 
 __all__ = [
     "CELL_EQUIVALENCES",
+    "GEOMETRIC_PREDICATES",
     "PARTIAL_GRID_PRESETS",
     "PREDICATE_PROPERTIES",
     "PREDICATE_SORTS",
@@ -66,6 +69,7 @@ __all__ = [
     "cell_exploration",
     "cell_number_exploration",
     "column_cells",
+    "geometry_basis",
     "get_coords",
     "get_sudoku_attributes",
     "get_sudoku_background_implications",

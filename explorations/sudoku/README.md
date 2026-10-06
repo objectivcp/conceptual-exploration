@@ -22,7 +22,7 @@ Sudoku can be modeled conceptually at three levels:
 3. **Deduction Rules on Partial Grids (SAT-based)**:
    - Objects are partial 4x4 grids with at least one completion. `Forced(x, n)` says that every completion has `n` in `x`, `Excluded(x, n)` that none does, so the rules found are deduction techniques such as naked and hidden singles.
    - `PartialGridExpert` enumerates the 288 solved 4x4 grids to decide these predicates; 9x9 grids have too many.
-   - Presets pick the variables and predicates: `cell` (one cell, four digits), `row`, `column` and `block` (the four cells of a unit), and `units` (three cells, all of the geometry).
+   - Presets pick the variables and predicates: `cell` (one cell, four digits), `row`, `column` and `block` (the four cells of a unit), `units` (three cells, all of the geometry), and `full` (four cells, all of the geometry). `full` explores the geometry alone first and adds its rules to the background, so that only rules about forced and excluded digits are reported.
 
 ## Features
 

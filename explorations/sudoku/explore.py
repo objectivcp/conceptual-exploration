@@ -174,6 +174,8 @@ def run_partial_grid_exploration(preset: str = "row"):
     print(f"Variables:  {', '.join(f'{v.name}: {v.sort.name}' for v in variables)}")
     print(f"Predicates: {', '.join(names)}")
 
+    if preset == "full":
+        print("Geometry explored first; its rules join the background.")
     exploration = partial_grid_exploration(preset)
     print(f"Atoms: {len(exploration.base.attributes)}")
     print(f"Background Implications: {len(exploration.background)}")
@@ -258,7 +260,9 @@ if __name__ == "__main__":
         help=(
             "Variables and predicates of the partial-grid exploration: cell (naked "
             "singles), row, column or block (a unit's techniques), units (how the "
-            "units interact), or all of them in turn (default: all)"
+            "units interact), full (four cells with all of the geometry, explored "
+            "after the geometry alone; takes longest), or all of them in turn "
+            "(default: all)"
         ),
     )
     parser.add_argument(

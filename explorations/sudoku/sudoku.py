@@ -1230,9 +1230,8 @@ def _numbers(*names: str) -> List[SortedVariable]:
     return [SortedVariable(name, SudokuSort.NUMBER) for name in names]
 
 
-# Variables and predicates for exploring partial 4x4 grids, each small
-# enough to finish quickly; the full partial-grid vocabulary over four cells
-# does not. A unit's techniques need a variable for each of its four cells.
+# Variables and predicates for exploring partial 4x4 grids. A unit's
+# techniques need a variable for each of its four cells.
 PARTIAL_GRID_PRESETS: Dict[str, Tuple[List[SortedVariable], Tuple[str, ...]]] = {
     # One cell and four digits: naked singles.
     "cell": (
@@ -1257,22 +1256,70 @@ PARTIAL_GRID_PRESETS: Dict[str, Tuple[List[SortedVariable], Tuple[str, ...]]] = 
         _cells("x", "y", "z") + _numbers("n"),
         ("SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"),
     ),
+    # Four cells with all of the geometry: everything above, together with
+    # interactions that need a fourth cell. Explored in two stages.
+    "full": (
+        _cells("w", "x", "y", "z") + _numbers("n"),
+        ("SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"),
+    ),
 }
+
+# The predicates about where cells are, which do not depend on the digits.
+GEOMETRIC_PREDICATES = (
+    "SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "SameBand", "SameStack",
+)
+
+
+def geometry_basis(
+    variables: Iterable[SortedVariable],
+    names: Iterable[str],
+    block_size: int = 2,
+) -> List[Implication]:
+    """The rules of the grid's geometry: the implications accepted by
+    exploring the geometric predicates among `names` alone, over the cell
+    variables among `variables`.
+
+    Given as background, they keep facts about where cells can be from
+    being reported among the rules about what the cells hold.
+    """
+    cells = [v for v in variables if v.sort is SudokuSort.CELL]
+    predicates = sudoku_predicates(n for n in names if n in GEOMETRIC_PREDICATES)
+    exploration = RuleExploration(
+        predicates,
+        cells,
+        SatSudokuRuleExpert(block_size, cells),
+        background=sudoku_background(predicates, cells),
+        substitutions=True,
+        evaluate_all=True,
+    )
+    exploration.run()
+    return list(exploration.base.accepted_implications)
 
 
 def partial_grid_exploration(
     preset: str = "row",
     on_question: Optional[Callable[[Any], None]] = None,
+    geometry_first: Optional[bool] = None,
 ) -> RuleExploration:
     """Build a rule exploration of partial 4x4 grids for one of
-    `PARTIAL_GRID_PRESETS`, with the grid-independent background."""
+    `PARTIAL_GRID_PRESETS`, with the grid-independent background.
+
+    With `geometry_first`, which is the default for the `full` preset, the
+    geometry is explored first and its rules added to the background, so
+    that only rules about forced and excluded digits are left to find.
+    """
     variables, names = PARTIAL_GRID_PRESETS[preset]
+    if geometry_first is None:
+        geometry_first = preset == "full"
     predicates = sudoku_predicates(names)
+    background = sudoku_background(predicates, variables)
+    if geometry_first:
+        background += geometry_basis(variables, names)
     return RuleExploration(
         predicates,
         variables,
         PartialGridExpert(variables),
-        background=sudoku_background(predicates, variables),
+        background=background,
         substitutions=True,
         evaluate_all=True,
         on_question=on_question,
