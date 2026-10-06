@@ -65,6 +65,10 @@ class ExplorationBase(Generic[O, A]):
         self.implications = ImplicationTheory[A](index=self.index)
         self.implication_sources: dict[Implication[A], ImplicationSource] = {}
         self._rows: dict[VersionedObject[O], tuple[int, int]] = {}
+        # The objects sharing each distinct row. Many versions of an object
+        # repeat a row under another name, and the context closure and the
+        # updates only need each row once.
+        self._names_by_row: dict[tuple[int, int], dict[VersionedObject[O], None]] = {}
 
         for implication in background_implications:
             self.add_background(implication)
@@ -254,8 +258,18 @@ class ExplorationBase(Generic[O, A]):
         self._store(name, row)
         return row
 
-    def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
+    def _set_row(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
+        old = self._rows.get(name)
+        if old is not None:
+            names = self._names_by_row[old]
+            del names[name]
+            if not names:
+                del self._names_by_row[old]
         self._rows[name] = row
+        self._names_by_row.setdefault(row, {})[name] = None
+
+    def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
+        self._set_row(name, row)
         obj = self.context.objects.get(name)
         if obj is None:
             self.context.add(
@@ -269,7 +283,7 @@ class ExplorationBase(Generic[O, A]):
         """The attributes every object having `attributes` might have: the
         mask form of `context.closure`."""
         result = self.full_mask
-        for positive, negative in self._rows.values():
+        for positive, negative in self._names_by_row:
             if attributes & positive == attributes:
                 result &= ~negative
         return result
@@ -282,19 +296,21 @@ class ExplorationBase(Generic[O, A]):
         fires, and a complete object has no unknown attribute for the negative
         side to claim; such objects are left alone. A firing implication on a
         complete object can only be a conflict, which `_complete` reports.
+        Objects sharing a row are completed once, together.
         """
         if not added:
             return
-        for name, (positive, negative) in list(self._rows.items()):
+        for (positive, negative), names in list(self._names_by_row.items()):
             fires = any(
                 premise & positive == premise and conclusion & ~positive
                 for premise, conclusion in added
             )
             if not fires and (positive | negative) & self.full_mask == self.full_mask:
                 continue
-            row = self._complete(positive, negative, name)
+            row = self._complete(positive, negative, next(iter(names)))
             if row != (positive, negative):
-                self._store(name, row)
+                for name in list(names):
+                    self._store(name, row)
 
     def _update_object(self, obj: PartialObject[O, A]):
         """Complete an object's attribute sets under the current implications.
@@ -310,7 +326,7 @@ class ExplorationBase(Generic[O, A]):
         obj.positive = self.index.decode(positive)
         obj.negative = self.index.decode(negative)
         if self.context.objects.get(obj.object) is obj:
-            self._rows[obj.object] = (positive, negative)
+            self._set_row(obj.object, (positive, negative))
 
     def _complete(self, positive: int, negative: int, name) -> tuple[int, int]:
         """Close the positive side, then deny every attribute that would force

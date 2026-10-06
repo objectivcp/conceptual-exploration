@@ -218,6 +218,35 @@ def test_mappings_to_truth_values():
     assert versions["g#1"].negative == {"b"}
 
 
+def test_objects_sharing_a_row_are_closed_over_once():
+    """The context closure runs over distinct rows, which must stay in step
+    with the objects as they are added, merged and completed."""
+    swap = {"a": "b", "b": "a", "c": "c", "d": "d"}
+    base = ExplorationBase(
+        attributes=["a", "b", "c", "d"],
+        mappings=[lambda x: swap[x]],
+    )
+    # Two objects whose rows coincide, and one whose image repeats it.
+    base.add_counterexample(PartialObject("g", {"a", "b"}, {"c"}))
+    base.add_counterexample(PartialObject("h", {"a", "b"}, {"c"}))
+    base.add_counterexample(PartialObject("k", {"c"}, {"a"}))
+    # Completion changes a shared row for both objects at once.
+    base.accept(Implication(frozenset(["a", "b"]), frozenset(["d"])))
+    # A merge moves an object to another row.
+    base.add_counterexample(PartialObject("k", {"d"}, set()))
+
+    rows = base._rows
+    assert len(base._names_by_row) < len(rows)
+    assert {name for names in base._names_by_row.values() for name in names} == set(rows)
+    for row, names in base._names_by_row.items():
+        assert all(rows[name] == row for name in names)
+
+    for attributes in [set(), {"a"}, {"c"}, {"d"}, {"a", "d"}]:
+        assert base.index.decode(
+            base.context_closure_mask(base.index.encode(attributes))
+        ) == base.context.closure(attributes)
+
+
 if __name__ == "__main__":
     test_object_is_merged_before_being_completed()
     test_the_expert_s_attribute_sets_are_left_alone()
@@ -228,4 +257,5 @@ if __name__ == "__main__":
     test_duplicate_mapped_versions_are_not_stored()
     test_add_returns_the_stored_object()
     test_mappings_to_truth_values()
+    test_objects_sharing_a_row_are_closed_over_once()
     print("All exploration base tests passed successfully!")
