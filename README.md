@@ -160,6 +160,7 @@ conceptual-exploration/
 Here is a minimal example discovering arithmetic relationships over small integers:
 
 ```python
+from conceptual_exploration import reduced_basis
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.attribute import AttributeExploration
@@ -213,8 +214,8 @@ exploration = AttributeExploration(base, expert)
 exploration.run()
 
 print("Discovered Implications:")
-for impl in base.accepted_implications:
-    print(f"  {impl}")
+for rule in reduced_basis(base):
+    print(f"  {rule}")
 ```
 
 An exploration runs silently by default. To watch it work, pass a callback — `report_every(n)` prints every nth question together with the expert's verdict:
@@ -233,6 +234,7 @@ Explore relational rules over variables $x, y, z$ and binary order/equality pred
 
 ```python
 from itertools import product
+from conceptual_exploration import reduced_basis
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.rule import RuleExploration
@@ -267,9 +269,10 @@ expert = NumberRelationalExpert(domain=range(-5, 6), variables=variables)
 exploration = RuleExploration(predicates, variables, expert, substitutions=True)
 exploration.run()
 
-print(f"Accepted {len(exploration.base.accepted_implications)} first-order rules:")
-for impl in exploration.base.accepted_implications:
-    print(f"  {impl}")
+rules = reduced_basis(exploration.base)
+print(f"Discovered {len(rules)} first-order rules:")
+for rule in rules:
+    print(f"  {rule}")
 ```
 
 ### 3. Loading Formal Contexts from `.cxt` Files

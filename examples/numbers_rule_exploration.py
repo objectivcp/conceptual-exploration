@@ -1,13 +1,12 @@
 from collections.abc import Iterable
 from itertools import product
 
-from conceptual_exploration import report_every
+from conceptual_exploration import reduced_basis, report_every
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.logic.predicate import EvaluatablePredicate, Notation
 from conceptual_exploration.logic.variable import Variable
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.rule import RuleExploration
-from conceptual_exploration.core.theory import ImplicationTheory
 
 
 class NumberExpert(Expert[int, EvaluatablePredicate]):
@@ -91,20 +90,11 @@ exploration = RuleExploration(predicates,
 exploration.run()
 
 base = exploration.base
+rules = reduced_basis(base)
 print()
-print(f'Accepted {len(base.accepted_implications)} implications:\n')
-theory = ImplicationTheory(base.implications)
-for implication in base.accepted_implications:
-    simplified = theory.simplify(implication)
-    for i in simplified.premise:
-        print(i)
-    print('-' * 20)
-    if len(implication.premise | implication.conclusion) == len(base.attributes):
-        print('M\n')
-        continue
-    for i in simplified.conclusion:
-        print(i)
-    print()
+print(f'Accepted {len(base.accepted_implications)} implications, reduced to {len(rules)} rules:\n')
+for rule in rules:
+    print(rule)
 print()
 
 # print(base.context)

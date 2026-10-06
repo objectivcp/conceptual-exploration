@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from itertools import combinations, product
 from typing import Generic, TypeVar
 
-from conceptual_exploration import report_every
+from conceptual_exploration import reduced_basis, report_every
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
@@ -102,16 +102,20 @@ exploration = AttributeExploration(
 
 exploration.run()
 
+# The attributes are implications themselves, so each rule is printed as a
+# block: its premise above the line and its conclusion below.
+rules = reduced_basis(base)
 print()
-print(f'Accepted {len(base.accepted_implications)} implications:\n')
-theory = ImplicationTheory(base.implications)
-for implication in base.accepted_implications:
-    simplified = theory.simplify(implication)
-    for i in simplified.premise:
+print(f'Accepted {len(base.accepted_implications)} implications, reduced to {len(rules)} rules:\n')
+for rule in rules:
+    for i in sorted(rule.premise):
         print(i)
     print('-' * 20)
-    for i in simplified.conclusion:
-        print(i)
+    if rule.everything:
+        print('everything')
+    else:
+        for i in sorted(rule.conclusion):
+            print(i)
     print()
 print()
 

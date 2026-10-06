@@ -1,7 +1,7 @@
 import random
 from typing import TypeVar, Generic
 
-from conceptual_exploration import report_every
+from conceptual_exploration import reduced_basis, report_every
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from typing import Callable
@@ -94,7 +94,7 @@ exploration = AttributeExploration(base, NumberExpert(100, attributes), on_quest
 exploration.run()
 
 print()
-for implication in base.implications:
-    print(implication)
+for rule in reduced_basis(base):
+    print(rule)
 print()
 print(base.context)
