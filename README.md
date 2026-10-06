@@ -107,6 +107,7 @@ conceptual-exploration/
 │   │   └── base.py                   # Abstract Expert interface (validate method)
 │   ├── exploration/
 │   │   ├── base.py                   # ExplorationBase with context, mappings & implications
+│   │   ├── basis.py                  # Rule and reduced_basis: accepted implications reduced for reading
 │   │   ├── attribute.py              # AttributeExploration coordinator
 │   │   ├── rule.py                   # RuleExploration first-order coordinator
 │   │   └── state.py                  # ExplorationState tracking queries and statistics
@@ -141,6 +142,7 @@ conceptual-exploration/
 | `QuestionReport` / `report_every` | `conceptual_exploration` | Per-question progress event emitted by an exploration, and a ready-made callback printing every nth one. |
 | `Implication` | `conceptual_exploration` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
 | `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
+| `Rule` / `reduced_basis` | `conceptual_exploration` | The accepted implications with premises and conclusions cut to what the background, the other rules and the mappings do not already give. |
 | `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
 | `PartialContext` | `conceptual_exploration` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
 | `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, declared properties, and optional evaluation function. |

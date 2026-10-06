@@ -30,8 +30,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration, report_every
-from conceptual_exploration.core.theory import ImplicationTheory
+from conceptual_exploration import AttributeExploration, reduced_basis, report_every
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 
@@ -97,18 +96,13 @@ def run_magma_exploration(
     print(f"Total Implications in Theory: {len(base.implications.implications)}")
     print(f"Counterexample Magmas Found:  {len(state.counterexamples)}")
 
-    # Display canonical simplified implication basis
-    theory = ImplicationTheory(base.implications)
-    print("\nDiscovered Canonical Implication Basis (Simplified):")
-    for idx, impl in enumerate(base.accepted_implications, start=1):
-        simplified = theory.simplify(impl)
-        premise_str = " {" + ", ".join(eq.name or str(eq) for eq in simplified.premise) + "}" if simplified.premise else " Ø"
-        concl_str = " {" + ", ".join(eq.name or str(eq) for eq in simplified.conclusion) + "}"
-        unconfirmed = (
-            base.implication_sources[impl] is ImplicationSource.UNCONFIRMED
-        )
+    # Display the implication basis, reduced for reading
+    rules = reduced_basis(base)
+    print(f"\nDiscovered Implication Basis (Reduced, {len(rules)} rules):")
+    for idx, rule in enumerate(rules, start=1):
+        unconfirmed = rule.source is ImplicationSource.UNCONFIRMED
         marker = "   [UNCONFIRMED]" if unconfirmed else ""
-        print(f"  [{idx}] {premise_str}  ==>  {concl_str}{marker}")
+        print(f"  [{idx}] {rule.format(lambda eq: eq.name or str(eq))}{marker}")
 
     if base.unconfirmed_implications:
         print(

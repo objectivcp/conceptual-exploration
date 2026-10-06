@@ -8,6 +8,27 @@ from .implication import Implication
 A = TypeVar("A")
 
 
+def close_mask(mask: int, implications: Iterable[tuple[int, int]]) -> int:
+    """Close an attribute mask under implications given as (premise,
+    conclusion) mask pairs."""
+    # An implication that has fired can fire no further, so each pass only
+    # looks at the ones whose premise was not yet contained.
+    pending = implications
+    changed = True
+    while changed:
+        changed = False
+        waiting = []
+        for premise, conclusion in pending:
+            if premise & mask == premise:
+                if conclusion & ~mask:
+                    mask |= conclusion
+                    changed = True
+            else:
+                waiting.append((premise, conclusion))
+        pending = waiting
+    return mask
+
+
 class ImplicationTheory(ClosureOperator[A]):
     """A list of implications together with the closure operator they define.
 
@@ -51,22 +72,7 @@ class ImplicationTheory(ClosureOperator[A]):
             self._masks.extend(
                 map(self._encode, self.implications[len(self._masks):])
             )
-        # An implication that has fired can fire no further, so each pass only
-        # looks at the ones whose premise was not yet contained.
-        pending = self._masks
-        changed = True
-        while changed:
-            changed = False
-            waiting = []
-            for premise, conclusion in pending:
-                if premise & mask == premise:
-                    if conclusion & ~mask:
-                        mask |= conclusion
-                        changed = True
-                else:
-                    waiting.append((premise, conclusion))
-            pending = waiting
-        return mask
+        return close_mask(mask, self._masks)
 
     def entails_mask(self, premise: int, conclusion: int) -> bool:
         return conclusion & ~self.closure_mask(premise) == 0

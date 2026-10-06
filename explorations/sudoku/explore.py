@@ -22,8 +22,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration
-from conceptual_exploration.core.theory import ImplicationTheory
+from conceptual_exploration import AttributeExploration, reduced_basis
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
@@ -135,23 +134,20 @@ def run_sudoku_rule_exploration(
         failing = sum(c is not None for c in counterexamples.values())
         print(f"Checked on Block Size {check_block_size}:  {failing} of {len(counterexamples)} fail ({elapsed:.2f}s)")
 
-    theory = ImplicationTheory(base.implications)
-    print("\nDiscovered Relational Rules (Simplified):")
-    for idx, impl in enumerate(base.accepted_implications, start=1):
-        simplified = theory.simplify(impl)
-        premise_str = " {" + ", ".join(str(a) for a in simplified.premise) + "}" if simplified.premise else " Ø"
-        concl_str = " {" + ", ".join(str(a) for a in simplified.conclusion) + "}"
+    rules = reduced_basis(base)
+    print(f"\nDiscovered Relational Rules (Reduced, {len(rules)}):")
+    for idx, rule in enumerate(rules, start=1):
         marker = (
             f"   [FAILS FOR BLOCK SIZE {check_block_size}]"
-            if counterexamples.get(impl) is not None
+            if counterexamples.get(rule.implication) is not None
             else ""
         )
-        print(f"  [{idx}] {premise_str}  ==>  {concl_str}{marker}")
+        print(f"  [{idx}] {rule}{marker}")
 
     failing = [
-        (idx, counterexamples[impl])
-        for idx, impl in enumerate(base.accepted_implications, start=1)
-        if counterexamples.get(impl) is not None
+        (idx, counterexamples[rule.implication])
+        for idx, rule in enumerate(rules, start=1)
+        if counterexamples.get(rule.implication) is not None
     ]
     if failing:
         print(f"\nCounterexamples for Block Size {check_block_size}:")

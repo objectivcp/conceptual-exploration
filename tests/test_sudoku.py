@@ -2,7 +2,7 @@
 
 import pytest
 
-from conceptual_exploration import AttributeExploration, Implication
+from conceptual_exploration import AttributeExploration, Implication, reduced_basis
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
@@ -197,18 +197,11 @@ def test_primitive_exploration_finds_the_sudoku_rules(block_size):
     exploration.run()
     base = exploration.base
 
-    theory = ImplicationTheory(base.implications)
-    found = set()
-    for implication in base.accepted_implications:
-        simplified = theory.simplify(implication)
-        assert any(a.predicate.name == "SameCell" for a in simplified.conclusion)
-        found.add(frozenset(a.predicate.name for a in simplified.premise))
-
-    assert found == {
-        frozenset({"Same", "SameRow"}),
-        frozenset({"Same", "SameColumn"}),
-        frozenset({"Same", "SameBlock"}),
-    }
+    assert sorted(str(rule) for rule in reduced_basis(base)) == [
+        "Same(x, y), SameBlock(x, y) -> SameCell(x, y)",
+        "Same(x, y), SameColumn(x, y) -> SameCell(x, y)",
+        "Same(x, y), SameRow(x, y) -> SameCell(x, y)",
+    ]
 
 
 def _declaration(p):

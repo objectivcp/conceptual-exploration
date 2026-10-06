@@ -113,20 +113,9 @@ class ExplorationBase(Generic[O, A]):
         Keeping the theory closed under the mappings is what lets a mapped copy
         of a completed object be completed itself, so background implications
         are mapped for the same reason confirmed ones are.
-
-        An attribute sent to true drops out of either side. One sent to false
-        makes a premise unsatisfiable, so the image says nothing; in the
-        conclusion it means the premise image cannot hold, so the image
-        concludes every attribute.
         """
         added = []
-        for k in range(len(self.mappings)):
-            mapped_premise = self._image(k, premise)
-            mapped_conclusion = self._image(k, conclusion)
-            if premise & self._false_masks[k]:
-                continue
-            if conclusion & self._false_masks[k]:
-                mapped_conclusion = self.full_mask
+        for mapped_premise, mapped_conclusion in self.mapped_images(premise, conclusion):
             if not self.implications.entails_mask(mapped_premise, mapped_conclusion):
                 mapped_implication = Implication(
                     self.index.decode(mapped_premise),
@@ -139,6 +128,25 @@ class ExplorationBase(Generic[O, A]):
                     )
                 )
         return added
+
+    def mapped_images(self, premise: int, conclusion: int) -> list[tuple[int, int]]:
+        """The masks of an implication's images under the mappings.
+
+        An attribute sent to true drops out of either side. One sent to false
+        makes a premise unsatisfiable, so that image says nothing and is left
+        out; in the conclusion it means the premise image cannot hold, so the
+        image concludes every attribute.
+        """
+        images = []
+        for k in range(len(self.mappings)):
+            mapped_premise = self._image(k, premise)
+            mapped_conclusion = self._image(k, conclusion)
+            if premise & self._false_masks[k]:
+                continue
+            if conclusion & self._false_masks[k]:
+                mapped_conclusion = self.full_mask
+            images.append((mapped_premise, mapped_conclusion))
+        return images
 
     def _extend_table(self, k: int, length: int) -> None:
         """Tabulate mapping k on the first `length` indexed attributes.
