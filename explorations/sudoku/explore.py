@@ -28,6 +28,7 @@ from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku.sudoku import (
     CELL_EQUIVALENCES,
+    PARTIAL_GRID_PRESETS,
     PRIMITIVE_PREDICATES,
     SatSudokuRuleExpert,
     SudokuExpert,
@@ -36,6 +37,7 @@ from explorations.sudoku.sudoku import (
     check_rules,
     get_sudoku_attributes,
     get_sudoku_symmetries,
+    partial_grid_exploration,
     select_predicates,
     sudoku_background,
     sudoku_predicates,
@@ -157,6 +159,40 @@ def run_sudoku_rule_exploration(
     return base
 
 
+def run_partial_grid_exploration(preset: str = "row"):
+    """Explore deduction rules on partial 4x4 grids.
+
+    Forced(x, n) says that every completion of the grid has n in x, and
+    Excluded(x, n) that none does, so the rules found say what follows from
+    what is already known: techniques such as naked and hidden singles.
+    """
+    variables, names = PARTIAL_GRID_PRESETS[preset]
+    print("=" * 70)
+    print(f"SUDOKU PARTIAL-GRID RULE EXPLORATION (4x4, Preset: {preset})")
+    print("=" * 70)
+    print(f"Variables:  {', '.join(f'{v.name}: {v.sort.name}' for v in variables)}")
+    print(f"Predicates: {', '.join(names)}")
+
+    exploration = partial_grid_exploration(preset)
+    print(f"Atoms: {len(exploration.base.attributes)}")
+    print(f"Background Implications: {len(exploration.background)}")
+
+    start_time = time.perf_counter()
+    state = exploration.run()
+    elapsed = time.perf_counter() - start_time
+
+    base = exploration.base
+    rules = reduced_basis(base)
+    print(f"\nTime Elapsed:                 {elapsed:.2f}s")
+    print(f"Questions Asked:              {state.questions_asked}")
+    print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
+    print(f"\nDiscovered Deduction Rules (Reduced, {len(rules)}):")
+    for idx, rule in enumerate(rules, start=1):
+        print(f"  [{idx}] {rule}")
+    print()
+    return base
+
+
 def run_sudoku_sat_exploration(block_size: int = 2, use_symmetries: bool = True):
     """Run propositional attribute exploration using PySAT solver and symmetries."""
     print("=" * 70)
@@ -198,9 +234,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sudoku Conceptual Exploration")
     parser.add_argument(
         "--mode",
-        choices=["rule", "sat", "both"],
+        choices=["rule", "partial", "sat", "both"],
         default="rule",
-        help="Exploration mode to execute: rule (first-order) or sat (PySAT propositional)",
+        help=(
+            "Exploration mode to execute: rule (first-order, solved grids), "
+            "partial (first-order, partial 4x4 grids), sat (PySAT propositional), "
+            "or both rule and sat"
+        ),
+    )
+    parser.add_argument(
+        "--preset",
+        choices=["all", *PARTIAL_GRID_PRESETS],
+        default="all",
+        help=(
+            "Variables and predicates of the partial-grid exploration: cell (naked "
+            "singles), row, column or block (a unit's techniques), units (how the "
+            "units interact), or all of them in turn (default: all)"
+        ),
     )
     parser.add_argument(
         "--block-size",
@@ -257,5 +307,9 @@ if __name__ == "__main__":
             check_block_size=args.check_block_size,
             expert_kind=args.expert,
         )
+    if args.mode == "partial":
+        presets = list(PARTIAL_GRID_PRESETS) if args.preset == "all" else [args.preset]
+        for preset in presets:
+            run_partial_grid_exploration(preset)
     if args.mode in ("sat", "both"):
         run_sudoku_sat_exploration(block_size=args.block_size)

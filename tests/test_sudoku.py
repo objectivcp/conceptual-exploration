@@ -212,9 +212,12 @@ def test_plain_predicates_match_the_z3_predicates():
     variables = [SortedVariable("x", SudokuSort.CELL)]
     expert = Z3SudokuExpert(block_size=2, variables=variables)
     z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
-    assert {p.name: p.sorts for p in z3_predicates} == PREDICATE_SORTS
+    z3_names = {p.name for p in z3_predicates}
+    # Forced and Excluded quantify over a partial grid's completions, which
+    # only the partial-grid expert evaluates.
+    assert set(PREDICATE_SORTS) - z3_names == {"Forced", "Excluded"}
     assert sorted(map(_declaration, z3_predicates)) == sorted(
-        map(_declaration, sudoku_predicates(PREDICATE_SORTS))
+        map(_declaration, sudoku_predicates(z3_names))
     )
 
 
@@ -296,6 +299,7 @@ def _holds(atom, witness, block_size):
         "Different": value(args[0]) != value(args[1]),
         "Same": value(args[0]) == value(args[1]),
         "SameCell": (r1, c1) == (r2, c2),
+        "DifferentCells": (r1, c1) != (r2, c2),
         "SameRow": r1 == r2,
         "SameColumn": c1 == c2,
         "SameBand": r1 // k == r2 // k,
