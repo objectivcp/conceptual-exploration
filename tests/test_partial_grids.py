@@ -193,3 +193,27 @@ def test_exploring_geometry_first_reports_only_deductions():
 def test_only_4x4_grids_are_supported():
     with pytest.raises(ValueError):
         PartialGridExpert([SortedVariable("x", SudokuSort.CELL)], block_size=3)
+
+
+@pytest.mark.parametrize("name", ["partial-cell", "partial-units"])
+def test_cegar_expert_agrees_with_enumeration(name):
+    """On 4x4 grids, where every solved grid can be listed, the CEGAR expert
+    reaches the same theory."""
+    from conceptual_exploration.exploration.rule import RuleExploration
+    from explorations.sudoku.sudoku import CegarPartialGridExpert
+
+    config = load_config(name)
+    variables, predicates = config.variables, sudoku_predicates(config.predicates)
+    theories = []
+    for expert in (PartialGridExpert(variables), CegarPartialGridExpert(variables, 2)):
+        exploration = RuleExploration(
+            predicates,
+            variables,
+            expert,
+            background=sudoku_background(predicates, variables),
+            substitutions=True,
+            evaluate_all=True,
+        )
+        exploration.run()
+        theories.append({str(i) for i in exploration.base.implications})
+    assert theories[0] == theories[1]

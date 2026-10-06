@@ -1158,6 +1158,233 @@ class PartialGridExpert(_SatRuleExpert):
         return super()._define(name, *args)
 
 
+class CegarPartialGridExpert(_SatRuleExpert):
+    """Expert for rules about partial grids of any block size (prototype).
+
+    It decides the same predicates as `PartialGridExpert` without listing
+    the solved grids, which 9x9 grids have too many of. A counterexample has
+    givens, a placement of the variables, and a completion W that breaks the
+    conclusion; the premise's Forced and Excluded atoms must hold in every
+    completion. That is an exists-forall question, decided by counterexample-
+    guided refinement:
+
+    - a SAT solver guesses givens, a placement and W, where W and every
+      completion found so far that is consistent with the givens satisfy the
+      premise;
+    - a second SAT solver looks, under the guessed givens, for a completion
+      that breaks a premise atom; one it finds joins the completions found
+      so far and the guess is repeated;
+    - a guess no completion breaks is a counterexample, and no guess at all
+      means the implication holds.
+
+    The completions found are kept for later questions. `refinements`
+    counts them, and `rounds` the guesses made.
+    """
+
+    def __init__(
+        self,
+        variables: Iterable[SortedVariable],
+        block_size: int = 2,
+        solver_name: str = "g3",
+    ) -> None:
+        k, n = block_size, block_size**2
+        self._n3 = n**3
+        given = lambda r, c, d: get_var(r, c, d, n)
+        witness = lambda r, c, d: self._n3 + get_var(r, c, d, n)
+        # At most one given per cell; W is a solved grid that keeps them.
+        clauses = [
+            [-given(r, c, d), -given(r, c, e)]
+            for r in range(n)
+            for c in range(n)
+            for d, e in combinations(range(1, n + 1), 2)
+        ]
+        clauses += [
+            [lit + self._n3 if lit > 0 else lit - self._n3 for lit in clause]
+            for clause in sudoku2sat([[0] * n for _ in range(n)], k).clauses
+        ]
+        clauses += [
+            [-given(r, c, d), witness(r, c, d)]
+            for r in range(n)
+            for c in range(n)
+            for d in range(1, n + 1)
+        ]
+        super().__init__(block_size, variables, clauses, 2 * self._n3 + 1, solver_name)
+        self._given = given
+        self._witness_var = witness
+
+        # Completions found to break a premise, shared by later questions.
+        self._completions: List[Tuple[Tuple[int, ...], ...]] = []
+        self._verifier = Solver(
+            name=solver_name,
+            bootstrap_with=sudoku2sat([[0] * n for _ in range(n)], k).clauses,
+        )
+        self.refinements = 0
+        self.rounds = 0
+
+    def validate(
+        self,
+        implication: Implication,
+        attributes: Optional[Iterable[Any]] = None,
+    ) -> Optional[PartialObject]:
+        semantic = lambda a: a.predicate.name in ("Forced", "Excluded")
+        premise_static = [self._literal(a) for a in implication.premise if not semantic(a)]
+        premise_semantic = [
+            (a.predicate.name, a.arguments[0], a.arguments[1])
+            for a in implication.premise if semantic(a)
+        ]
+
+        # Only the call that assumes `active` needs these.
+        active = self._defs.var()
+        failing = []
+        for a in implication.conclusion:
+            if semantic(a):
+                holds_in_w = self._defined(("witness_holds", a.arguments[0], a.arguments[1]))
+                failing.append(-holds_in_w if a.predicate.name == "Forced" else holds_in_w)
+            else:
+                failing.append(-self._literal(a))
+        self._defs.pending.append([-active] + failing)
+        for name, x, m in premise_semantic:
+            holds_in_w = self._defined(("witness_holds", x, m))
+            self._defs.pending.append([-active, holds_in_w if name == "Forced" else -holds_in_w])
+
+        def require(completion: int) -> None:
+            """Completion number `completion`, if consistent with the givens,
+            satisfies the premise's Forced and Excluded atoms."""
+            consistent = self._defined(("consistent", completion))
+            for name, x, m in premise_semantic:
+                holds = self._defined(("holds_in", completion, x, m))
+                self._defs.pending.append(
+                    [-active, -consistent, holds if name == "Forced" else -holds]
+                )
+
+        for completion in range(len(self._completions)):
+            require(completion)
+
+        while True:
+            self.rounds += 1
+            self._solver.append_formula(self._defs.pending)
+            self._defs.pending = []
+            if not self._solver.solve(assumptions=premise_static + [active]):
+                return None
+            true = {v for v in self._solver.get_model() if v > 0}
+            givens = self._givens(true)
+            places = self._places(true)
+            broken = None
+            for name, x, m in premise_semantic:
+                (r, c), digit = places[x], places[m]
+                broken = self._completion(givens, r, c, digit, name == "Excluded")
+                if broken is not None:
+                    break
+            if broken is None:
+                return self._counterexample(implication, attributes, true, givens, places)
+            self._completions.append(broken)
+            self.refinements += 1
+            require(len(self._completions) - 1)
+
+    def _givens(self, true: Set[int]) -> Dict[Tuple[int, int], int]:
+        n = self.grid_size
+        return {
+            (r, c): d
+            for r in range(n)
+            for c in range(n)
+            for d in range(1, n + 1)
+            if self._given(r, c, d) in true
+        }
+
+    def _places(self, true: Set[int]) -> Dict[SortedVariable, Any]:
+        index = lambda literals: next(i for i, v in enumerate(literals) if v in true)
+        return {
+            v: (index(self._rows[v]), index(self._columns[v]))
+            if v.sort is SudokuSort.CELL
+            else index(self._digits[v]) + 1
+            for v in self.variables
+        }
+
+    def _completion(self, givens, r, c, digit, has_digit):
+        """A completion of the givens with (has_digit) or without digit in
+        cell (r, c), or None if there is none."""
+        n = self.grid_size
+        assumptions = [get_var(gr, gc, d, n) for (gr, gc), d in givens.items()]
+        cell = get_var(r, c, digit, n)
+        if not self._verifier.solve(assumptions=assumptions + [cell if has_digit else -cell]):
+            return None
+        return tuple(map(tuple, assemble_solution(self._verifier.get_model(), self.block_size)))
+
+    def _counterexample(self, implication, attributes, true, givens, places):
+        if attributes is None:
+            attributes = implication.premise | implication.conclusion
+        n = self.grid_size
+        positive = set()
+        for a in attributes:
+            if a.predicate.name in ("Forced", "Excluded"):
+                (r, c), digit = places[a.arguments[0]], places[a.arguments[1]]
+                # Forced: no completion lacks the digit; Excluded: none has it.
+                has_digit = a.predicate.name == "Excluded"
+                holds = self._completion(givens, r, c, digit, has_digit) is None
+            else:
+                lit = self._literal(a)
+                holds = lit in true if lit > 0 else -lit not in true
+            if holds:
+                positive.add(a)
+        grid = tuple(
+            tuple(givens.get((r, c), 0) for c in range(n))
+            for r in range(n)
+        )
+        assignment = tuple((v.name, places[v]) for v in self.variables)
+        return PartialObject(
+            SudokuRuleWitness(assignment, grid),
+            positive,
+            set(attributes) - positive,
+        )
+
+    def _define(self, name: str, *args: Any):
+        d = self._defs
+        n = self.grid_size
+        if name == "witness_holds":
+            # Whether W has, in cell x, the digit of number m.
+            x, m = args
+            position = self._defined(("position", x))
+            return d.disj(
+                d.conj((
+                    self._digits[m][digit - 1],
+                    d.disj(
+                        d.conj((position[r * n + c], self._witness_var(r, c, digit)))
+                        for r in range(n)
+                        for c in range(n)
+                    ),
+                ))
+                for digit in range(1, n + 1)
+            )
+        if name == "consistent":
+            (i,) = args
+            solution = self._completions[i]
+            return d.conj(
+                -self._given(r, c, digit)
+                for r in range(n)
+                for c in range(n)
+                for digit in range(1, n + 1)
+                if digit != solution[r][c]
+            )
+        if name == "holds_in":
+            # Whether completion i has, in cell x, the digit of number m.
+            i, x, m = args
+            position = self._defined(("position", x))
+            solution = self._completions[i]
+            return d.disj(
+                d.conj((
+                    self._digits[m][digit - 1],
+                    d.disj(
+                        position[r * n + c]
+                        for r in range(n)
+                        for c in range(n)
+                        if solution[r][c] == digit
+                    ),
+                ))
+                for digit in range(1, n + 1)
+            )
+        return super()._define(name, *args)
+
+
 def check_rules(
     implications: Iterable[Implication],
     block_size: int,
