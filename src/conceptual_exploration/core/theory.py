@@ -81,8 +81,14 @@ class ImplicationTheory(ClosureOperator[A]):
         return self.entails_mask(*self._encode(implication))
 
     def simplify(self, implication: Implication[A]) -> Implication[A]:
+        """Drop the premise attributes the rest of the premise entails.
+
+        Which attributes survive depends on the order they are tried in, so they
+        are tried in sorted order: set iteration order varies with hashing, and
+        would make the result differ from one run to the next.
+        """
         simplified_premise = set(implication.premise)
-        for a in implication.premise:
+        for a in sorted(implication.premise):
             if a in self.closure(simplified_premise - {a}):
                 simplified_premise -= {a}
         return Implication(
