@@ -1,6 +1,6 @@
 # Conceptual Exploration
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 **`conceptual-exploration`** is a Python library for interactive knowledge discovery and formal theory building based on **Formal Concept Analysis (FCA)**. It provides implementations of:
@@ -55,7 +55,7 @@
 ## Installation
 
 ### Requirements
-- Python >= 3.10
+- Python >= 3.11
 
 ### Basic Installation
 
@@ -124,6 +124,8 @@ conceptual-exploration/
 │   │   └── README.md                 # Project background & documentation
 │   └── sudoku/                       # Sudoku rule and constraint exploration
 │       ├── sudoku.py                 # SAT/SMT models, experts, predicates & symmetries
+│       ├── config.py                 # TOML configuration of explorations
+│       ├── configs/                  # Shipped exploration configurations
 │       ├── explore.py                # Exploration runner script
 │       ├── explore.ipynb             # Interactive Jupyter notebook
 │       └── README.md                 # Project background & documentation
@@ -319,7 +321,7 @@ A binary predicate can declare itself `symmetric`, `reflexive` or `irreflexive`,
 The `explorations/` directory houses specialized mathematical and domain-specific exploration projects:
 
 - **`explorations/equational_theories/`**: Conceptual exploration of equational laws on magmas from the **Equational Theories Project (ETP)**. Combines term ASTs, Cayley table models, and duality symmetry mappings with automated counterexample search using the Z3 SMT solver (`MagmaExpert`), which looks for a finite magma satisfying every premise while violating some conclusion and marks an implication `UNCONFIRMED` when its per-size solver budget (`z3_timeout_ms`) runs out, including a standalone runner (`explore.py`) and an interactive Jupyter notebook (`explore.ipynb`).
-- **`explorations/sudoku/`**: Conceptual exploration of Sudoku rules and constraints. Combines SAT-based propositional exploration with PySAT and the symmetry group of the grid (line and band permutations, transposition, digit permutations), first-order relational rule exploration with a PySAT or Z3 expert over multi-sorted variables (`SudokuSort.CELL` and `SudokuSort.NUMBER`), and the exploration of deduction rules on partial 4x4 grids, including a standalone runner (`explore.py`) and an interactive Jupyter notebook (`explore.ipynb`).
+- **`explorations/sudoku/`**: Conceptual exploration of Sudoku rules and constraints. Combines SAT-based propositional exploration with PySAT and the symmetry group of the grid (line and band permutations, transposition, digit permutations), first-order relational rule exploration with a PySAT or Z3 expert over multi-sorted variables (`SudokuSort.CELL` and `SudokuSort.NUMBER`), and the exploration of deduction rules on partial 4x4 grids, including a runner (`explore.py`) driven by TOML configurations and an interactive Jupyter notebook (`explore.ipynb`).
 
 ### Lightweight Examples (`examples/`)
 

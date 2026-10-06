@@ -22,14 +22,14 @@ Sudoku can be modeled conceptually at three levels:
 3. **Deduction Rules on Partial Grids (SAT-based)**:
    - Objects are partial 4x4 grids with at least one completion. `Forced(x, n)` says that every completion has `n` in `x`, `Excluded(x, n)` that none does, so the rules found are deduction techniques such as naked and hidden singles.
    - `PartialGridExpert` enumerates the 288 solved 4x4 grids to decide these predicates; 9x9 grids have too many.
-   - Presets pick the variables and predicates: `cell` (one cell, four digits), `row`, `column` and `block` (the four cells of a unit), `units` (three cells, all of the geometry), and `full` (four cells, all of the geometry). `full` explores the geometry alone first and adds its rules to the background, so that only rules about forced and excluded digits are reported.
+   - The shipped configurations pick the variables and predicates: `partial-cell` (one cell, four digits), `partial-row`, `partial-column` and `partial-block` (the four cells of a unit), `partial-units` (three cells, all of the geometry), and `partial-full` (four cells, all of the geometry). `partial-full` explores the geometry alone first and adds its rules to the background, so that only rules about forced and excluded digits are reported.
 
 ## Features
 
 - **PySAT Reduction & Solver**: Functions `sudoku2sat`, `solve_sudoku`, and `assemble_solution` for flexible puzzle solving and verification.
 - **SAT Expert (`SudokuExpert`)**: Verifies candidate implications and provides full/partial satisfying Sudoku grids as counterexamples.
 - **Symmetry Group**: The 3072 symmetries of 4x4 grids: band, row, stack and column permutations, transposition, and digit relabelling; rotations and reflections are among them.
-- **Z3 Rule Expert (`Z3SudokuExpert`)**: SMT-based first-order verification with background Sudoku axioms, selected with `--expert z3`.
+- **Z3 Rule Expert (`Z3SudokuExpert`)**: SMT-based first-order verification with background Sudoku axioms, selected with `expert = "z3"`.
 - **SAT Rule Expert (`SatSudokuRuleExpert`)**: Complete SAT-based verification of first-order rules at any block size; the default expert of the rule exploration, also used by `check_rules` to test rules across grid sizes.
 - **Partial-Grid Expert (`PartialGridExpert`)**: SAT-based verification of rules about what follows from the givens of a partial 4x4 grid.
 - **First-Order Predicates**: Predicate library for relational exploration over cells and numbers.
@@ -38,27 +38,30 @@ Sudoku can be modeled conceptually at three levels:
 
 ### Run the CLI Exploration Script
 
-Run first-order relational rule exploration:
+Each exploration is described by a TOML configuration file. Run one shipped in `configs/` by name, or your own by path; several run in turn:
 ```bash
-python explorations/sudoku/explore.py --mode rule
+python explorations/sudoku/explore.py partial-row
+python explorations/sudoku/explore.py my-exploration.toml
 ```
 
-`--full` explores three cell and two number variables instead of two cells, and `--no-background` drops the background implications, so the exploration rediscovers them too. `--check-block-size K` sets the block size the accepted rules are re-checked on (default 3, or 2 when exploring 9x9 grids; 0 skips the check), and `--expert z3` answers the questions with Z3 instead of the SAT expert.
-
-Run the exploration of deduction rules on partial 4x4 grids, for every preset or, with `--preset`, for one:
-```bash
-python explorations/sudoku/explore.py --mode partial --preset row
+A configuration says which grids to explore and how:
+```toml
+grid = "partial"          # "solved", "partial" or "propositional"
+block_size = 2            # 3 for 9x9 grids (solved grids only)
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded"]
+background = true         # what holds in any grid
+geometry_first = false    # explore the geometry first and add it to the background
+expert = "sat"            # "z3" for solved grids only
+check_block_size = 3      # solved grids: re-check the rules there; 0 skips
 ```
 
-Run propositional attribute exploration with PySAT and symmetries:
-```bash
-python explorations/sudoku/explore.py --mode sat
-```
+`grid = "propositional"` explores (row, column, digit) attributes and takes only `block_size`, `background` and `symmetries`. Settings that cannot be run, such as `Forced` on solved grids or a misspelt key, are reported before anything runs.
 
-Or run both:
-```bash
-python explorations/sudoku/explore.py --mode both
-```
+The shipped configurations are `solved-pairs`, `solved-triples` and `solved-quads` (solved grids), `partial-cell`, `partial-row`, `partial-column`, `partial-block`, `partial-units` and `partial-full` (partial grids), and `propositional`.
+
+`--block-size K` and `--no-background` override the configuration, and `--output PATH` also writes the rules to a file, after the configuration that produced them.
 
 ### Interactive Jupyter Notebook
 

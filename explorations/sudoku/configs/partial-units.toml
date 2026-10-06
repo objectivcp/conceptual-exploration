@@ -1,0 +1,8 @@
+# Partial 4x4 grids, three cells with all of the geometry: how the units
+# interact.
+grid = "partial"
+block_size = 2
+cells = ["x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"]
+background = true

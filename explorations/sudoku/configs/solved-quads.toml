@@ -1,0 +1,10 @@
+# Solved grids, four cells. On 4x4 grids this finds rules that hold only
+# there, which the re-check on 9x9 grids marks; on 9x9 grids (block_size = 3)
+# only the rules of Sudoku remain.
+grid = "solved"
+block_size = 2
+cells = ["w", "x", "y", "z"]
+numbers = []
+predicates = ["SameCell", "SameRow", "SameColumn", "SameBlock", "SameBand", "SameStack", "Same"]
+background = true
+expert = "sat"

@@ -1,0 +1,11 @@
+# Partial 4x4 grids, four cells with all of the geometry: the techniques of
+# the other partial-grid configurations, and interactions that need a fourth
+# cell. The geometry is explored first and its rules join the background, so
+# only rules about forced and excluded digits are reported. Takes longest.
+grid = "partial"
+block_size = 2
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"]
+background = true
+geometry_first = true

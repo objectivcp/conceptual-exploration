@@ -1,0 +1,7 @@
+# Propositional exploration of 4x4 grids: the attributes are (row, column,
+# digit) assignments, the rules of Sudoku are the background, and the
+# symmetry group of the grid maps every rule and counterexample.
+grid = "propositional"
+block_size = 2
+background = true
+symmetries = true

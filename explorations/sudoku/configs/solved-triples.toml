@@ -1,0 +1,11 @@
+# Solved grids, three cells and two digits, with Contains and SameNumber.
+grid = "solved"
+block_size = 2
+cells = ["x", "y", "z"]
+numbers = ["n", "m"]
+predicates = [
+    "SameCell", "SameRow", "SameColumn", "SameBlock", "SameBand", "SameStack", "Same",
+    "Contains", "SameNumber",
+]
+background = true
+expert = "sat"

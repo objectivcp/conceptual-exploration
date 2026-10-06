@@ -11,10 +11,10 @@ from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku import (
     GEOMETRIC_PREDICATES,
-    PARTIAL_GRID_PRESETS,
     PartialGridExpert,
     SudokuSort,
     geometry_basis,
+    load_config,
     partial_grid_exploration,
     sudoku_background,
     sudoku_predicates,
@@ -95,7 +95,7 @@ def test_counterexamples_and_rules_are_right(preset):
     expert.validate = checked
     exploration.run()
 
-    variables, _ = PARTIAL_GRID_PRESETS[preset]
+    variables = load_config(f"partial-{preset}").variables
     rng = random.Random(0)
     for _ in range(500):
         grid, assignment = _random_state(variables, rng)
@@ -107,7 +107,8 @@ def test_counterexamples_and_rules_are_right(preset):
 
 @pytest.mark.parametrize("preset", ["cell", "units"])
 def test_background_holds_on_partial_grids(preset):
-    variables, names = PARTIAL_GRID_PRESETS[preset]
+    config = load_config(f"partial-{preset}")
+    variables, names = config.variables, config.predicates
     predicates = sudoku_predicates(names)
     expert = PartialGridExpert(variables)
     background = sudoku_background(predicates, variables)
@@ -122,7 +123,7 @@ def _atom(name, *args):
 
 
 def test_naked_and_hidden_singles_are_found():
-    x, n1, n2, n3, n4 = PARTIAL_GRID_PRESETS["cell"][0]
+    x, n1, n2, n3, n4 = load_config("partial-cell").variables
     cell = partial_grid_exploration("cell")
     cell.run()
     naked_single = Implication(
@@ -133,7 +134,7 @@ def test_naked_and_hidden_singles_are_found():
     )
     assert cell.base.implications.entails(naked_single)
 
-    w, x, y, z, n = PARTIAL_GRID_PRESETS["row"][0]
+    w, x, y, z, n = load_config("partial-row").variables
     row = partial_grid_exploration("row")
     row.run()
     cells = (w, x, y, z)
@@ -158,7 +159,8 @@ def test_naked_and_hidden_singles_are_found():
 
 
 def test_geometry_basis_holds_on_every_placement():
-    variables, names = PARTIAL_GRID_PRESETS["units"]
+    config = load_config("partial-units")
+    variables, names = config.variables, config.predicates
     cells = [v for v in variables if v.sort is SudokuSort.CELL]
     basis = geometry_basis(variables, names)
     assert basis

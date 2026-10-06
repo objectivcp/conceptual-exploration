@@ -8,7 +8,6 @@ relational predicates for conceptual exploration.
 from .sudoku import (
     CELL_EQUIVALENCES,
     GEOMETRIC_PREDICATES,
-    PARTIAL_GRID_PRESETS,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -20,6 +19,7 @@ from .sudoku import (
     Z3SudokuExpert,
     assemble_solution,
     block_cells,
+    check_rule_exploration,
     check_rules,
     cell_exploration,
     cell_number_exploration,
@@ -32,7 +32,6 @@ from .sudoku import (
     get_sudoku_symmetries,
     get_var,
     make_number_mapping,
-    partial_grid_exploration,
     print_solution,
     row_cells,
     run_sudoku_rule_exploration,
@@ -42,6 +41,7 @@ from .sudoku import (
     sudoku2sat,
     sudoku_background,
     sudoku_predicates,
+    sudoku_rule_exploration,
     sudoku_solutions,
     z3_same_block,
     z3_same_block_coords,
@@ -50,10 +50,21 @@ from .sudoku import (
     z3predicates,
 )
 
+from .config import (
+    CONFIG_DIR,
+    ExplorationConfig,
+    available_configs,
+    load_config,
+    partial_grid_exploration,
+)
+
 __all__ = [
+    "CONFIG_DIR",
+    "ExplorationConfig",
+    "available_configs",
+    "load_config",
     "CELL_EQUIVALENCES",
     "GEOMETRIC_PREDICATES",
-    "PARTIAL_GRID_PRESETS",
     "PREDICATE_PROPERTIES",
     "PREDICATE_SORTS",
     "PRIMITIVE_PREDICATES",
@@ -65,6 +76,7 @@ __all__ = [
     "Z3SudokuExpert",
     "assemble_solution",
     "block_cells",
+    "check_rule_exploration",
     "check_rules",
     "cell_exploration",
     "cell_number_exploration",
@@ -87,6 +99,7 @@ __all__ = [
     "sudoku2sat",
     "sudoku_background",
     "sudoku_predicates",
+    "sudoku_rule_exploration",
     "sudoku_solutions",
     "z3_same_block",
     "z3_same_block_coords",

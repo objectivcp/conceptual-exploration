@@ -1204,16 +1204,10 @@ def _primitive_rule_exploration(
     variables: List[SortedVariable],
     names: Iterable[str],
 ) -> ExplorationBase:
-    expert = SatSudokuRuleExpert(block_size, variables)
-    predicates = sudoku_predicates(names)
-    exploration = RuleExploration(
-        predicates,
-        variables,
-        expert,
-        background=sudoku_background(predicates, variables),
-        substitutions=True,
-        evaluate_all=True,
-        on_question=report_every(20),
+    cells = [v.name for v in variables if v.sort is SudokuSort.CELL]
+    numbers = [v.name for v in variables if v.sort is SudokuSort.NUMBER]
+    exploration = sudoku_rule_exploration(
+        "solved", block_size, cells, numbers, names, on_question=report_every(20)
     )
     exploration.run()
     return exploration.base
@@ -1221,48 +1215,6 @@ def _primitive_rule_exploration(
 
 run_sudoku_rule_exploration = cell_number_exploration
 
-
-def _cells(*names: str) -> List[SortedVariable]:
-    return [SortedVariable(name, SudokuSort.CELL) for name in names]
-
-
-def _numbers(*names: str) -> List[SortedVariable]:
-    return [SortedVariable(name, SudokuSort.NUMBER) for name in names]
-
-
-# Variables and predicates for exploring partial 4x4 grids. A unit's
-# techniques need a variable for each of its four cells.
-PARTIAL_GRID_PRESETS: Dict[str, Tuple[List[SortedVariable], Tuple[str, ...]]] = {
-    # One cell and four digits: naked singles.
-    "cell": (
-        _cells("x") + _numbers("n1", "n2", "n3", "n4"),
-        ("Forced", "Excluded", "SameNumber", "DifferentNumbers"),
-    ),
-    # The four cells of a row, column or block: hidden singles and
-    # elimination within the unit.
-    **{
-        unit: (
-            _cells("w", "x", "y", "z") + _numbers("n"),
-            ("SameCell", "DifferentCells", predicate, "Forced", "Excluded"),
-        )
-        for unit, predicate in (
-            ("row", "SameRow"),
-            ("column", "SameColumn"),
-            ("block", "SameBlock"),
-        )
-    },
-    # Three cells with all of the geometry: how the units interact.
-    "units": (
-        _cells("x", "y", "z") + _numbers("n"),
-        ("SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"),
-    ),
-    # Four cells with all of the geometry: everything above, together with
-    # interactions that need a fourth cell. Explored in two stages.
-    "full": (
-        _cells("w", "x", "y", "z") + _numbers("n"),
-        ("SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Forced", "Excluded"),
-    ),
-}
 
 # The predicates about where cells are, which do not depend on the digits.
 GEOMETRIC_PREDICATES = (
@@ -1296,30 +1248,108 @@ def geometry_basis(
     return list(exploration.base.accepted_implications)
 
 
-def partial_grid_exploration(
-    preset: str = "row",
-    on_question: Optional[Callable[[Any], None]] = None,
-    geometry_first: Optional[bool] = None,
-) -> RuleExploration:
-    """Build a rule exploration of partial 4x4 grids for one of
-    `PARTIAL_GRID_PRESETS`, with the grid-independent background.
+# What each kind of grid lets the predicates talk about: solved grids have
+# values but nothing follows from anything, partial grids have forced and
+# excluded digits but no values of their own.
+_GRID_PREDICATES: Dict[str, Set[str]] = {
+    "solved": set(PREDICATE_SORTS) - {"Forced", "Excluded"},
+    "partial": set(GEOMETRIC_PREDICATES) | {
+        "Peers", "Apart", "Forced", "Excluded", "SameNumber", "DifferentNumbers",
+    },
+}
 
-    With `geometry_first`, which is the default for the `full` preset, the
-    geometry is explored first and its rules added to the background, so
-    that only rules about forced and excluded digits are left to find.
+
+def check_rule_exploration(
+    grid: str,
+    block_size: int,
+    cells: Iterable[str],
+    numbers: Iterable[str],
+    predicates: Iterable[str],
+    expert: str = "sat",
+) -> None:
+    """Raise ValueError, saying why, if a rule exploration with these
+    settings cannot be run."""
+    cells, numbers, predicates = list(cells), list(numbers), list(predicates)
+    if grid not in _GRID_PREDICATES:
+        raise ValueError(f"grid must be one of {sorted(_GRID_PREDICATES)}, not {grid!r}")
+    if block_size < 2:
+        raise ValueError(f"block_size must be at least 2, not {block_size}")
+    if grid == "partial" and block_size != 2:
+        raise ValueError(
+            "partial grids need block_size 2: deciding what follows from the "
+            "givens enumerates every solved grid, which only 4x4 grids allow"
+        )
+    if expert not in ("sat", "z3"):
+        raise ValueError(f"expert must be 'sat' or 'z3', not {expert!r}")
+    if expert == "z3" and grid != "solved":
+        raise ValueError("the z3 expert decides rules about solved grids only")
+    names = cells + numbers
+    if not names:
+        raise ValueError("at least one cell or number variable is needed")
+    if len(set(names)) != len(names):
+        raise ValueError(f"variable names must be distinct: {names}")
+    if not predicates:
+        raise ValueError("at least one predicate is needed")
+    unknown = [p for p in predicates if p not in PREDICATE_SORTS]
+    if unknown:
+        raise ValueError(f"unknown predicates {unknown}; known are {sorted(PREDICATE_SORTS)}")
+    unsupported = [p for p in predicates if p not in _GRID_PREDICATES[grid]]
+    if unsupported:
+        raise ValueError(f"predicates {unsupported} do not apply to {grid} grids")
+    for p in predicates:
+        sorts = set(PREDICATE_SORTS[p])
+        if SudokuSort.CELL in sorts and not cells:
+            raise ValueError(f"predicate {p} needs a cell variable")
+        if SudokuSort.NUMBER in sorts and not numbers:
+            raise ValueError(f"predicate {p} needs a number variable")
+
+
+def sudoku_rule_exploration(
+    grid: str,
+    block_size: int,
+    cells: Iterable[str],
+    numbers: Iterable[str],
+    predicates: Iterable[str],
+    *,
+    background: bool = True,
+    geometry_first: bool = False,
+    expert: str = "sat",
+    on_question: Optional[Callable[[Any], None]] = None,
+) -> RuleExploration:
+    """Build a rule exploration of solved or partial Sudoku grids.
+
+    `cells` and `numbers` name the variables of each sort, and `predicates`
+    the predicates to explore (see `PREDICATE_SORTS`). With `background`,
+    what holds in any grid is given as background (`sudoku_background`);
+    with `geometry_first`, the geometry is explored first and its rules are
+    added to it, so that only rules about the grid's contents are reported.
+    Settings that cannot be run raise ValueError, from
+    `check_rule_exploration`.
     """
-    variables, names = PARTIAL_GRID_PRESETS[preset]
-    if geometry_first is None:
-        geometry_first = preset == "full"
-    predicates = sudoku_predicates(names)
-    background = sudoku_background(predicates, variables)
+    cells, numbers, names = list(cells), list(numbers), list(predicates)
+    check_rule_exploration(grid, block_size, cells, numbers, names, expert)
+    variables = (
+        [SortedVariable(name, SudokuSort.CELL) for name in cells]
+        + [SortedVariable(name, SudokuSort.NUMBER) for name in numbers]
+    )
+    if grid == "partial":
+        rule_expert = PartialGridExpert(variables)
+        selected = sudoku_predicates(names)
+    elif expert == "sat":
+        rule_expert = SatSudokuRuleExpert(block_size, variables)
+        selected = sudoku_predicates(names)
+    else:
+        rule_expert = Z3SudokuExpert(block_size, variables)
+        selected = select_predicates(z3predicates(block_size, rule_expert), names)
+
+    implications = sudoku_background(selected, variables) if background else []
     if geometry_first:
-        background += geometry_basis(variables, names)
+        implications += geometry_basis(variables, names, block_size)
     return RuleExploration(
-        predicates,
+        selected,
         variables,
-        PartialGridExpert(variables),
-        background=background,
+        rule_expert,
+        background=implications,
         substitutions=True,
         evaluate_all=True,
         on_question=on_question,

@@ -1,0 +1,9 @@
+# Solved grids, two cells: the rules of Sudoku themselves. Two cells holding
+# the same digit in a row, column or block are the same cell.
+grid = "solved"
+block_size = 2
+cells = ["x", "y"]
+numbers = []
+predicates = ["SameCell", "SameRow", "SameColumn", "SameBlock", "SameBand", "SameStack", "Same"]
+background = true
+expert = "sat"

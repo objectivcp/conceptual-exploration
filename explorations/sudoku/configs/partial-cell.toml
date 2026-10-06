@@ -1,0 +1,7 @@
+# Partial 4x4 grids, one cell and four digits: naked singles.
+grid = "partial"
+block_size = 2
+cells = ["x"]
+numbers = ["n1", "n2", "n3", "n4"]
+predicates = ["Forced", "Excluded", "SameNumber", "DifferentNumbers"]
+background = true
