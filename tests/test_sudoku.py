@@ -10,6 +10,7 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
+    PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
     SatSudokuRuleExpert,
     SudokuExpert,
@@ -27,6 +28,7 @@ from explorations.sudoku import (
     solve_sudoku,
     sudoku2sat,
     sudoku_background,
+    sudoku_predicates,
 )
 
 
@@ -172,18 +174,16 @@ def test_background_holds_in_every_grid(block_size):
         assert expert.validate(implication, atoms) is None, str(implication)
 
 
-def test_primitive_exploration_finds_the_sudoku_rules():
+@pytest.mark.parametrize("block_size", [2, 3])
+def test_primitive_exploration_finds_the_sudoku_rules(block_size):
     """Given what holds in any grid, what is left are the rules themselves:
     two cells holding the same digit in a row, column or block coincide."""
     variables = [
         SortedVariable("x", SudokuSort.CELL),
         SortedVariable("y", SudokuSort.CELL),
     ]
-    expert = Z3SudokuExpert(block_size=2, variables=variables)
-    predicates = select_predicates(
-        get_sudoku_predicates(block_size=2, expert=expert),
-        CELL_EQUIVALENCES,
-    )
+    expert = SatSudokuRuleExpert(block_size=block_size, variables=variables)
+    predicates = sudoku_predicates(CELL_EQUIVALENCES)
     exploration = RuleExploration(
         predicates,
         variables,
@@ -207,6 +207,16 @@ def test_primitive_exploration_finds_the_sudoku_rules():
         frozenset({"Same", "SameColumn"}),
         frozenset({"Same", "SameBlock"}),
     }
+
+
+def test_predicate_sorts_match_the_z3_predicates():
+    variables = [SortedVariable("x", SudokuSort.CELL)]
+    expert = Z3SudokuExpert(block_size=2, variables=variables)
+    z3_sorts = {
+        p.name: p.sorts for p in get_sudoku_predicates(block_size=2, expert=expert)
+    }
+    assert z3_sorts == PREDICATE_SORTS
+    assert [p.sorts for p in sudoku_predicates(PREDICATE_SORTS)] == list(PREDICATE_SORTS.values())
 
 
 def test_sat_rule_expert_agrees_with_z3():
@@ -306,7 +316,9 @@ if __name__ == "__main__":
     test_sudoku_rule_exploration()
     for block_size in (2, 3):
         test_background_holds_in_every_grid(block_size)
-    test_primitive_exploration_finds_the_sudoku_rules()
+    for block_size in (2, 3):
+        test_primitive_exploration_finds_the_sudoku_rules(block_size)
+    test_predicate_sorts_match_the_z3_predicates()
     test_sat_rule_expert_agrees_with_z3()
     test_rules_are_checked_on_9x9_grids()
     print("All Sudoku tests passed successfully!")

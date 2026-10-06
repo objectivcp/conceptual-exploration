@@ -2,8 +2,8 @@
 
 This script demonstrates how Formal Concept Analysis and Attribute/Rule Exploration
 can discover the logic of Sudoku:
-1. First-Order Relational Rule Exploration using the Z3 SMT solver
-   (with multi-sorted variables `SudokuSort.CELL` and `SudokuSort.NUMBER`).
+1. First-Order Relational Rule Exploration using a PySAT expert, or the Z3 SMT
+   solver (with multi-sorted variables `SudokuSort.CELL` and `SudokuSort.NUMBER`).
 2. Propositional Attribute Exploration using PySAT and symmetry mappings
    (digit permutations, rotations, and reflections).
 """
@@ -30,6 +30,7 @@ from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku.sudoku import (
     CELL_EQUIVALENCES,
     PRIMITIVE_PREDICATES,
+    SatSudokuRuleExpert,
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
@@ -38,6 +39,7 @@ from explorations.sudoku.sudoku import (
     get_sudoku_symmetries,
     select_predicates,
     sudoku_background,
+    sudoku_predicates,
     z3predicates,
 )
 
@@ -46,12 +48,22 @@ def run_sudoku_rule_exploration(
     block_size: int = 2,
     quick: bool = True,
     use_background: bool = True,
-    check_block_size: int | None = 3,
+    check_block_size: int | None = None,
+    expert_kind: str = "sat",
 ):
-    """Run first-order relational rule exploration using Z3 SMT solver."""
+    """Run first-order relational rule exploration with a SAT or Z3 expert.
+
+    The accepted rules are re-checked on grids of `check_block_size`, which
+    defaults to 3 (the 9x9 grid), or to 2 when exploring 9x9 grids; 0 skips
+    the check.
+    """
+    if check_block_size is None:
+        check_block_size = 3 if block_size != 3 else 2
+
     print("=" * 70)
     print(f"SUDOKU FIRST-ORDER RULE EXPLORATION (Block Size: {block_size}x{block_size})")
     print(f"Mode: {'Quick (2 Cell Variables)' if quick else 'Full (3 Cell + 2 Number Variables)'}")
+    print(f"Expert: {'SAT (PySAT)' if expert_kind == 'sat' else 'SMT (Z3)'}")
     print("=" * 70)
 
     if quick:
@@ -69,8 +81,12 @@ def run_sudoku_rule_exploration(
             SortedVariable("m", SudokuSort.NUMBER),
         ]
         names = PRIMITIVE_PREDICATES
-    expert = Z3SudokuExpert(block_size, variables)
-    selected_predicates = select_predicates(z3predicates(block_size, expert), names)
+    if expert_kind == "sat":
+        expert = SatSudokuRuleExpert(block_size, variables)
+        selected_predicates = sudoku_predicates(names)
+    else:
+        expert = Z3SudokuExpert(block_size, variables)
+        selected_predicates = select_predicates(z3predicates(block_size, expert), names)
     background = (
         sudoku_background(selected_predicates, variables) if use_background else []
     )
@@ -188,7 +204,7 @@ if __name__ == "__main__":
         "--mode",
         choices=["rule", "sat", "both"],
         default="rule",
-        help="Exploration mode to execute: rule (Z3 first-order) or sat (PySAT propositional)",
+        help="Exploration mode to execute: rule (first-order) or sat (PySAT propositional)",
     )
     parser.add_argument(
         "--block-size",
@@ -221,13 +237,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--check-block-size",
         type=int,
-        default=3,
+        default=None,
         metavar="K",
         help=(
             "Re-check every accepted rule on grids of block size K with a SAT "
-            "solver, marking the ones that fail there (default: 3, the 9x9 grid; "
-            "0 skips the check)"
+            "solver, marking the ones that fail there (default: 3, the 9x9 grid, "
+            "or 2 when exploring 9x9 grids; 0 skips the check)"
         ),
+    )
+    parser.add_argument(
+        "--expert",
+        choices=["sat", "z3"],
+        default="sat",
+        help="Expert answering the rule exploration's questions (default: sat)",
     )
     args = parser.parse_args()
 
@@ -237,6 +259,7 @@ if __name__ == "__main__":
             quick=args.quick,
             use_background=args.background,
             check_block_size=args.check_block_size,
+            expert_kind=args.expert,
         )
     if args.mode in ("sat", "both"):
         run_sudoku_sat_exploration(block_size=args.block_size)

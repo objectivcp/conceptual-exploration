@@ -22,7 +22,7 @@ from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.atom import Atom
-from conceptual_exploration.logic.predicate import EvaluatablePredicate
+from conceptual_exploration.logic.predicate import EvaluatablePredicate, Predicate
 from conceptual_exploration.logic.variable import Sort, SortedVariable
 
 
@@ -579,8 +579,39 @@ def select_predicates(
     return [by_name[name] for name in names]
 
 
+_CELL_PAIR = (SudokuSort.CELL, SudokuSort.CELL)
+_NUMBER_PAIR = (SudokuSort.NUMBER, SudokuSort.NUMBER)
+
+# The sorts of each predicate's arguments, as `z3predicates` declares them.
+PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
+    "Peers": _CELL_PAIR,
+    "Apart": _CELL_PAIR,
+    "Same": _CELL_PAIR,
+    "Different": _CELL_PAIR,
+    "Contains": (SudokuSort.CELL, SudokuSort.NUMBER),
+    "SameNumber": _NUMBER_PAIR,
+    "DifferentNumbers": _NUMBER_PAIR,
+    "SameBlock": _CELL_PAIR,
+    "SameRow": _CELL_PAIR,
+    "SameColumn": _CELL_PAIR,
+    "SameCell": _CELL_PAIR,
+    "SameBand": _CELL_PAIR,
+    "SameStack": _CELL_PAIR,
+}
+
+
+def sudoku_predicates(names: Iterable[str] = PRIMITIVE_PREDICATES) -> List[Predicate]:
+    """The named predicates as plain symbols, for experts that interpret
+    atoms by predicate name, as `SatSudokuRuleExpert` does; unlike
+    `z3predicates`, they need no Z3 expert to be built."""
+    return [
+        Predicate(name, len(PREDICATE_SORTS[name]), sorts=PREDICATE_SORTS[name])
+        for name in names
+    ]
+
+
 def sudoku_background(
-    predicates: Iterable[EvaluatablePredicate],
+    predicates: Iterable[Predicate],
     variables: Iterable[SortedVariable],
 ) -> List[Implication]:
     """Implications that hold in every grid whatever its digits.
@@ -906,8 +937,8 @@ def _primitive_rule_exploration(
     variables: List[SortedVariable],
     names: Iterable[str],
 ) -> ExplorationBase:
-    expert = Z3SudokuExpert(block_size, variables)
-    predicates = select_predicates(z3predicates(block_size, expert), names)
+    expert = SatSudokuRuleExpert(block_size, variables)
+    predicates = sudoku_predicates(names)
     exploration = RuleExploration(
         predicates,
         variables,
