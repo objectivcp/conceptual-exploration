@@ -40,6 +40,10 @@ class ExplorationBase(Generic[O, A]):
     in the context, and applying the mappings all become integer operations.
     The masks are the base's own copy of the context it manages, so objects
     have to be added through `add_counterexample`, not `context.add`.
+
+    Each implication and each object is mapped by each mapping once, never by
+    a composition of them, so the mappings should be closed under
+    composition: a group of symmetries, or all substitutions of variables.
     """
 
     def __init__(
@@ -115,20 +119,18 @@ class ExplorationBase(Generic[O, A]):
         Raises ValueError if the new implications conflict with an object.
 
         An implication the theory already holds, such as a background
-        implication added before as the image of another, is not added again;
-        it only takes on the new source.
+        implication added before as the image of another, only takes on the
+        new source. It is not mapped again either: it is the original or an
+        image of one that was mapped, and with the mappings closed under
+        composition its images are images of that original, which the theory
+        already holds or entails. A background made of whole orbits is thus
+        mapped once per orbit rather than once per implication.
         """
         if implication in self.implication_sources:
             self.implication_sources[implication] = source
-            masks = (
-                self.index.encode(implication.premise),
-                self.index.encode(implication.conclusion),
-            )
-            added = []
-        else:
-            masks = self._add_implication(implication, source)
-            added = [masks]
-        added.extend(self._add_mapped(*masks))
+            return
+        masks = self._add_implication(implication, source)
+        added = [masks, *self._add_mapped(*masks)]
         self._update(added)
 
     def _add_mapped(self, premise: int, conclusion: int) -> list[tuple[int, int]]:

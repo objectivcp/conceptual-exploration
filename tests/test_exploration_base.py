@@ -283,6 +283,26 @@ def test_context_closure_matches_the_context_on_random_runs():
                 ) == base.context.closure(query)
 
 
+def test_a_background_orbit_is_mapped_once():
+    """With the mappings closed under composition, an implication the theory
+    already holds as an image needs no mapping of its own."""
+    swap = {"a": "b", "b": "a", "c": "d", "d": "c"}
+    first = Implication(frozenset(["a"]), frozenset(["c"]))
+    second = Implication(frozenset(["b"]), frozenset(["d"]))  # its image
+
+    base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]])
+    calls = []
+    mapped_images = base.mapped_images
+    base.mapped_images = lambda *masks: calls.append(masks) or mapped_images(*masks)
+    base.add_background(first)
+    base.add_background(second)
+
+    assert len(calls) == 1
+    assert len(base.implications.implications) == 2
+    assert base.implication_sources[first] is ImplicationSource.BACKGROUND
+    assert base.implication_sources[second] is ImplicationSource.BACKGROUND
+
+
 if __name__ == "__main__":
     test_object_is_merged_before_being_completed()
     test_the_expert_s_attribute_sets_are_left_alone()
@@ -295,4 +315,5 @@ if __name__ == "__main__":
     test_mappings_to_truth_values()
     test_objects_sharing_a_row_are_closed_over_once()
     test_context_closure_matches_the_context_on_random_runs()
+    test_a_background_orbit_is_mapped_once()
     print("All exploration base tests passed successfully!")

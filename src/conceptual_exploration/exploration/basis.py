@@ -70,13 +70,15 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
             if c & ~p
         }
 
+    # A background implication already among the images is an image of one
+    # mapped before, and with the mappings closed under composition so are
+    # its own images; a background of whole orbits is mapped once per orbit.
     background: set[tuple[int, int]] = set()
     for implication, source in base.implication_sources.items():
         if source is ImplicationSource.BACKGROUND:
-            background |= images(
-                index.encode(implication.premise),
-                index.encode(implication.conclusion),
-            )
+            masks = (index.encode(implication.premise), index.encode(implication.conclusion))
+            if masks not in background:
+                background |= images(*masks)
 
     accepted = base.accepted_implications
     rules = []
