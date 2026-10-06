@@ -101,9 +101,22 @@ class ExplorationBase(Generic[O, A]):
         the objects up to date with all of them at once.
 
         Raises ValueError if the new implications conflict with an object.
+
+        An implication the theory already holds, such as a background
+        implication added before as the image of another, is not added again;
+        it only takes on the new source.
         """
-        added = [self._add_implication(implication, source)]
-        added.extend(self._add_mapped(*added[0]))
+        if implication in self.implication_sources:
+            self.implication_sources[implication] = source
+            masks = (
+                self.index.encode(implication.premise),
+                self.index.encode(implication.conclusion),
+            )
+            added = []
+        else:
+            masks = self._add_implication(implication, source)
+            added = [masks]
+        added.extend(self._add_mapped(*masks))
         self._update(added)
 
     def _add_mapped(self, premise: int, conclusion: int) -> list[tuple[int, int]]:

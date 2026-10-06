@@ -47,6 +47,7 @@ class ImplicationTheory(ClosureOperator[A]):
         self.index = index if index is not None else AttributeIndex[A]()
         self.implications: list[Implication[A]] = []
         self._masks: list[tuple[int, int]] = []
+        self._mask_set: set[tuple[int, int]] = set()
         for implication in implications:
             self.add(implication)
 
@@ -58,6 +59,7 @@ class ImplicationTheory(ClosureOperator[A]):
         self.implications.append(implication)
         masks = self._encode(implication)
         self._masks.append(masks)
+        self._mask_set.add(masks)
         return masks
 
     def _encode(self, implication: Implication[A]) -> tuple[int, int]:
@@ -69,12 +71,16 @@ class ImplicationTheory(ClosureOperator[A]):
     def closure_mask(self, mask: int) -> int:
         if len(self._masks) != len(self.implications):
             # Someone appended to `implications` directly; catch the masks up.
-            self._masks.extend(
-                map(self._encode, self.implications[len(self._masks):])
-            )
+            missing = list(map(self._encode, self.implications[len(self._masks):]))
+            self._masks.extend(missing)
+            self._mask_set.update(missing)
         return close_mask(mask, self._masks)
 
     def entails_mask(self, premise: int, conclusion: int) -> bool:
+        # An implication the theory contains needs no closure; mapping a
+        # theory closed under the mappings produces nothing but those.
+        if conclusion & ~premise == 0 or (premise, conclusion) in self._mask_set:
+            return True
         return conclusion & ~self.closure_mask(premise) == 0
 
     def closure(self, attributes: Set[A]) -> MutableSet[A]:
