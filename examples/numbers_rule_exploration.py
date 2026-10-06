@@ -62,19 +62,23 @@ predicates = [
         "<",
         2,
         function=lambda n, m: n < m,
-        notation=Notation.INFIX
+        notation=Notation.INFIX,
+        irreflexive=True
     ),
     EvaluatablePredicate(
         ">",
         2,
         function=lambda n, m: n > m,
-        notation=Notation.INFIX
+        notation=Notation.INFIX,
+        irreflexive=True
     ),
     EvaluatablePredicate(
         "=",
         2,
         function=lambda n, m: n == m,
-        notation=Notation.INFIX
+        notation=Notation.INFIX,
+        symmetric=True,
+        reflexive=True
     )
 ]
 
