@@ -22,6 +22,7 @@ from explorations.sudoku import (
     check_rules,
     get_coords,
     get_sudoku_attributes,
+    get_sudoku_background_implications,
     get_sudoku_predicates,
     get_sudoku_symmetries,
     get_var,
@@ -31,6 +32,7 @@ from explorations.sudoku import (
     sudoku2sat,
     sudoku_background,
     sudoku_predicates,
+    sudoku_solutions,
 )
 
 
@@ -101,17 +103,38 @@ def test_sudoku_expert_sat():
 
 
 def test_sudoku_symmetries():
-    symmetries = get_sudoku_symmetries(block_size=2, include_rotations=True, include_reflections=True)
-    assert len(symmetries) > 0
+    """The mappings are the symmetry group of 4x4 grids without the identity:
+    distinct bijections of the attributes that keep solved grids solved, and
+    closed under composition, since ExplorationBase does not compose them."""
+    symmetries = get_sudoku_symmetries(block_size=2)
+    assert len(symmetries) == 8 * 8 * 2 * 24 - 1
 
-    attr = (0, 1, 2)
-    for sym in symmetries:
-        mapped = sym(attr)
-        assert len(mapped) == 3
-        r, c, num = mapped
-        assert 0 <= r < 4
-        assert 0 <= c < 4
-        assert 1 <= num <= 4
+    attributes = get_sudoku_attributes(2)
+    tables = {tuple(map(sym, attributes)) for sym in symmetries}
+    assert len(tables) == len(symmetries)
+    assert all(len(set(table)) == len(attributes) for table in tables)
+    group = tables | {tuple(attributes)}
+
+    solutions = set(sudoku_solutions(2))
+    for sym in symmetries[::50]:
+        for solution in list(solutions)[::40]:
+            image = [[0] * 4 for _ in range(4)]
+            for r in range(4):
+                for c in range(4):
+                    rr, cc, d = sym((r, c, solution[r][c]))
+                    image[rr][cc] = d
+            assert tuple(map(tuple, image)) in solutions
+        for other in symmetries[::97]:
+            assert tuple(sym(other(a)) for a in attributes) in group
+
+    with pytest.raises(ValueError):
+        get_sudoku_symmetries(block_size=3)
+
+
+def test_sat_exploration_background_holds():
+    expert = SudokuExpert(block_size=2)
+    for implication in get_sudoku_background_implications(2)[::7]:
+        assert expert.validate(implication) is None, str(implication)
 
 
 def test_z3_sudoku_expert_and_predicates():
@@ -352,6 +375,7 @@ if __name__ == "__main__":
     test_sudoku_unsat()
     test_sudoku_expert_sat()
     test_sudoku_symmetries()
+    test_sat_exploration_background_holds()
     test_z3_sudoku_expert_and_predicates()
     test_sudoku_rule_exploration()
     for block_size in (2, 3):

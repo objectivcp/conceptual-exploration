@@ -36,6 +36,7 @@ from explorations.sudoku.sudoku import (
     Z3SudokuExpert,
     check_rules,
     get_sudoku_attributes,
+    get_sudoku_background_implications,
     get_sudoku_symmetries,
     partial_grid_exploration,
     select_predicates,
@@ -202,12 +203,15 @@ def run_sudoku_sat_exploration(block_size: int = 2, use_symmetries: bool = True)
 
     attributes = get_sudoku_attributes(block_size)
     mappings = get_sudoku_symmetries(block_size) if use_symmetries else []
+    background = get_sudoku_background_implications(block_size)
 
     print(f"\nAttributes: {len(attributes)} cell assignments (r, c, num)")
     print(f"Symmetry Mappings: {len(mappings)}")
+    print(f"Background Implications: {len(background)}")
 
     base = ExplorationBase(
         attributes=attributes,
+        background_implications=background,
         mappings=mappings,
     )
     expert = SudokuExpert(block_size)
@@ -225,7 +229,12 @@ def run_sudoku_sat_exploration(block_size: int = 2, use_symmetries: bool = True)
     print(f"Total Questions Asked:        {state.questions_asked}")
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
     print(f"Total Implications in Theory: {len(base.implications.implications)}")
-    print(f"Discovered Objects/Configs:   {len(base.objects)}")
+    print(f"Discovered Objects/Configs:   {len(base.context.objects)}")
+
+    rules = reduced_basis(base)
+    print(f"\nDiscovered Rules (Reduced, {len(rules)}), as (row, column, digit):")
+    for idx, rule in enumerate(rules, start=1):
+        print(f"  [{idx}] {rule}")
 
     return state, base
 

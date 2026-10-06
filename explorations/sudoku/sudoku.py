@@ -241,7 +241,14 @@ def _n_1_implications(
 
 
 def get_sudoku_background_implications(block_size: int) -> List[Implication]:
-    """Generate canonical background implications for Sudoku rules."""
+    """The rules of Sudoku as implications between cell assignments.
+
+    Two digits in one cell, or one digit twice in a row, column or block,
+    imply every attribute: no grid has them. And when the other cells of a
+    unit hold the other digits, the remaining cell holds the remaining digit.
+    There are (n - 1)! such premises per cell, digit and unit for n = k * k,
+    which is practical for 4x4 grids but not for 9x9 ones.
+    """
     k = block_size
     n = k**2
     attributes = get_sudoku_attributes(block_size)
@@ -278,38 +285,62 @@ def make_number_mapping(permutation: Tuple[int, ...]) -> Callable[[Tuple[int, in
     )
 
 
-def get_sudoku_symmetries(
-    block_size: int,
-    include_rotations: bool = True,
-    include_reflections: bool = True,
-) -> List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]]:
-    """Generate symmetry transformations (digit permutations, rotations, reflections)."""
-    n = block_size**2
-    numbers = tuple(range(1, n + 1))
-
-    number_mappings = [
-        make_number_mapping(perm)
-        for perm in permutations(numbers)
-        if perm != numbers
+def _line_permutations(block_size: int) -> List[Tuple[int, ...]]:
+    """Permutations of the rows (or columns) that keep the bands (or stacks)
+    together: the bands are permuted, and the lines within each band."""
+    k = block_size
+    return [
+        tuple(band_order[line // k] * k + inner[line // k][line % k] for line in range(k * k))
+        for band_order in permutations(range(k))
+        for inner in product(permutations(range(k)), repeat=k)
     ]
 
-    mappings: List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]] = list(number_mappings)
 
-    if include_rotations:
-        rotations: List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]] = [
-            lambda t, n=n: (t[1], n - 1 - t[0], t[2]),
-            lambda t, n=n: (n - 1 - t[0], n - 1 - t[1], t[2]),
-            lambda t, n=n: (n - 1 - t[1], t[0], t[2]),
-        ]
-        mappings.extend(rotations)
+def get_sudoku_symmetries(
+    block_size: int,
+    include_digit_permutations: bool = True,
+    include_geometry: bool = True,
+) -> List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]]:
+    """Every symmetry of the Sudoku grids but the identity, as maps of the
+    attributes (row, column, digit).
 
-    if include_reflections:
-        reflections: List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]] = [
-            lambda t, n=n: (n - 1 - t[0], t[1], t[2]),
-            lambda t, n=n: (t[0], n - 1 - t[1], t[2]),
-        ]
-        mappings.extend(reflections)
+    The geometric symmetries permute the bands and the rows within each
+    band, and likewise the stacks and columns, and may transpose the grid;
+    rotations and reflections are among them. `ExplorationBase` maps each
+    implication and counterexample once by each mapping, without composing
+    them, so the mappings must form a group rather than generate one. For 4x4
+    grids it has 8 * 8 * 2 * 24 = 3072 elements; for 9x9 grids about 1.2e12,
+    which is too many, so only block size 2 is supported.
+    """
+    if block_size != 2:
+        raise ValueError(
+            "The symmetry group of Sudoku grids with block size "
+            f"{block_size} is too large to list; only block size 2 is supported"
+        )
+    n = block_size**2
+    identity = tuple(range(n))
+    lines = _line_permutations(block_size) if include_geometry else [identity]
+    transpositions = (False, True) if include_geometry else (False,)
+    digits = (
+        list(permutations(range(1, n + 1)))
+        if include_digit_permutations
+        else [tuple(range(1, n + 1))]
+    )
 
+    mappings: List[Callable[[Tuple[int, int, int]], Tuple[int, int, int]]] = []
+    for rows, columns, transpose, digit in product(lines, lines, transpositions, digits):
+        if rows == columns == identity and not transpose and digit == tuple(range(1, n + 1)):
+            continue
+        if transpose:
+            mappings.append(
+                lambda t, rows=rows, columns=columns, digit=digit:
+                    (columns[t[1]], rows[t[0]], digit[t[2] - 1])
+            )
+        else:
+            mappings.append(
+                lambda t, rows=rows, columns=columns, digit=digit:
+                    (rows[t[0]], columns[t[1]], digit[t[2] - 1])
+            )
     return mappings
 
 
@@ -1258,6 +1289,7 @@ def run_sudoku_sat_exploration(
 
     base = ExplorationBase(
         attributes=attributes,
+        background_implications=get_sudoku_background_implications(block_size),
         mappings=mappings,
     )
     expert = SudokuExpert(block_size)
