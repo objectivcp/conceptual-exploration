@@ -1,0 +1,19 @@
+# Partial 9x9 grids, two cells and a digit, with the Confined predicates:
+# locked candidates. When n's place in a block is confined to one row, n is
+# excluded from the rest of that row (pointing), and when n's place in a row
+# is confined to one block, n is excluded from the rest of that block
+# (claiming); likewise for columns.
+grid = "partial"
+block_size = 3
+cells = ["x", "y"]
+numbers = ["n"]
+predicates = [
+    "SameCell", "DifferentCells", "SameRow", "DifferentRows",
+    "SameColumn", "DifferentColumns", "SameBlock", "DifferentBlocks",
+    "Forced", "Excluded",
+    "ConfinedToRowInBlock", "ConfinedToColumnInBlock",
+    "ConfinedToBlockInRow", "ConfinedToBlockInColumn",
+]
+background = true
+geometry_first = true
+expert = "cegar"          # 9x9 grids have too many solved grids to list

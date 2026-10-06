@@ -9,7 +9,7 @@ A configuration says what kind of grid is explored and how:
     predicates = ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded"]
     background = true
     geometry_first = false
-    expert = "sat"            # "z3" for solved grids only
+    expert = "sat"            # "z3" for solved grids, "cegar" for partial ones
     check_block_size = 3      # solved grids: re-check rules there; 0 skips
 
 Solved and partial grids are explored with first-order rules over the cell

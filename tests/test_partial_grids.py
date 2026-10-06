@@ -10,9 +10,11 @@ from conceptual_exploration import Implication, reduced_basis
 from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku import (
+    ExplorationConfig,
     GEOMETRIC_PREDICATES,
     PartialGridExpert,
     SudokuSort,
+    confinement_cells,
     geometry_basis,
     load_config,
     partial_grid_exploration,
@@ -43,6 +45,10 @@ def _holds(atom, grid, assignment):
         if name == "Forced":
             return all(s[r][c] == digit for s in completions)
         return all(s[r][c] != digit for s in completions)
+    if name.startswith("Confined"):
+        cell, digit = args
+        kept_out = confinement_cells(name, cell, 2)
+        return all(s[r][c] != digit for s in _completions(grid) for r, c in kept_out)
     if name in ("SameNumber", "DifferentNumbers"):
         return (args[0] == args[1]) == (name == "SameNumber")
     (r1, c1), (r2, c2) = args
@@ -50,8 +56,11 @@ def _holds(atom, grid, assignment):
         "SameCell": (r1, c1) == (r2, c2),
         "DifferentCells": (r1, c1) != (r2, c2),
         "SameRow": r1 == r2,
+        "DifferentRows": r1 != r2,
         "SameColumn": c1 == c2,
+        "DifferentColumns": c1 != c2,
         "SameBlock": (r1 // 2, c1 // 2) == (r2 // 2, c2 // 2),
+        "DifferentBlocks": (r1 // 2, c1 // 2) != (r2 // 2, c2 // 2),
     }[name]
 
 
@@ -214,6 +223,58 @@ def test_cegar_expert_agrees_with_enumeration(name):
             substitutions=True,
             evaluate_all=True,
         )
+        exploration.run()
+        theories.append({str(i) for i in exploration.base.implications})
+    assert theories[0] == theories[1]
+
+
+_LOCKED = {
+    "grid": "partial",
+    "cells": ["x", "y"],
+    "numbers": ["n"],
+    "predicates": [
+        "SameRow", "DifferentRows", "SameBlock", "DifferentBlocks",
+        "Excluded", "ConfinedToRowInBlock", "ConfinedToBlockInRow",
+    ],
+}
+
+
+@pytest.mark.parametrize("expert", ["sat", "cegar"])
+def test_confinement_is_decided_right(expert):
+    """Both experts' counterexamples have the attributes they claim, checked
+    against the solved grids directly, and the pointing rule is found."""
+    exploration = ExplorationConfig.from_dict({**_LOCKED, "expert": expert}).rule_exploration()
+    validate = exploration.expert.validate
+
+    def checked(implication, attributes=None):
+        counterexample = validate(implication, attributes)
+        if counterexample is not None:
+            witness = counterexample.object
+            holds = lambda a: _holds(a, witness.grid, witness.assignment)
+            assert all(map(holds, implication.premise))
+            assert not all(map(holds, implication.conclusion))
+            assert all(holds(a) == (a in counterexample.positive) for a in attributes)
+        return counterexample
+
+    exploration.expert.validate = checked
+    exploration.run()
+
+    x, y, n = ExplorationConfig.from_dict(_LOCKED).variables
+    pointing = Implication(
+        {
+            _atom("ConfinedToRowInBlock", y, n),
+            _atom("SameRow", x, y),
+            _atom("DifferentBlocks", x, y),
+        },
+        {_atom("Excluded", x, n)},
+    )
+    assert exploration.base.implications.entails(pointing)
+
+
+def test_cegar_agrees_with_enumeration_on_confinement():
+    theories = []
+    for expert in ("sat", "cegar"):
+        exploration = ExplorationConfig.from_dict({**_LOCKED, "expert": expert}).rule_exploration()
         exploration.run()
         theories.append({str(i) for i in exploration.base.implications})
     assert theories[0] == theories[1]

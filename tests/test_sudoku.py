@@ -10,6 +10,7 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
+    COMPLETION_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -236,9 +237,9 @@ def test_plain_predicates_match_the_z3_predicates():
     expert = Z3SudokuExpert(block_size=2, variables=variables)
     z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
     z3_names = {p.name for p in z3_predicates}
-    # Forced and Excluded quantify over a partial grid's completions, which
-    # only the partial-grid expert evaluates.
-    assert set(PREDICATE_SORTS) - z3_names == {"Forced", "Excluded"}
+    # The completion predicates quantify over a partial grid's completions,
+    # which only the partial-grid experts evaluate.
+    assert set(PREDICATE_SORTS) - z3_names == set(COMPLETION_PREDICATES)
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
     )
@@ -323,6 +324,9 @@ def _holds(atom, witness, block_size):
         "Same": value(args[0]) == value(args[1]),
         "SameCell": (r1, c1) == (r2, c2),
         "DifferentCells": (r1, c1) != (r2, c2),
+        "DifferentRows": r1 != r2,
+        "DifferentColumns": c1 != c2,
+        "DifferentBlocks": (r1 // k, c1 // k) != (r2 // k, c2 // k),
         "SameRow": r1 == r2,
         "SameColumn": c1 == c2,
         "SameBand": r1 // k == r2 // k,
