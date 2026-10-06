@@ -20,6 +20,27 @@ class Predicate:
         default=Notation.FUNCTIONAL,
         kw_only=True
     )
+    # Properties of a binary predicate that the exploration can rely on
+    # without asking: it keeps one atom of each symmetric pair, and fixes the
+    # truth of P(v, v) for reflexive and irreflexive predicates. `complement`
+    # names a predicate that holds exactly where this one does not.
+    symmetric: bool = field(default=False, kw_only=True)
+    reflexive: bool = field(default=False, kw_only=True)
+    irreflexive: bool = field(default=False, kw_only=True)
+    complement: str | None = field(default=None, kw_only=True)
+
+    def __post_init__(self):
+        if (self.symmetric or self.reflexive or self.irreflexive) and self.arity != 2:
+            raise ValueError(
+                f"Predicate {self.name} has arity {self.arity}; only binary "
+                f"predicates can be symmetric, reflexive or irreflexive"
+            )
+        if self.reflexive and self.irreflexive:
+            raise ValueError(f"Predicate {self.name} cannot be both reflexive and irreflexive")
+        if self.symmetric and self.sorts and self.sorts[0] != self.sorts[1]:
+            raise ValueError(
+                f"Predicate {self.name} relates different sorts, so it cannot be symmetric"
+            )
 
     def format(self, arguments):
         if self.notation is Notation.INFIX:

@@ -101,7 +101,8 @@ conceptual-exploration/
 │   │   ├── bitset.py                 # AttributeIndex numbering attributes as bitmask positions
 │   │   ├── context.py                # PartialObject and PartialContext (with CXT parser)
 │   │   ├── implication.py            # Implication dataclass and respectedness checks
-│   │   └── theory.py                 # ImplicationTheory for closure & simplification
+│   │   ├── theory.py                 # ImplicationTheory for closure & simplification
+│   │   └── truth.py                  # Truth values a mapping may send an attribute to
 │   ├── experts/
 │   │   └── base.py                   # Abstract Expert interface (validate method)
 │   ├── exploration/
@@ -142,7 +143,7 @@ conceptual-exploration/
 | `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
 | `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
 | `PartialContext` | `conceptual_exploration` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
-| `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, and optional evaluation function. |
+| `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, declared properties, and optional evaluation function. |
 | `Variable` / `SortedVariable` | `conceptual_exploration` | Variables used in first-order relational atoms. |
 | `Magma` / `MagmaExpert` | `explorations.equational_theories` | Finite Cayley table representation and oracle for Equational Theories Project (ETP) exploration. |
 | `Equation` / `Term` | `explorations.equational_theories` | AST for algebraic magma equations and terms with duality symmetry transformations. |
@@ -301,6 +302,8 @@ base = ExplorationBase(
 ```
 
 For first-order rule exploration, variable symmetries (permutations and non-injective variable substitutions) are configured automatically via `substitutions=True` in `RuleExploration`.
+
+A binary predicate can declare itself `symmetric`, `reflexive` or `irreflexive`, and name its `complement`. `RuleExploration` then keeps one atom of each symmetric pair, drops atoms whose truth is fixed, such as `P(x, x)` for a reflexive `P`, and adds `{P(a), Q(a)} -> ⊥` for complementary predicates.
 
 ---
 

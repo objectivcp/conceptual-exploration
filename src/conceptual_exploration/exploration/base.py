@@ -7,6 +7,7 @@ from ..core.bitset import AttributeIndex, bits
 from ..core.context import PartialContext, PartialObject
 from ..core.implication import Implication
 from ..core.theory import ImplicationTheory
+from ..core.truth import Truth
 
 A = TypeVar("A")
 O = TypeVar("O")
@@ -52,9 +53,13 @@ class ExplorationBase(Generic[O, A]):
         self.full_mask = (1 << len(self.attributes)) - 1
         self.context = PartialContext[VersionedObject[O], A](self.attributes)
         self.mappings = tuple(mappings)
-        # For each mapping, the image bit of attribute i at position i; a
-        # mapping is called once per attribute rather than on every use.
+        # For each mapping, the image bit of attribute i at position i (0 if
+        # the image is a truth value), and the attributes it sends to true
+        # and to false; a mapping is called once per attribute rather than on
+        # every use.
         self._mapping_tables: list[list[int]] = [[] for _ in self.mappings]
+        self._true_masks: list[int] = [0] * len(self.mappings)
+        self._false_masks: list[int] = [0] * len(self.mappings)
         for k in range(len(self.mappings)):
             self._extend_table(k, len(self.attributes))
         self.implications = ImplicationTheory[A](index=self.index)
@@ -108,11 +113,20 @@ class ExplorationBase(Generic[O, A]):
         Keeping the theory closed under the mappings is what lets a mapped copy
         of a completed object be completed itself, so background implications
         are mapped for the same reason confirmed ones are.
+
+        An attribute sent to true drops out of either side. One sent to false
+        makes a premise unsatisfiable, so the image says nothing; in the
+        conclusion it means the premise image cannot hold, so the image
+        concludes every attribute.
         """
         added = []
         for k in range(len(self.mappings)):
             mapped_premise = self._image(k, premise)
             mapped_conclusion = self._image(k, conclusion)
+            if premise & self._false_masks[k]:
+                continue
+            if conclusion & self._false_masks[k]:
+                mapped_conclusion = self.full_mask
             if not self.implications.entails_mask(mapped_premise, mapped_conclusion):
                 mapped_implication = Implication(
                     self.index.decode(mapped_premise),
@@ -135,9 +149,16 @@ class ExplorationBase(Generic[O, A]):
         """
         table = self._mapping_tables[k]
         while len(table) < length:
-            table.append(
-                self.index.bit(self.mappings[k](self.index.attributes[len(table)]))
-            )
+            i = len(table)
+            image = self.mappings[k](self.index.attributes[i])
+            if image is Truth.TRUE:
+                self._true_masks[k] |= 1 << i
+                table.append(0)
+            elif image is Truth.FALSE:
+                self._false_masks[k] |= 1 << i
+                table.append(0)
+            else:
+                table.append(self.index.bit(image))
 
     def _image(self, k: int, mask: int) -> int:
         self._extend_table(k, mask.bit_length())
@@ -148,7 +169,8 @@ class ExplorationBase(Generic[O, A]):
         return image
 
     def _preimage(self, k: int, mask: int) -> int:
-        """The attributes whose images under mapping k lie in `mask`."""
+        """The attributes whose images under mapping k are attributes in
+        `mask`."""
         preimage = 0
         for i, image in enumerate(self._mapping_tables[k][:len(self.attributes)]):
             if image & mask:
@@ -166,7 +188,8 @@ class ExplorationBase(Generic[O, A]):
         already holds is re-added even so, to keep it in step with the object
         it is derived from. Versions are numbered by mapping rather than
         consecutively, so that a second sighting of the same object merges into
-        the images of the first.
+        the images of the first. An attribute the mapping sends to a truth
+        value has that value in every version.
         """
         original = example.object
         row = self._add_row(
@@ -177,7 +200,10 @@ class ExplorationBase(Generic[O, A]):
         seen = {row}
         for k in range(len(self.mappings)):
             name = VersionedObject(original, k + 1)
-            copy = (self._preimage(k, row[0]), self._preimage(k, row[1]))
+            copy = (
+                self._preimage(k, row[0]) | self._true_masks[k] & self.full_mask,
+                self._preimage(k, row[1]) | self._false_masks[k] & self.full_mask,
+            )
             if copy in seen and name not in self._rows:
                 continue
             seen.add(copy)

@@ -4,6 +4,7 @@ import pytest
 
 from conceptual_exploration import Implication
 from conceptual_exploration.core.context import PartialObject
+from conceptual_exploration.core.truth import Truth
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 
 
@@ -181,6 +182,42 @@ def test_add_returns_the_stored_object():
     assert len(base.context.objects) == 1
 
 
+def test_mappings_to_truth_values():
+    """A mapping may send an attribute to a fixed truth value, as identifying
+    the arguments of a reflexive or irreflexive relation does."""
+    # Sends a to true and b to false, and swaps c and d.
+    image = {"a": Truth.TRUE, "b": Truth.FALSE, "c": "d", "d": "c"}
+    base = ExplorationBase(
+        attributes=["a", "b", "c", "d"],
+        mappings=[lambda x: image[x]],
+    )
+
+    # A false premise attribute: the image says nothing.
+    base.accept(Implication(frozenset(["b"]), frozenset(["c"])))
+    assert len(base.implications.implications) == 1
+
+    # A true premise attribute drops out of the image.
+    base.accept(Implication(frozenset(["a", "c"]), frozenset(["d"])))
+    assert base.implications.entails(Implication(frozenset(["d"]), frozenset(["c"])))
+
+    # A false conclusion attribute makes the premise image impossible.
+    base.accept(Implication(frozenset(["c"]), frozenset(["b"])))
+    assert base.implications.entails(
+        Implication(frozenset(["d"]), frozenset(["a", "b", "c"]))
+    )
+
+    # In an object's image the attributes take their fixed values, whatever
+    # the object itself says about them.
+    base = ExplorationBase(
+        attributes=["a", "b", "c", "d"],
+        mappings=[lambda x: image[x]],
+    )
+    base.add_counterexample(PartialObject("g", {"c"}, {"a"}))
+    versions = {str(o.object): o for o in base.context.objects.values()}
+    assert versions["g#1"].positive == {"a", "d"}
+    assert versions["g#1"].negative == {"b"}
+
+
 if __name__ == "__main__":
     test_object_is_merged_before_being_completed()
     test_the_expert_s_attribute_sets_are_left_alone()
@@ -190,4 +227,5 @@ if __name__ == "__main__":
     test_mapped_versions_are_already_complete()
     test_duplicate_mapped_versions_are_not_stored()
     test_add_returns_the_stored_object()
+    test_mappings_to_truth_values()
     print("All exploration base tests passed successfully!")

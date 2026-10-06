@@ -2,6 +2,7 @@ from collections import defaultdict
 from itertools import product, permutations
 from typing import Callable
 
+from ..core.truth import Truth
 from .atom import Atom
 from .variable import Variable, SortedVariable
 
@@ -64,5 +65,7 @@ def sorted_variable_symmetries(
 
 def _atom_renaming(
         variable_map: dict[Variable, Variable],
-) -> Callable[[Atom], Atom]:
-    return lambda atom: atom.rename(lambda variable: variable_map[variable])
+) -> Callable[[Atom], Atom | Truth]:
+    """Rename an atom's variables and normalize the result, so that the image
+    of a canonical atom is a canonical atom or a fixed truth value."""
+    return lambda atom: atom.rename(lambda variable: variable_map[variable]).normalize()

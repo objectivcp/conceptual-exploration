@@ -2,6 +2,8 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from itertools import product
 
+from ..core.implication import Implication
+from ..core.truth import Truth
 from .predicate import Predicate, EvaluatablePredicate
 from .variable import Variable
 
@@ -27,6 +29,25 @@ class Atom:
             self.predicate,
             tuple(mapping(argument) for argument in self.arguments),
         )
+
+    def normalize(self) -> "Atom | Truth":
+        """This atom in canonical form, or its truth value where the
+        predicate's properties fix it.
+
+        Of the two orders of a symmetric atom's arguments, the canonical one
+        has them sorted. An atom that is already canonical is returned itself.
+        """
+        p = self.predicate
+        if p.arity == 2:
+            first, second = self.arguments
+            if first == second:
+                if p.reflexive:
+                    return Truth.TRUE
+                if p.irreflexive:
+                    return Truth.FALSE
+            elif p.symmetric and second < first:
+                return Atom(p, (second, first))
+        return self
 
     def __str__(self) -> str:
         return self.predicate.format(self.arguments)
@@ -63,11 +84,52 @@ def atoms_over(
         variables: Iterable[Variable],
 ) -> list[Atom]:
     """List every atom obtained by applying each predicate to all
-    argument tuples drawn (with repetition) from ``variables``."""
+    argument tuples drawn (with repetition) from ``variables``.
+
+    Only atoms in canonical form whose truth is not fixed are listed; see
+    `Atom.normalize`. For predicates that declare no properties, that is all
+    of them.
+    """
     variables = tuple(variables)
     atoms: list[Atom] = []
     for predicate in predicates:
         for arguments in product(variables, repeat=predicate.arity):
             if predicate.valid_arguments(arguments):
-                atoms.append(Atom(predicate, arguments))
+                atom = Atom(predicate, arguments)
+                if atom.normalize() is atom:
+                    atoms.append(atom)
     return atoms
+
+
+def normalize_implication(
+        implication: Implication[Atom],
+        atoms: Iterable[Atom],
+) -> Implication[Atom] | None:
+    """Rewrite an implication over canonical atoms, or return None if it says
+    nothing once the fixed truth values are taken into account.
+
+    A true atom drops out of either side. A false premise atom makes the
+    implication vacuous; a false conclusion atom means the premise cannot
+    hold, so the conclusion becomes all of `atoms`.
+    """
+    premise = set()
+    for atom in implication.premise:
+        normal = atom.normalize()
+        if normal is Truth.FALSE:
+            return None
+        if normal is not Truth.TRUE:
+            premise.add(normal)
+
+    conclusion = set()
+    for atom in implication.conclusion:
+        normal = atom.normalize()
+        if normal is Truth.FALSE:
+            conclusion = set(atoms)
+            break
+        if normal is not Truth.TRUE:
+            conclusion.add(normal)
+
+    conclusion -= premise
+    if not conclusion:
+        return None
+    return Implication(premise, conclusion)
