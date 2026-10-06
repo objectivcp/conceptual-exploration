@@ -2,7 +2,7 @@ from collections.abc import Set, MutableSet, Iterator, Iterable
 from typing import TypeVar
 
 from ..algorithms.closure import ClosureOperator
-from .bitset import AttributeIndex
+from .bitset import AttributeIndex, bits
 from .implication import Implication
 
 A = TypeVar("A")
@@ -37,6 +37,16 @@ class ImplicationTheory(ClosureOperator[A]):
     and decode the result. Callers that work with masks themselves — the
     exploration engine does — pass their own index so the bits agree, and call
     `closure_mask` directly.
+
+    For closures the theory is also kept transposed: for each attribute, a
+    bitmask over the implications (by number) whose premise contains it, and
+    one over those whose conclusion does. The implications that can fire are
+    then those that no absent attribute's premise mask covers, and an absent
+    attribute is derived when its conclusion mask meets them, so a round of
+    the closure is a big-integer operation per attribute rather than a step
+    per implication. Ruling out the implications whose premise has an absent
+    attribute is similar to Wild's closure algorithm; the conclusion masks
+    are added so that what fires is read off per attribute as well.
     """
 
     def __init__(
@@ -48,6 +58,10 @@ class ImplicationTheory(ClosureOperator[A]):
         self.implications: list[Implication[A]] = []
         self._masks: list[tuple[int, int]] = []
         self._mask_set: set[tuple[int, int]] = set()
+        # The transposed theory, by attribute position: the implications
+        # whose premise, and those whose conclusion, contains the attribute.
+        self._in_premise: dict[int, int] = {}
+        self._in_conclusion: dict[int, int] = {}
         for implication in implications:
             self.add(implication)
 
@@ -58,9 +72,18 @@ class ImplicationTheory(ClosureOperator[A]):
         """Add an implication and return its premise and conclusion masks."""
         self.implications.append(implication)
         masks = self._encode(implication)
+        self._record(masks)
+        return masks
+
+    def _record(self, masks: tuple[int, int]) -> None:
+        premise, conclusion = masks
+        number = 1 << len(self._masks)
         self._masks.append(masks)
         self._mask_set.add(masks)
-        return masks
+        for position in bits(premise):
+            self._in_premise[position] = self._in_premise.get(position, 0) | number
+        for position in bits(conclusion):
+            self._in_conclusion[position] = self._in_conclusion.get(position, 0) | number
 
     def _encode(self, implication: Implication[A]) -> tuple[int, int]:
         return (
@@ -71,10 +94,26 @@ class ImplicationTheory(ClosureOperator[A]):
     def closure_mask(self, mask: int) -> int:
         if len(self._masks) != len(self.implications):
             # Someone appended to `implications` directly; catch the masks up.
-            missing = list(map(self._encode, self.implications[len(self._masks):]))
-            self._masks.extend(missing)
-            self._mask_set.update(missing)
-        return close_mask(mask, self._masks)
+            for implication in self.implications[len(self._masks):]:
+                self._record(self._encode(implication))
+
+        everything = (1 << len(self._masks)) - 1
+        result = mask
+        while True:
+            # The implications with a premise attribute the result lacks
+            # cannot fire; the rest have fired or are about to.
+            blocked = 0
+            for position, implications in self._in_premise.items():
+                if not result >> position & 1:
+                    blocked |= implications
+            firing = everything & ~blocked
+            new = 0
+            for position, implications in self._in_conclusion.items():
+                if implications & firing and not result >> position & 1:
+                    new |= 1 << position
+            if not new:
+                return result
+            result |= new
 
     def entails_mask(self, premise: int, conclusion: int) -> bool:
         # An implication the theory contains needs no closure; mapping a

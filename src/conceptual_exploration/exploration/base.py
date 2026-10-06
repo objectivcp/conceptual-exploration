@@ -69,6 +69,14 @@ class ExplorationBase(Generic[O, A]):
         # repeat a row under another name, and the context closure and the
         # updates only need each row once.
         self._names_by_row: dict[tuple[int, int], dict[VersionedObject[O], None]] = {}
+        # The distinct rows transposed for the context closure: each row has
+        # a bit, and each attribute (by position) a mask of the rows that
+        # have it and of the rows that deny it.
+        self._row_bits: dict[tuple[int, int], int] = {}
+        self._next_row_bit = 1
+        self._live_rows = 0
+        self._rows_with: dict[int, int] = {}
+        self._rows_without: dict[int, int] = {}
 
         for implication in background_implications:
             self.add_background(implication)
@@ -265,8 +273,32 @@ class ExplorationBase(Generic[O, A]):
             del names[name]
             if not names:
                 del self._names_by_row[old]
+                self._forget_row(old)
         self._rows[name] = row
-        self._names_by_row.setdefault(row, {})[name] = None
+        if row not in self._names_by_row:
+            self._names_by_row[row] = {}
+            self._register_row(row)
+        self._names_by_row[row][name] = None
+
+    def _register_row(self, row: tuple[int, int]) -> None:
+        bit = self._next_row_bit
+        self._next_row_bit <<= 1
+        self._row_bits[row] = bit
+        self._live_rows |= bit
+        positive, negative = row
+        for position in bits(positive):
+            self._rows_with[position] = self._rows_with.get(position, 0) | bit
+        for position in bits(negative):
+            self._rows_without[position] = self._rows_without.get(position, 0) | bit
+
+    def _forget_row(self, row: tuple[int, int]) -> None:
+        bit = self._row_bits.pop(row)
+        self._live_rows &= ~bit
+        positive, negative = row
+        for position in bits(positive):
+            self._rows_with[position] &= ~bit
+        for position in bits(negative):
+            self._rows_without[position] &= ~bit
 
     def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
         self._set_row(name, row)
@@ -282,10 +314,15 @@ class ExplorationBase(Generic[O, A]):
     def context_closure_mask(self, attributes: int) -> int:
         """The attributes every object having `attributes` might have: the
         mask form of `context.closure`."""
+        rows = self._live_rows
+        for position in bits(attributes):
+            rows &= self._rows_with.get(position, 0)
+            if not rows:
+                return self.full_mask
         result = self.full_mask
-        for positive, negative in self._names_by_row:
-            if attributes & positive == attributes:
-                result &= ~negative
+        for position, denying in self._rows_without.items():
+            if denying & rows:
+                result &= ~(1 << position)
         return result
 
     def _update(self, added: list[tuple[int, int]]) -> None:

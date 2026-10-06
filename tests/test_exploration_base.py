@@ -1,5 +1,7 @@
 """Unit tests for ExplorationBase object bookkeeping."""
 
+import random
+
 import pytest
 
 from conceptual_exploration import Implication
@@ -247,6 +249,40 @@ def test_objects_sharing_a_row_are_closed_over_once():
         ) == base.context.closure(attributes)
 
 
+def test_context_closure_matches_the_context_on_random_runs():
+    """The transposed context closure agrees with PartialContext.closure while
+    objects are added, merged, mapped and completed."""
+    rng = random.Random(1)
+    attributes = ["a", "b", "c", "d", "e"]
+    swap = {"a": "b", "b": "a", "c": "c", "d": "e", "e": "d"}
+    for _ in range(40):
+        base = ExplorationBase(attributes=attributes, mappings=[lambda x: swap[x]])
+        for step in range(15):
+            if rng.random() < 0.3:
+                premise = {a for a in attributes if rng.random() < 0.3}
+                conclusion = {a for a in attributes if rng.random() < 0.2}
+                try:
+                    base.accept(Implication(frozenset(premise), frozenset(conclusion)))
+                except ValueError:
+                    break  # conflicts with an object; the run ends there
+            else:
+                positive = {a for a in attributes if rng.random() < 0.4}
+                negative = {a for a in attributes if a not in positive and rng.random() < 0.4}
+                try:
+                    base.add_counterexample(PartialObject(f"g{rng.randrange(4)}", positive, negative))
+                except ValueError:
+                    pass  # conflicts with what is known; the context is unchanged
+            # Rows only gain attributes, so a row left behind would not change
+            # a closure; it would only cost time. Each live row is a distinct
+            # row of some object.
+            assert base._live_rows.bit_count() == len(base._names_by_row) == len(base._row_bits)
+            for _ in range(5):
+                query = {a for a in attributes if rng.random() < 0.3}
+                assert base.index.decode(
+                    base.context_closure_mask(base.index.encode(query))
+                ) == base.context.closure(query)
+
+
 if __name__ == "__main__":
     test_object_is_merged_before_being_completed()
     test_the_expert_s_attribute_sets_are_left_alone()
@@ -258,4 +294,5 @@ if __name__ == "__main__":
     test_add_returns_the_stored_object()
     test_mappings_to_truth_values()
     test_objects_sharing_a_row_are_closed_over_once()
+    test_context_closure_matches_the_context_on_random_runs()
     print("All exploration base tests passed successfully!")
