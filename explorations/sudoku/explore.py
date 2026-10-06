@@ -28,16 +28,24 @@ from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku.sudoku import (
+    CELL_EQUIVALENCES,
+    PRIMITIVE_PREDICATES,
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
     get_sudoku_attributes,
     get_sudoku_symmetries,
+    select_predicates,
+    sudoku_background,
     z3predicates,
 )
 
 
-def run_sudoku_rule_exploration(block_size: int = 2, quick: bool = True):
+def run_sudoku_rule_exploration(
+    block_size: int = 2,
+    quick: bool = True,
+    use_background: bool = True,
+):
     """Run first-order relational rule exploration using Z3 SMT solver."""
     print("=" * 70)
     print(f"SUDOKU FIRST-ORDER RULE EXPLORATION (Block Size: {block_size}x{block_size})")
@@ -49,9 +57,7 @@ def run_sudoku_rule_exploration(block_size: int = 2, quick: bool = True):
             SortedVariable("x", SudokuSort.CELL),
             SortedVariable("y", SudokuSort.CELL),
         ]
-        expert = Z3SudokuExpert(block_size, variables)
-        predicates = z3predicates(block_size, expert)
-        selected_predicates = predicates[:4]  # Peers, Apart, Same, Different
+        names = CELL_EQUIVALENCES
     else:
         variables = [
             SortedVariable("x", SudokuSort.CELL),
@@ -60,19 +66,12 @@ def run_sudoku_rule_exploration(block_size: int = 2, quick: bool = True):
             SortedVariable("n", SudokuSort.NUMBER),
             SortedVariable("m", SudokuSort.NUMBER),
         ]
-        expert = Z3SudokuExpert(block_size, variables)
-        predicates = z3predicates(block_size, expert)
-        selected_predicates = (
-            predicates[0],  # Peers
-            predicates[1],  # Apart
-            predicates[2],  # Same
-            predicates[3],  # Different
-            predicates[4],  # Contains
-            predicates[5],  # SameNumber
-            predicates[6],  # DifferentNumbers
-            predicates[8],  # SameRow
-            predicates[9],  # SameColumn
-        )
+        names = PRIMITIVE_PREDICATES
+    expert = Z3SudokuExpert(block_size, variables)
+    selected_predicates = select_predicates(z3predicates(block_size, expert), names)
+    background = (
+        sudoku_background(selected_predicates, variables) if use_background else []
+    )
 
     print(f"\nVariables ({len(variables)}):")
     for v in variables:
@@ -83,10 +82,13 @@ def run_sudoku_rule_exploration(block_size: int = 2, quick: bool = True):
         sort_names = tuple(s.name for s in p.sorts) if p.sorts else ()
         print(f"  - {p.name}{sort_names}")
 
+    print(f"\nBackground Implications: {len(background)}")
+
     exploration = RuleExploration(
         selected_predicates,
         variables,
         expert,
+        background=background,
         substitutions=True,
         evaluate_all=True,
     )
@@ -179,9 +181,23 @@ if __name__ == "__main__":
         action="store_false",
         help="Run full multi-sorted rule exploration with cell and number variables",
     )
+    parser.add_argument(
+        "--no-background",
+        dest="background",
+        action="store_false",
+        help=(
+            "Explore without the background implications that hold in any grid "
+            "(equivalence laws, how rows, columns, blocks, bands and stacks nest, "
+            "one value per cell), so that these are rediscovered as well"
+        ),
+    )
     args = parser.parse_args()
 
     if args.mode in ("rule", "both"):
-        run_sudoku_rule_exploration(block_size=args.block_size, quick=args.quick)
+        run_sudoku_rule_exploration(
+            block_size=args.block_size,
+            quick=args.quick,
+            use_background=args.background,
+        )
     if args.mode in ("sat", "both"):
         run_sudoku_sat_exploration(block_size=args.block_size)

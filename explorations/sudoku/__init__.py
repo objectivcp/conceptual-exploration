@@ -6,6 +6,8 @@ relational predicates for conceptual exploration.
 """
 
 from .sudoku import (
+    CELL_EQUIVALENCES,
+    PRIMITIVE_PREDICATES,
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
@@ -25,8 +27,10 @@ from .sudoku import (
     row_cells,
     run_sudoku_rule_exploration,
     run_sudoku_sat_exploration,
+    select_predicates,
     solve_sudoku,
     sudoku2sat,
+    sudoku_background,
     z3_same_block,
     z3_same_block_coords,
     z3_together,
@@ -35,6 +39,8 @@ from .sudoku import (
 )
 
 __all__ = [
+    "CELL_EQUIVALENCES",
+    "PRIMITIVE_PREDICATES",
     "SudokuExpert",
     "SudokuSort",
     "Z3SudokuExpert",
@@ -54,8 +60,10 @@ __all__ = [
     "row_cells",
     "run_sudoku_rule_exploration",
     "run_sudoku_sat_exploration",
+    "select_predicates",
     "solve_sudoku",
     "sudoku2sat",
+    "sudoku_background",
     "z3_same_block",
     "z3_same_block_coords",
     "z3_together",

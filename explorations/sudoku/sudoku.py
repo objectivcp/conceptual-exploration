@@ -8,7 +8,7 @@ relational predicates for conceptual exploration.
 from __future__ import annotations
 
 from enum import auto
-from itertools import combinations, permutations
+from itertools import combinations, permutations, product
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 import z3
@@ -21,6 +21,7 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
+from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.predicate import EvaluatablePredicate
 from conceptual_exploration.logic.variable import Sort, SortedVariable
 
@@ -526,10 +527,112 @@ def z3predicates(block_size: int, expert: Z3SudokuExpert) -> List[EvaluatablePre
             sorts=(SudokuSort.CELL, SudokuSort.CELL),
             function=lambda x, y: x[1] == y[1],
         ),
+        EvaluatablePredicate(
+            "SameCell",
+            2,
+            sorts=(SudokuSort.CELL, SudokuSort.CELL),
+            function=lambda x, y: z3.And(x[0] == y[0], x[1] == y[1]),
+        ),
+        EvaluatablePredicate(
+            "SameBand",
+            2,
+            sorts=(SudokuSort.CELL, SudokuSort.CELL),
+            function=lambda x, y: z3_same_block_coords(x[0], y[0], block_size),
+        ),
+        EvaluatablePredicate(
+            "SameStack",
+            2,
+            sorts=(SudokuSort.CELL, SudokuSort.CELL),
+            function=lambda x, y: z3_same_block_coords(x[1], y[1], block_size),
+        ),
     ]
 
 
 get_sudoku_predicates = z3predicates
+
+
+# Equivalence relations on cells: the five from the grid's geometry and
+# `Same`, equality of the values the cells hold.
+CELL_EQUIVALENCES = (
+    "SameCell",
+    "SameRow",
+    "SameColumn",
+    "SameBlock",
+    "SameBand",
+    "SameStack",
+    "Same",
+)
+
+# The vocabulary the rule explorations use by default. `Peers`, `Apart`,
+# `Different` and `DifferentNumbers` are left out: each is a negation or a
+# disjunction of these, which Horn rules cannot define, so exploring them
+# mostly rediscovers how they relate to the primitives.
+PRIMITIVE_PREDICATES = CELL_EQUIVALENCES + ("Contains", "SameNumber")
+
+
+def select_predicates(
+    predicates: Iterable[EvaluatablePredicate],
+    names: Iterable[str],
+) -> List[EvaluatablePredicate]:
+    """Pick predicates by name, in the order the names are given."""
+    by_name = {p.name: p for p in predicates}
+    return [by_name[name] for name in names]
+
+
+def sudoku_background(
+    predicates: Iterable[EvaluatablePredicate],
+    variables: Iterable[SortedVariable],
+) -> List[Implication]:
+    """Implications that hold in every grid whatever its digits.
+
+    They say that the equivalences are equivalences, how the grid's regions
+    nest, and that a cell holds a single value; none of them depends on a
+    Sudoku rule. Given as background, they leave the exploration to find only
+    what the rules add. Implications mentioning a predicate not in
+    `predicates` are left out.
+    """
+    by_name = {p.name: p for p in predicates}
+    variables = tuple(variables)
+    cells = [v for v in variables if v.sort is SudokuSort.CELL]
+    numbers = [v for v in variables if v.sort is SudokuSort.NUMBER]
+    background: List[Implication] = []
+
+    def rule(premise, conclusion) -> None:
+        if all(name in by_name for name, _ in premise + conclusion):
+            background.append(Implication(
+                (Atom(by_name[name], args) for name, args in premise),
+                (Atom(by_name[name], args) for name, args in conclusion),
+            ))
+
+    equivalences = [(name, cells) for name in CELL_EQUIVALENCES]
+    equivalences.append(("SameNumber", numbers))
+    for name, terms in equivalences:
+        for u in terms:
+            rule([], [(name, (u, u))])
+        for u, v in product(terms, repeat=2):
+            rule([(name, (u, v))], [(name, (v, u))])
+        for u, v, w in product(terms, repeat=3):
+            rule([(name, (u, v)), (name, (v, w))], [(name, (u, w))])
+
+    for u, v in product(cells, repeat=2):
+        for name in CELL_EQUIVALENCES[1:]:
+            rule([("SameCell", (u, v))], [(name, (u, v))])
+        rule([("SameRow", (u, v)), ("SameColumn", (u, v))], [("SameCell", (u, v))])
+        rule([("SameRow", (u, v))], [("SameBand", (u, v))])
+        rule([("SameColumn", (u, v))], [("SameStack", (u, v))])
+        rule([("SameBlock", (u, v))], [("SameBand", (u, v))])
+        rule([("SameBlock", (u, v))], [("SameStack", (u, v))])
+        rule([("SameBand", (u, v)), ("SameStack", (u, v))], [("SameBlock", (u, v))])
+        for n in numbers:
+            rule([("Contains", (u, n)), ("Same", (u, v))], [("Contains", (v, n))])
+            rule([("Contains", (u, n)), ("Contains", (v, n))], [("Same", (u, v))])
+
+    for u in cells:
+        for n, m in product(numbers, repeat=2):
+            rule([("Contains", (u, n)), ("SameNumber", (n, m))], [("Contains", (u, m))])
+            rule([("Contains", (u, n)), ("Contains", (u, m))], [("SameNumber", (n, m))])
+
+    return background
 
 
 # ---------------------------------------------------------------------------
@@ -544,17 +647,7 @@ def cell_exploration(block_size: int = 2) -> ExplorationBase:
         SortedVariable("z", SudokuSort.CELL),
         SortedVariable("w", SudokuSort.CELL),
     ]
-    expert = Z3SudokuExpert(block_size, variables)
-    exploration = RuleExploration(
-        z3predicates(block_size, expert)[:4],
-        variables,
-        expert,
-        substitutions=True,
-        evaluate_all=True,
-        on_question=report_every(20),
-    )
-    exploration.run()
-    return exploration.base
+    return _primitive_rule_exploration(block_size, variables, CELL_EQUIVALENCES)
 
 
 def cell_number_exploration(block_size: int = 2) -> ExplorationBase:
@@ -566,23 +659,21 @@ def cell_number_exploration(block_size: int = 2) -> ExplorationBase:
         SortedVariable("n", SudokuSort.NUMBER),
         SortedVariable("m", SudokuSort.NUMBER),
     ]
+    return _primitive_rule_exploration(block_size, variables, PRIMITIVE_PREDICATES)
+
+
+def _primitive_rule_exploration(
+    block_size: int,
+    variables: List[SortedVariable],
+    names: Iterable[str],
+) -> ExplorationBase:
     expert = Z3SudokuExpert(block_size, variables)
-    predicates = z3predicates(block_size, expert)
-    selected_predicates = (
-        predicates[0],  # Peers
-        predicates[1],  # Apart
-        predicates[2],  # Same
-        predicates[3],  # Different
-        predicates[4],  # Contains
-        predicates[5],  # SameNumber
-        predicates[6],  # DifferentNumbers
-        predicates[8],  # SameRow
-        predicates[9],  # SameColumn
-    )
+    predicates = select_predicates(z3predicates(block_size, expert), names)
     exploration = RuleExploration(
-        selected_predicates,
+        predicates,
         variables,
         expert,
+        background=sudoku_background(predicates, variables),
         substitutions=True,
         evaluate_all=True,
         on_question=report_every(20),

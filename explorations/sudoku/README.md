@@ -13,8 +13,8 @@ Sudoku can be modeled conceptually at two levels:
 
 2. **First-Order Relational Rule Exploration (SMT-based)**:
    - Uses multi-sorted variables (`SudokuSort.CELL` for coordinates and `SudokuSort.NUMBER` for cell values).
-   - Uses the **Z3 SMT solver** to reason about relational predicates like `Peers`, `Apart`, `Same`, `Different`, `Contains`, `SameRow`, `SameColumn`, and `SameBlock`.
-   - Automatically discovers domain axioms and deduction rules (e.g., cell peer relations, value uniqueness, row/column dependencies).
+   - Uses the **Z3 SMT solver** to reason about relational predicates: the cell equivalences `SameCell`, `SameRow`, `SameColumn`, `SameBlock`, `SameBand`, `SameStack` and `Same` (equal values), together with `Contains` and `SameNumber`. The derived predicates `Peers`, `Apart`, `Different` and `DifferentNumbers` remain available but are not explored by default.
+   - Takes as background what holds in any grid whatever its digits (equivalence laws, how the regions nest, one value per cell), so the accepted rules are the ones the Sudoku constraints add.
 
 ## Features
 
@@ -32,6 +32,8 @@ Run first-order relational rule exploration with Z3:
 ```bash
 python explorations/sudoku/explore.py --mode rule
 ```
+
+`--full` explores three cell and two number variables instead of two cells, and `--no-background` drops the background implications, so the exploration rediscovers them too.
 
 Run propositional attribute exploration with PySAT and symmetries:
 ```bash

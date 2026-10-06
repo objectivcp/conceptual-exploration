@@ -6,7 +6,11 @@ from conceptual_exploration import AttributeExploration, Implication
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
+from conceptual_exploration.core.theory import ImplicationTheory
+from conceptual_exploration.logic.atom import atoms_over
 from explorations.sudoku import (
+    CELL_EQUIVALENCES,
+    PRIMITIVE_PREDICATES,
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
@@ -17,8 +21,10 @@ from explorations.sudoku import (
     get_sudoku_symmetries,
     get_var,
     print_solution,
+    select_predicates,
     solve_sudoku,
     sudoku2sat,
+    sudoku_background,
 )
 
 
@@ -142,6 +148,65 @@ def test_sudoku_rule_exploration():
     assert len(base.accepted_implications) > 0
 
 
+@pytest.mark.parametrize("block_size", [2, 3])
+def test_background_holds_in_every_grid(block_size):
+    variables = [
+        SortedVariable("x", SudokuSort.CELL),
+        SortedVariable("y", SudokuSort.CELL),
+        SortedVariable("z", SudokuSort.CELL),
+        SortedVariable("n", SudokuSort.NUMBER),
+        SortedVariable("m", SudokuSort.NUMBER),
+    ]
+    expert = Z3SudokuExpert(block_size=block_size, variables=variables)
+    predicates = select_predicates(
+        get_sudoku_predicates(block_size=block_size, expert=expert),
+        PRIMITIVE_PREDICATES,
+    )
+    atoms = atoms_over(predicates, variables)
+
+    background = sudoku_background(predicates, variables)
+    assert background
+    for implication in background:
+        assert expert.validate(implication, atoms) is None, str(implication)
+
+
+def test_primitive_exploration_finds_the_sudoku_rules():
+    """Given what holds in any grid, what is left are the rules themselves:
+    two cells holding the same digit in a row, column or block coincide."""
+    variables = [
+        SortedVariable("x", SudokuSort.CELL),
+        SortedVariable("y", SudokuSort.CELL),
+    ]
+    expert = Z3SudokuExpert(block_size=2, variables=variables)
+    predicates = select_predicates(
+        get_sudoku_predicates(block_size=2, expert=expert),
+        CELL_EQUIVALENCES,
+    )
+    exploration = RuleExploration(
+        predicates,
+        variables,
+        expert,
+        background=sudoku_background(predicates, variables),
+        substitutions=True,
+        evaluate_all=True,
+    )
+    exploration.run()
+    base = exploration.base
+
+    theory = ImplicationTheory(base.implications)
+    found = set()
+    for implication in base.accepted_implications:
+        simplified = theory.simplify(implication)
+        assert any(a.predicate.name == "SameCell" for a in simplified.conclusion)
+        found.add(frozenset(a.predicate.name for a in simplified.premise))
+
+    assert found == {
+        frozenset({"Same", "SameRow"}),
+        frozenset({"Same", "SameColumn"}),
+        frozenset({"Same", "SameBlock"}),
+    }
+
+
 if __name__ == "__main__":
     test_get_var_and_coords()
     test_sudoku2sat_and_solve_4x4()
@@ -150,4 +215,7 @@ if __name__ == "__main__":
     test_sudoku_symmetries()
     test_z3_sudoku_expert_and_predicates()
     test_sudoku_rule_exploration()
+    for block_size in (2, 3):
+        test_background_holds_in_every_grid(block_size)
+    test_primitive_exploration_finds_the_sudoku_rules()
     print("All Sudoku tests passed successfully!")
