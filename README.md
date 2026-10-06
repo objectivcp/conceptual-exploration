@@ -98,6 +98,7 @@ conceptual-exploration/
 │   │   ├── closure.py                # Abstract ClosureOperator protocol
 │   │   └── next_closure.py           # NextClosure lectic enumeration algorithm
 │   ├── core/
+│   │   ├── bitset.py                 # AttributeIndex numbering attributes as bitmask positions
 │   │   ├── context.py                # PartialObject and PartialContext (with CXT parser)
 │   │   ├── implication.py            # Implication dataclass and respectedness checks
 │   │   └── theory.py                 # ImplicationTheory for closure & simplification

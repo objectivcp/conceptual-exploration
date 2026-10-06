@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypeVar, Generic, Iterable
 
+from ..core.bitset import AttributeIndex, bits
 from ..core.context import PartialContext, PartialObject
 from ..core.implication import Implication
 from ..core.theory import ImplicationTheory
@@ -30,6 +31,15 @@ class ImplicationSource(Enum):
 
 
 class ExplorationBase(Generic[O, A]):
+    """The implications and objects an exploration has gathered so far.
+
+    `implications` and `context` are the public, set-based record. Alongside
+    them the base keeps every object as a pair of bitmasks over `index`, and
+    the exploration loop works on those: completing objects, closing premises
+    in the context, and applying the mappings all become integer operations.
+    The masks are the base's own copy of the context it manages, so objects
+    have to be added through `add_counterexample`, not `context.add`.
+    """
 
     def __init__(
             self,
@@ -38,17 +48,24 @@ class ExplorationBase(Generic[O, A]):
             mappings: Iterable[Callable[[A], A]] = ()
     ) -> None:
         self.attributes = tuple(attributes)
-        self.context = PartialContext[VersionedObject[O], A](attributes)
+        self.index = AttributeIndex[A](self.attributes)
+        self.full_mask = (1 << len(self.attributes)) - 1
+        self.context = PartialContext[VersionedObject[O], A](self.attributes)
         self.mappings = tuple(mappings)
-        self.implications = ImplicationTheory[A]()
+        # For each mapping, the image bit of attribute i at position i; a
+        # mapping is called once per attribute rather than on every use.
+        self._mapping_tables: list[list[int]] = [[] for _ in self.mappings]
+        for k in range(len(self.mappings)):
+            self._extend_table(k, len(self.attributes))
+        self.implications = ImplicationTheory[A](index=self.index)
         self.implication_sources: dict[Implication[A], ImplicationSource] = {}
+        self._rows: dict[VersionedObject[O], tuple[int, int]] = {}
 
         for implication in background_implications:
             self.add_background(implication)
 
     def add_background(self, implication: Implication[A]) -> None:
-        self._add_implication(implication, ImplicationSource.BACKGROUND)
-        self._add_mapped(implication)
+        self.accept(implication, ImplicationSource.BACKGROUND)
 
     @property
     def accepted_implications(self) -> tuple[Implication[A], ...]:
@@ -75,26 +92,68 @@ class ExplorationBase(Generic[O, A]):
             implication: Implication[A],
             source: ImplicationSource = ImplicationSource.CONFIRMED,
     ) -> None:
-        self._add_implication(implication, source)
-        self._add_mapped(implication)
+        """Add an implication and its images under the mappings, then bring
+        the objects up to date with all of them at once.
 
-    def _add_mapped(self, implication: Implication[A]) -> None:
-        """Add the images of an implication under the symmetry mappings.
+        Raises ValueError if the new implications conflict with an object.
+        """
+        added = [self._add_implication(implication, source)]
+        added.extend(self._add_mapped(*added[0]))
+        self._update(added)
+
+    def _add_mapped(self, premise: int, conclusion: int) -> list[tuple[int, int]]:
+        """Add the images of an implication under the symmetry mappings and
+        return the masks of those that were not entailed already.
 
         Keeping the theory closed under the mappings is what lets a mapped copy
         of a completed object be completed itself, so background implications
         are mapped for the same reason confirmed ones are.
         """
-        for mapping in self.mappings:
-            mapped_implication = Implication(
-                frozenset(mapping(a) for a in implication.premise),
-                frozenset(mapping(a) for a in implication.conclusion)
-            )
-            if not self.implications.entails(mapped_implication):
-                self._add_implication(
-                    mapped_implication,
-                    ImplicationSource.MAPPED
+        added = []
+        for k in range(len(self.mappings)):
+            mapped_premise = self._image(k, premise)
+            mapped_conclusion = self._image(k, conclusion)
+            if not self.implications.entails_mask(mapped_premise, mapped_conclusion):
+                mapped_implication = Implication(
+                    self.index.decode(mapped_premise),
+                    self.index.decode(mapped_conclusion),
                 )
+                added.append(
+                    self._add_implication(
+                        mapped_implication,
+                        ImplicationSource.MAPPED,
+                    )
+                )
+        return added
+
+    def _extend_table(self, k: int, length: int) -> None:
+        """Tabulate mapping k on the first `length` indexed attributes.
+
+        A mapping may send an attribute outside `attributes`, which gives the
+        image a new bit; implications mentioning it are mapped in turn, so the
+        tables grow with the index rather than being fixed at construction.
+        """
+        table = self._mapping_tables[k]
+        while len(table) < length:
+            table.append(
+                self.index.bit(self.mappings[k](self.index.attributes[len(table)]))
+            )
+
+    def _image(self, k: int, mask: int) -> int:
+        self._extend_table(k, mask.bit_length())
+        table = self._mapping_tables[k]
+        image = 0
+        for i in bits(mask):
+            image |= table[i]
+        return image
+
+    def _preimage(self, k: int, mask: int) -> int:
+        """The attributes whose images under mapping k lie in `mask`."""
+        preimage = 0
+        for i, image in enumerate(self._mapping_tables[k][:len(self.attributes)]):
+            if image & mask:
+                preimage |= 1 << i
+        return preimage
 
     def add_counterexample(self, example: PartialObject[O, A]) -> None:
         """Add a counterexample along with its images under the mappings.
@@ -109,91 +168,133 @@ class ExplorationBase(Generic[O, A]):
         consecutively, so that a second sighting of the same object merges into
         the images of the first.
         """
-        obj = self._add_object(
-            PartialObject(
-                VersionedObject(example.object, 0),
-                example.positive,
-                example.negative
-            )
+        original = example.object
+        row = self._add_row(
+            VersionedObject(original, 0),
+            self.index.encode(example.positive),
+            self.index.encode(example.negative),
         )
-        seen = {self._fingerprint(obj)}
-        for version, mapping in enumerate(self.mappings, start=1):
-            copy = self._make_version(obj, mapping, version)
-            fingerprint = self._fingerprint(copy)
-            if fingerprint in seen and copy.object not in self.context.objects:
+        seen = {row}
+        for k in range(len(self.mappings)):
+            name = VersionedObject(original, k + 1)
+            copy = (self._preimage(k, row[0]), self._preimage(k, row[1]))
+            if copy in seen and name not in self._rows:
                 continue
-            seen.add(fingerprint)
-            self._add_object(copy)
+            seen.add(copy)
+            self._add_row(name, *copy)
 
-    @staticmethod
-    def _fingerprint(
-            example: PartialObject[VersionedObject[O], A],
-    ) -> tuple[frozenset[A], frozenset[A]]:
-        return frozenset(example.positive), frozenset(example.negative)
-
-    def _add_object(self, example: PartialObject[VersionedObject[O], A]):
-        """Merge an observation into what is already known, complete it under
-        the implications, and store it; return the object the context holds.
-
-        Takes ownership of `example`, whose attribute sets are replaced with the
-        merged and completed ones. Merging comes first because an attribute
-        derivable from the union need not be derivable from either observation
-        alone, and nothing is stored until completion succeeds, so a conflicting
-        observation leaves the context as it was rather than half-absorbed.
-        """
-        stored = self.context.objects.get(example.object)
-        if stored is not None:
-            example.positive = example.positive | stored.positive
-            example.negative = example.negative | stored.negative
-
-        self._update_object(example)
-        return self.context.add(example)
-
-    def _make_version(
+    def _add_row(
             self,
-            example: PartialObject[VersionedObject[O], A],
-            mapping: Callable[[A], A],
-            version: int
-    ) -> PartialObject[O, A]:
+            name: VersionedObject[O],
+            positive: int,
+            negative: int,
+    ) -> tuple[int, int]:
+        """Merge an observation into what is already known, complete it under
+        the implications, and store it; return the stored masks.
 
-        return PartialObject(
-            VersionedObject(example.object.original, version),
-            set(a for a in self.attributes if mapping(a) in example.positive),
-            set(a for a in self.attributes if mapping(a) in example.negative)
-        )
+        Merging comes first because an attribute derivable from the union need
+        not be derivable from either observation alone, and nothing is stored
+        until completion succeeds, so a conflicting observation leaves the
+        context as it was rather than half-absorbed. The stored object gets
+        sets of its own, never the ones the expert handed over.
+        """
+        stored = self._rows.get(name)
+        if stored is not None:
+            positive |= stored[0]
+            negative |= stored[1]
 
-    def _update(self):
-        for obj in self.context.objects.values():
-            self._update_object(obj)
+        row = self._complete(positive, negative, name)
+        self._store(name, row)
+        return row
+
+    def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
+        self._rows[name] = row
+        obj = self.context.objects.get(name)
+        if obj is None:
+            self.context.add(
+                PartialObject(name, self.index.decode(row[0]), self.index.decode(row[1]))
+            )
+        else:
+            obj.positive = self.index.decode(row[0])
+            obj.negative = self.index.decode(row[1])
+
+    def context_closure_mask(self, attributes: int) -> int:
+        """The attributes every object having `attributes` might have: the
+        mask form of `context.closure`."""
+        result = self.full_mask
+        for positive, negative in self._rows.values():
+            if attributes & positive == attributes:
+                result &= ~negative
+        return result
+
+    def _update(self, added: list[tuple[int, int]]) -> None:
+        """Bring the objects up to date after `added` joined the theory.
+
+        Every stored object is closed under the theory it was completed by, so
+        its positive side can only grow where one of the new implications
+        fires, and a complete object has no unknown attribute for the negative
+        side to claim; such objects are left alone. A firing implication on a
+        complete object can only be a conflict, which `_complete` reports.
+        """
+        if not added:
+            return
+        for name, (positive, negative) in list(self._rows.items()):
+            fires = any(
+                premise & positive == premise and conclusion & ~positive
+                for premise, conclusion in added
+            )
+            if not fires and (positive | negative) & self.full_mask == self.full_mask:
+                continue
+            row = self._complete(positive, negative, name)
+            if row != (positive, negative):
+                self._store(name, row)
 
     def _update_object(self, obj: PartialObject[O, A]):
         """Complete an object's attribute sets under the current implications.
 
         Raises ValueError if the implications force an attribute the object is
-        known not to have. Completing the positive side is what can produce that
-        clash, so the check lives here, where the closure is computed anyway.
+        known not to have.
         """
-        positive = self.implications.closure(obj.positive)
-        if positive & obj.negative:
-            raise ValueError(f"Implications conflict with object: {obj}")
+        positive, negative = self._complete(
+            self.index.encode(obj.positive),
+            self.index.encode(obj.negative),
+            obj.object,
+        )
+        obj.positive = self.index.decode(positive)
+        obj.negative = self.index.decode(negative)
+        if self.context.objects.get(obj.object) is obj:
+            self._rows[obj.object] = (positive, negative)
 
-        obj.positive = positive
+    def _complete(self, positive: int, negative: int, name) -> tuple[int, int]:
+        """Close the positive side, then deny every attribute that would force
+        a denied one.
+
+        Completing the positive side is what can clash with the negative one,
+        so the check lives here, where the closure is computed anyway.
+        """
+        closure = self.implications.closure_mask
+        positive = closure(positive)
+        if positive & negative:
+            raise ValueError(
+                f"Implications conflict with object {name}: "
+                f"{self.index.decode(positive & negative)}"
+            )
         changed = True
-        new_negative = set(obj.negative)
         while changed:
             changed = False
-            for a in set(self.attributes) - obj.positive - new_negative:
-                if self.implications.closure(obj.positive | {a}) & new_negative:
+            for i in bits(self.full_mask & ~positive & ~negative):
+                bit = 1 << i
+                if closure(positive | bit) & negative:
+                    negative |= bit
                     changed = True
-                    new_negative.add(a)
-        obj.negative = new_negative
+        return positive, negative
 
     def _add_implication(
             self,
             implication: Implication[A],
             source: ImplicationSource,
-    ) -> None:
-        self.implications.add(implication)
+    ) -> tuple[int, int]:
+        """Record an implication in the theory without touching the objects;
+        return its masks."""
         self.implication_sources[implication] = source
-        self._update()
-
+        return self.implications.add(implication)

@@ -67,16 +67,25 @@ class AttributeExploration:
         self.on_question = on_question
 
     def run(self):
-        generator = NextClosure(self.base.attributes, self.base.implications.closure)
-        premises = generator.generate()
+        # Premises and closures are bitmasks over the base's index; only the
+        # implication put to the expert is turned back into sets.
+        index = self.base.index
+        generator = NextClosure(
+            self.base.attributes,
+            mask_closure_operator=self.base.implications.closure_mask,
+        )
+        premises = generator.generate_masks()
 
         try:
             premise = next(premises)
             while True:
-                closure = self.base.context.closure(premise)
+                closure = self.base.context_closure_mask(premise)
 
                 while closure != premise:
-                    implication = Implication(premise=premise, conclusion=closure-premise)
+                    implication = Implication(
+                        premise=index.decode(premise),
+                        conclusion=index.decode(closure & ~premise),
+                    )
                     counterexample = self.expert.validate(
                         implication,
                         self.base.attributes if self.evaluate_all else None
@@ -90,7 +99,7 @@ class AttributeExploration:
                         self._report(implication, counterexample, None)
                         self.base.add_counterexample(counterexample)
                         self.state.counterexamples.append(counterexample)
-                        closure = self.base.context.closure(premise)
+                        closure = self.base.context_closure_mask(premise)
                     else:
                         source = (
                             ImplicationSource.CONFIRMED
