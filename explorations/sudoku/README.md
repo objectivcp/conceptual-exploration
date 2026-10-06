@@ -14,6 +14,7 @@ Sudoku can be modeled conceptually at two levels:
 2. **First-Order Relational Rule Exploration (SAT-based)**:
    - Uses multi-sorted variables (`SudokuSort.CELL` for coordinates and `SudokuSort.NUMBER` for cell values).
    - Uses a **PySAT** expert, or optionally the **Z3 SMT solver**, to reason about relational predicates: the cell equivalences `SameCell`, `SameRow`, `SameColumn`, `SameBlock`, `SameBand`, `SameStack` and `Same` (equal values), together with `Contains` and `SameNumber`. The derived predicates `Peers`, `Apart`, `Different` and `DifferentNumbers` remain available but are not explored by default.
+   - Declares which predicates are symmetric, reflexive, irreflexive or complementary, so only one atom of each symmetric pair is explored and atoms such as `Same(x, x)` are not.
    - Takes as background what holds in any grid whatever its digits (equivalence laws, how the regions nest, one value per cell), so the accepted rules are the ones the Sudoku constraints add.
    - Re-checks the accepted rules on grids of another block size (9x9 by default), marking those that hold only on the explored size.
 

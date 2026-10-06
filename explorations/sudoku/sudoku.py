@@ -7,6 +7,7 @@ relational predicates for conceptual exploration.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from enum import auto
 from itertools import combinations, permutations, product
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
@@ -462,8 +463,9 @@ def z3_together(x: Tuple[Any, Any], y: Tuple[Any, Any], block_size: int) -> z3.B
 
 
 def z3predicates(block_size: int, expert: Z3SudokuExpert) -> List[EvaluatablePredicate]:
-    """Return standard first-order Sudoku evaluatable predicates."""
-    return [
+    """Return standard first-order Sudoku evaluatable predicates, with the
+    properties `PREDICATE_PROPERTIES` declares for them."""
+    predicates = [
         EvaluatablePredicate(
             "Peers",
             2,
@@ -546,6 +548,7 @@ def z3predicates(block_size: int, expert: Z3SudokuExpert) -> List[EvaluatablePre
             function=lambda x, y: z3_same_block_coords(x[1], y[1], block_size),
         ),
     ]
+    return [replace(p, **PREDICATE_PROPERTIES[p.name]) for p in predicates]
 
 
 get_sudoku_predicates = z3predicates
@@ -600,12 +603,41 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
 }
 
 
+_EQUIVALENCE = {"symmetric": True, "reflexive": True}
+_DISTINCTION = {"symmetric": True, "irreflexive": True}
+
+# What the exploration may assume of each predicate without asking: the
+# equivalences are symmetric and reflexive; peers, apart cells and different
+# values are symmetric and never relate a cell to itself; and `Different` and
+# `DifferentNumbers` are the complements of `Same` and `SameNumber`.
+PREDICATE_PROPERTIES: Dict[str, Dict[str, Any]] = {
+    "Peers": _DISTINCTION,
+    "Apart": _DISTINCTION,
+    "Same": {**_EQUIVALENCE, "complement": "Different"},
+    "Different": {**_DISTINCTION, "complement": "Same"},
+    "Contains": {},
+    "SameNumber": {**_EQUIVALENCE, "complement": "DifferentNumbers"},
+    "DifferentNumbers": {**_DISTINCTION, "complement": "SameNumber"},
+    "SameBlock": _EQUIVALENCE,
+    "SameRow": _EQUIVALENCE,
+    "SameColumn": _EQUIVALENCE,
+    "SameCell": _EQUIVALENCE,
+    "SameBand": _EQUIVALENCE,
+    "SameStack": _EQUIVALENCE,
+}
+
+
 def sudoku_predicates(names: Iterable[str] = PRIMITIVE_PREDICATES) -> List[Predicate]:
     """The named predicates as plain symbols, for experts that interpret
     atoms by predicate name, as `SatSudokuRuleExpert` does; unlike
     `z3predicates`, they need no Z3 expert to be built."""
     return [
-        Predicate(name, len(PREDICATE_SORTS[name]), sorts=PREDICATE_SORTS[name])
+        Predicate(
+            name,
+            len(PREDICATE_SORTS[name]),
+            sorts=PREDICATE_SORTS[name],
+            **PREDICATE_PROPERTIES[name],
+        )
         for name in names
     ]
 

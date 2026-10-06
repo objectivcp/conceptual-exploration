@@ -7,6 +7,7 @@ relational predicates for conceptual exploration.
 
 from .sudoku import (
     CELL_EQUIVALENCES,
+    PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
     SatSudokuRuleExpert,
@@ -45,6 +46,7 @@ from .sudoku import (
 
 __all__ = [
     "CELL_EQUIVALENCES",
+    "PREDICATE_PROPERTIES",
     "PREDICATE_SORTS",
     "PRIMITIVE_PREDICATES",
     "SatSudokuRuleExpert",

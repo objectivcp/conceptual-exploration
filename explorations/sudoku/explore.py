@@ -100,8 +100,6 @@ def run_sudoku_rule_exploration(
         sort_names = tuple(s.name for s in p.sorts) if p.sorts else ()
         print(f"  - {p.name}{sort_names}")
 
-    print(f"\nBackground Implications: {len(background)}")
-
     exploration = RuleExploration(
         selected_predicates,
         variables,
@@ -110,6 +108,8 @@ def run_sudoku_rule_exploration(
         substitutions=True,
         evaluate_all=True,
     )
+    print(f"\nAtoms: {len(exploration.base.attributes)}")
+    print(f"Background Implications: {len(exploration.background)}")
 
     print("\nStarting First-Order Rule Exploration...")
     start_time = time.perf_counter()

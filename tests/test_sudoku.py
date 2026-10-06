@@ -10,10 +10,12 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
+    PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
     SatSudokuRuleExpert,
     SudokuExpert,
+    SudokuRuleWitness,
     SudokuSort,
     Z3SudokuExpert,
     assemble_solution,
@@ -209,14 +211,49 @@ def test_primitive_exploration_finds_the_sudoku_rules(block_size):
     }
 
 
-def test_predicate_sorts_match_the_z3_predicates():
+def _declaration(p):
+    return (p.name, p.sorts, p.symmetric, p.reflexive, p.irreflexive, p.complement)
+
+
+def test_plain_predicates_match_the_z3_predicates():
     variables = [SortedVariable("x", SudokuSort.CELL)]
     expert = Z3SudokuExpert(block_size=2, variables=variables)
-    z3_sorts = {
-        p.name: p.sorts for p in get_sudoku_predicates(block_size=2, expert=expert)
-    }
-    assert z3_sorts == PREDICATE_SORTS
-    assert [p.sorts for p in sudoku_predicates(PREDICATE_SORTS)] == list(PREDICATE_SORTS.values())
+    z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
+    assert {p.name: p.sorts for p in z3_predicates} == PREDICATE_SORTS
+    assert sorted(map(_declaration, z3_predicates)) == sorted(
+        map(_declaration, sudoku_predicates(PREDICATE_SORTS))
+    )
+
+
+@pytest.mark.parametrize("block_size", [2, 3])
+def test_declared_properties_hold_on_a_solved_grid(block_size):
+    """Check the properties against a grid directly, not through an expert."""
+    n = block_size**2
+    grid = solve_sudoku([[0] * n for _ in range(n)], k=block_size)
+    cells = [(r, c) for r in range(n) for c in range(n)]
+    numbers = range(1, n + 1)
+    witness = lambda first, second: SudokuRuleWitness((("u", first), ("v", second)), grid)
+    u = {sort: SortedVariable("u", sort) for sort in SudokuSort}
+    v = {sort: SortedVariable("v", sort) for sort in SudokuSort}
+    predicates = {p.name: p for p in sudoku_predicates(PREDICATE_SORTS)}
+
+    for name, properties in PREDICATE_PROPERTIES.items():
+        p = predicates[name]
+        if not properties:
+            continue
+        domain = cells if p.sorts[0] is SudokuSort.CELL else numbers
+        sort = p.sorts[0]
+        holds = lambda q, a, b: _holds(Atom(q, (u[sort], v[sort])), witness(a, b), block_size)
+        for a in domain:
+            if p.reflexive:
+                assert holds(p, a, a), name
+            if p.irreflexive:
+                assert not holds(p, a, a), name
+            for b in domain:
+                if p.symmetric:
+                    assert holds(p, a, b) == holds(p, b, a), name
+                if p.complement:
+                    assert holds(p, a, b) != holds(predicates[p.complement], a, b), name
 
 
 def test_sat_rule_expert_agrees_with_z3():
@@ -256,8 +293,14 @@ def _holds(atom, witness, block_size):
         return value(args[0]) == args[1]
     if name == "SameNumber":
         return args[0] == args[1]
+    if name == "DifferentNumbers":
+        return args[0] != args[1]
     (r1, c1), (r2, c2) = args
+    together = r1 == r2 or c1 == c2 or (r1 // k, c1 // k) == (r2 // k, c2 // k)
     return {
+        "Peers": together and (r1, c1) != (r2, c2),
+        "Apart": not together,
+        "Different": value(args[0]) != value(args[1]),
         "Same": value(args[0]) == value(args[1]),
         "SameCell": (r1, c1) == (r2, c2),
         "SameRow": r1 == r2,
@@ -318,7 +361,9 @@ if __name__ == "__main__":
         test_background_holds_in_every_grid(block_size)
     for block_size in (2, 3):
         test_primitive_exploration_finds_the_sudoku_rules(block_size)
-    test_predicate_sorts_match_the_z3_predicates()
+    test_plain_predicates_match_the_z3_predicates()
+    for block_size in (2, 3):
+        test_declared_properties_hold_on_a_solved_grid(block_size)
     test_sat_rule_expert_agrees_with_z3()
     test_rules_are_checked_on_9x9_grids()
     print("All Sudoku tests passed successfully!")
