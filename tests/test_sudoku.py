@@ -7,14 +7,16 @@ from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
 from conceptual_exploration.core.theory import ImplicationTheory
-from conceptual_exploration.logic.atom import atoms_over
+from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
     PRIMITIVE_PREDICATES,
+    SatSudokuRuleExpert,
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
     assemble_solution,
+    check_rules,
     get_coords,
     get_sudoku_attributes,
     get_sudoku_predicates,
@@ -207,6 +209,93 @@ def test_primitive_exploration_finds_the_sudoku_rules():
     }
 
 
+def test_sat_rule_expert_agrees_with_z3():
+    variables = [
+        SortedVariable("x", SudokuSort.CELL),
+        SortedVariable("y", SudokuSort.CELL),
+        SortedVariable("n", SudokuSort.NUMBER),
+    ]
+    theories = []
+    for make_expert in (
+        lambda z3_expert: z3_expert,
+        lambda z3_expert: SatSudokuRuleExpert(block_size=2, variables=variables),
+    ):
+        z3_expert = Z3SudokuExpert(block_size=2, variables=variables)
+        predicates = get_sudoku_predicates(block_size=2, expert=z3_expert)
+        exploration = RuleExploration(
+            predicates,
+            variables,
+            make_expert(z3_expert),
+            substitutions=True,
+            evaluate_all=True,
+        )
+        exploration.run()
+        theories.append({str(i) for i in exploration.base.implications})
+
+    assert theories[0] == theories[1]
+
+
+def _holds(atom, witness, block_size):
+    """Evaluate an atom on a witness directly, without the SAT encoding."""
+    k = block_size
+    values = dict(witness.assignment)
+    args = [values[v.name] for v in atom.arguments]
+    value = lambda cell: witness.grid[cell[0]][cell[1]]
+    name = atom.predicate.name
+    if name == "Contains":
+        return value(args[0]) == args[1]
+    if name == "SameNumber":
+        return args[0] == args[1]
+    (r1, c1), (r2, c2) = args
+    return {
+        "Same": value(args[0]) == value(args[1]),
+        "SameCell": (r1, c1) == (r2, c2),
+        "SameRow": r1 == r2,
+        "SameColumn": c1 == c2,
+        "SameBand": r1 // k == r2 // k,
+        "SameStack": c1 // k == c2 // k,
+        "SameBlock": (r1 // k, c1 // k) == (r2 // k, c2 // k),
+    }[name]
+
+
+def test_rules_are_checked_on_9x9_grids():
+    w, x, y, z = (SortedVariable(v, SudokuSort.CELL) for v in "wxyz")
+    expert = Z3SudokuExpert(block_size=2, variables=[w, x, y, z])
+    p = {pred.name: pred for pred in get_sudoku_predicates(block_size=2, expert=expert)}
+    atom = lambda name, *args: Atom(p[name], args)
+
+    sudoku_rule = Implication(
+        {atom("Same", x, y), atom("SameBlock", x, y)},
+        {atom("SameCell", x, y)},
+    )
+    # Two digit pairs in two blocks: in 4x4 a block has only two columns, so
+    # this is forced there and nowhere else.
+    small_grid_rule = Implication(
+        {
+            atom("Same", y, w), atom("Same", z, x), atom("SameBlock", x, w),
+            atom("SameBlock", z, y), atom("SameColumn", z, w),
+        },
+        {atom("SameColumn", x, y)},
+    )
+    assert SatSudokuRuleExpert(block_size=2, variables=[w, x, y, z]).validate(small_grid_rule) is None
+
+    results = dict(check_rules([sudoku_rule, small_grid_rule], 3, [w, x, y, z]))
+    assert results[sudoku_rule] is None
+
+    witness = results[small_grid_rule].object
+    digits = set(range(1, 10))
+    grid = witness.grid
+    assert all(set(row) == digits for row in grid)
+    assert all({row[c] for row in grid} == digits for c in range(9))
+    assert all(
+        {grid[r][c] for r in range(br, br + 3) for c in range(bc, bc + 3)} == digits
+        for br in (0, 3, 6)
+        for bc in (0, 3, 6)
+    )
+    assert all(_holds(a, witness, 3) for a in small_grid_rule.premise)
+    assert not all(_holds(a, witness, 3) for a in small_grid_rule.conclusion)
+
+
 if __name__ == "__main__":
     test_get_var_and_coords()
     test_sudoku2sat_and_solve_4x4()
@@ -218,4 +307,6 @@ if __name__ == "__main__":
     for block_size in (2, 3):
         test_background_holds_in_every_grid(block_size)
     test_primitive_exploration_finds_the_sudoku_rules()
+    test_sat_rule_expert_agrees_with_z3()
+    test_rules_are_checked_on_9x9_grids()
     print("All Sudoku tests passed successfully!")

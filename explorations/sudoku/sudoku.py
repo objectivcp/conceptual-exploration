@@ -636,7 +636,246 @@ def sudoku_background(
 
 
 # ---------------------------------------------------------------------------
-# 6. Exploration Runner Helpers
+# 6. SAT-based First-Order Rule Expert & Checking Across Grid Sizes
+# ---------------------------------------------------------------------------
+
+class _Definitions:
+    """Fresh SAT variables defined as conjunctions and disjunctions of literals.
+
+    Each definition is an equivalence, so a defined literal may be used
+    negated as well as plain. Clauses collect in `pending` until the owner
+    hands them to its solver.
+    """
+
+    def __init__(self, first_var: int) -> None:
+        self.top = first_var - 1
+        self.pending: List[List[int]] = []
+
+    def var(self) -> int:
+        self.top += 1
+        return self.top
+
+    def conj(self, literals: Iterable[int]) -> int:
+        literals = list(literals)
+        if len(literals) == 1:
+            return literals[0]
+        v = self.var()
+        self.pending.extend([-v, a] for a in literals)
+        self.pending.append([v] + [-a for a in literals])
+        return v
+
+    def disj(self, literals: Iterable[int]) -> int:
+        literals = list(literals)
+        if len(literals) == 1:
+            return literals[0]
+        v = self.var()
+        self.pending.extend([v, -a] for a in literals)
+        self.pending.append([-v] + literals)
+        return v
+
+    def exactly_one(self, literals: List[int]) -> None:
+        self.pending.append(list(literals))
+        self.pending.extend([-a, -b] for a, b in combinations(literals, 2))
+
+
+class SudokuRuleWitness:
+    """A grid together with the cells and numbers a rule's variables denote."""
+
+    def __init__(
+        self,
+        assignment: Tuple[Tuple[str, Any], ...],
+        grid: Tuple[Tuple[int, ...], ...],
+    ) -> None:
+        self.assignment = assignment
+        self.grid = grid
+
+    def _key(self):
+        return self.assignment, self.grid
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SudokuRuleWitness) and self._key() == other._key()
+
+    def __hash__(self) -> int:
+        return hash(self._key())
+
+    def __str__(self) -> str:
+        values = ", ".join(f"{name}={value}" for name, value in self.assignment)
+        rows = "\n".join(" ".join(map(str, row)) for row in self.grid)
+        return f"{values}\n{rows}"
+
+
+class SatSudokuRuleExpert(Expert):
+    """SAT-based expert for first-order Sudoku rules, complete at any block size.
+
+    A counterexample is a solved grid together with a cell for each cell
+    variable and a digit for each number variable. Atoms are interpreted by
+    the name of their predicate, so the atoms of an exploration run with
+    `Z3SudokuExpert`, at any block size, can be checked here unchanged.
+    """
+
+    def __init__(
+        self,
+        block_size: int,
+        variables: Iterable[SortedVariable],
+        solver_name: str = "g3",
+    ) -> None:
+        self.block_size = k = block_size
+        self.grid_size = n = k**2
+        formula = sudoku2sat([[0] * n for _ in range(n)], k)
+        self._defs = _Definitions(n**3 + 1)
+        self._solver = Solver(name=solver_name, bootstrap_with=formula.clauses)
+
+        # One-hot rows and columns of the cell variables, digits of the
+        # number variables.
+        self._rows: Dict[SortedVariable, List[int]] = {}
+        self._columns: Dict[SortedVariable, List[int]] = {}
+        self._digits: Dict[SortedVariable, List[int]] = {}
+        self.variables = tuple(variables)
+        for v in self.variables:
+            if v.sort is SudokuSort.CELL:
+                self._rows[v] = [self._defs.var() for _ in range(n)]
+                self._columns[v] = [self._defs.var() for _ in range(n)]
+                self._defs.exactly_one(self._rows[v])
+                self._defs.exactly_one(self._columns[v])
+            else:
+                self._digits[v] = [self._defs.var() for _ in range(n)]
+                self._defs.exactly_one(self._digits[v])
+
+        self._memo: Dict[Tuple[Any, ...], Any] = {}
+
+    def validate(
+        self,
+        implication: Implication,
+        attributes: Optional[Iterable[Any]] = None,
+    ) -> Optional[PartialObject]:
+        premise = [self._literal(a) for a in implication.premise]
+        conclusion = [self._literal(a) for a in implication.conclusion]
+        # Only the call that assumes `active` needs a conclusion atom false.
+        active = self._defs.var()
+        self._defs.pending.append([-active] + [-c for c in conclusion])
+
+        if attributes is None:
+            attributes = implication.premise | implication.conclusion
+        literals = {a: self._literal(a) for a in attributes}
+
+        self._solver.append_formula(self._defs.pending)
+        self._defs.pending = []
+        if not self._solver.solve(assumptions=premise + [active]):
+            return None
+
+        true = {v for v in self._solver.get_model() if v > 0}
+        positive = {
+            a for a, lit in literals.items()
+            if (lit in true if lit > 0 else -lit not in true)
+        }
+        return PartialObject(
+            self._witness(true),
+            positive,
+            set(literals) - positive,
+        )
+
+    def _witness(self, true: Set[int]) -> SudokuRuleWitness:
+        n = self.grid_size
+        grid = tuple(
+            tuple(
+                next(d for d in range(1, n + 1) if get_var(r, c, d, n) in true)
+                for c in range(n)
+            )
+            for r in range(n)
+        )
+        index = lambda literals: next(i for i, v in enumerate(literals) if v in true)
+        assignment = tuple(
+            (v.name, (index(self._rows[v]), index(self._columns[v])))
+            if v.sort is SudokuSort.CELL
+            else (v.name, index(self._digits[v]) + 1)
+            for v in self.variables
+        )
+        return SudokuRuleWitness(assignment, grid)
+
+    def _literal(self, atom: Any) -> int:
+        return self._defined((atom.predicate.name,) + tuple(atom.arguments))
+
+    def _defined(self, key: Tuple[Any, ...]):
+        if key not in self._memo:
+            self._memo[key] = self._define(*key)
+        return self._memo[key]
+
+    def _define(self, name: str, *args: Any):
+        d = self._defs
+        k, n = self.block_size, self.grid_size
+        same = lambda xs, ys: d.disj(d.conj((a, b)) for a, b in zip(xs, ys))
+        regions = lambda literals: [
+            d.disj(literals[i * k:(i + 1) * k]) for i in range(k)
+        ]
+
+        # Per-variable encodings, memoised under keys of their own.
+        if name == "band":
+            return regions(self._rows[args[0]])
+        if name == "stack":
+            return regions(self._columns[args[0]])
+        if name == "value":
+            (x,) = args
+            return [
+                d.disj(
+                    d.conj((self._rows[x][r], self._columns[x][c], get_var(r, c, digit, n)))
+                    for r in range(n)
+                    for c in range(n)
+                )
+                for digit in range(1, n + 1)
+            ]
+
+        if name in ("SameNumber", "DifferentNumbers"):
+            lit = same(self._digits[args[0]], self._digits[args[1]])
+            return lit if name == "SameNumber" else -lit
+        if name == "Contains":
+            x, number = args
+            return same(self._defined(("value", x)), self._digits[number])
+
+        x, y = args
+        if name == "SameRow":
+            return same(self._rows[x], self._rows[y])
+        if name == "SameColumn":
+            return same(self._columns[x], self._columns[y])
+        if name == "SameBand":
+            return same(self._defined(("band", x)), self._defined(("band", y)))
+        if name == "SameStack":
+            return same(self._defined(("stack", x)), self._defined(("stack", y)))
+        if name == "SameBlock":
+            return d.conj((self._defined(("SameBand", x, y)), self._defined(("SameStack", x, y))))
+        if name == "SameCell":
+            return d.conj((self._defined(("SameRow", x, y)), self._defined(("SameColumn", x, y))))
+        if name in ("Same", "Different"):
+            lit = same(self._defined(("value", x)), self._defined(("value", y)))
+            return lit if name == "Same" else -lit
+
+        together = d.disj((
+            self._defined(("SameRow", x, y)),
+            self._defined(("SameColumn", x, y)),
+            self._defined(("SameBlock", x, y)),
+        ))
+        if name == "Apart":
+            return -together
+        if name == "Peers":
+            return d.conj((together, -self._defined(("SameCell", x, y))))
+        raise ValueError(f"No SAT encoding for predicate {name!r}")
+
+
+def check_rules(
+    implications: Iterable[Implication],
+    block_size: int,
+    variables: Iterable[SortedVariable],
+) -> List[Tuple[Implication, Optional[PartialObject]]]:
+    """Check rules found at one block size on grids of another.
+
+    Returns each implication with a counterexample at `block_size`, or None
+    where it holds on every grid of that size.
+    """
+    expert = SatSudokuRuleExpert(block_size, variables)
+    return [(implication, expert.validate(implication)) for implication in implications]
+
+
+# ---------------------------------------------------------------------------
+# 7. Exploration Runner Helpers
 # ---------------------------------------------------------------------------
 
 def cell_exploration(block_size: int = 2) -> ExplorationBase:

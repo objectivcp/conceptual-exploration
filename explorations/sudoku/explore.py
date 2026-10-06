@@ -33,6 +33,7 @@ from explorations.sudoku.sudoku import (
     SudokuExpert,
     SudokuSort,
     Z3SudokuExpert,
+    check_rules,
     get_sudoku_attributes,
     get_sudoku_symmetries,
     select_predicates,
@@ -45,6 +46,7 @@ def run_sudoku_rule_exploration(
     block_size: int = 2,
     quick: bool = True,
     use_background: bool = True,
+    check_block_size: int | None = 3,
 ):
     """Run first-order relational rule exploration using Z3 SMT solver."""
     print("=" * 70)
@@ -107,13 +109,38 @@ def run_sudoku_rule_exploration(
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
     print(f"Total Implications in Theory: {len(base.implications.implications)}")
 
+    counterexamples = {}
+    if check_block_size:
+        start_time = time.perf_counter()
+        counterexamples = dict(
+            check_rules(base.accepted_implications, check_block_size, variables)
+        )
+        elapsed = time.perf_counter() - start_time
+        failing = sum(c is not None for c in counterexamples.values())
+        print(f"Checked on Block Size {check_block_size}:  {failing} of {len(counterexamples)} fail ({elapsed:.2f}s)")
+
     theory = ImplicationTheory(base.implications)
     print("\nDiscovered Relational Rules (Simplified):")
     for idx, impl in enumerate(base.accepted_implications, start=1):
         simplified = theory.simplify(impl)
         premise_str = " {" + ", ".join(str(a) for a in simplified.premise) + "}" if simplified.premise else " Ø"
         concl_str = " {" + ", ".join(str(a) for a in simplified.conclusion) + "}"
-        print(f"  [{idx}] {premise_str}  ==>  {concl_str}")
+        marker = (
+            f"   [FAILS FOR BLOCK SIZE {check_block_size}]"
+            if counterexamples.get(impl) is not None
+            else ""
+        )
+        print(f"  [{idx}] {premise_str}  ==>  {concl_str}{marker}")
+
+    failing = [
+        (idx, counterexamples[impl])
+        for idx, impl in enumerate(base.accepted_implications, start=1)
+        if counterexamples.get(impl) is not None
+    ]
+    if failing:
+        print(f"\nCounterexamples for Block Size {check_block_size}:")
+        for idx, counterexample in failing:
+            print(f"\nRule [{idx}]: {counterexample.object}")
 
     return base
 
@@ -191,6 +218,17 @@ if __name__ == "__main__":
             "one value per cell), so that these are rediscovered as well"
         ),
     )
+    parser.add_argument(
+        "--check-block-size",
+        type=int,
+        default=3,
+        metavar="K",
+        help=(
+            "Re-check every accepted rule on grids of block size K with a SAT "
+            "solver, marking the ones that fail there (default: 3, the 9x9 grid; "
+            "0 skips the check)"
+        ),
+    )
     args = parser.parse_args()
 
     if args.mode in ("rule", "both"):
@@ -198,6 +236,7 @@ if __name__ == "__main__":
             block_size=args.block_size,
             quick=args.quick,
             use_background=args.background,
+            check_block_size=args.check_block_size,
         )
     if args.mode in ("sat", "both"):
         run_sudoku_sat_exploration(block_size=args.block_size)
