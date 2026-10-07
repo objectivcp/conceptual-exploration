@@ -35,6 +35,15 @@ from explorations.sudoku.sudoku import (
 )
 
 
+def expert_label(config: ExplorationConfig) -> str:
+    """How the configured expert decides the questions."""
+    if config.grid == "partial":
+        if config.expert == "cegar":
+            return "CEGAR (counterexample-guided, two PySAT solvers)"
+        return "SAT (PySAT), listing every solved 4x4 grid"
+    return {"sat": "SAT (PySAT)", "z3": "SMT (Z3)"}[config.expert]
+
+
 def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
     """Run a first-order rule exploration and return its rules as printed."""
     size = config.block_size**2
@@ -44,7 +53,7 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
     print(f"Cells:      {', '.join(config.cells) or '-'}")
     print(f"Numbers:    {', '.join(config.numbers) or '-'}")
     print(f"Predicates: {', '.join(config.predicates)}")
-    print(f"Expert:     {'SAT (PySAT)' if config.expert == 'sat' else 'SMT (Z3)'}")
+    print(f"Expert:     {expert_label(config)}")
     background = "on" if config.background else "off"
     if config.geometry_first:
         background += ", with the geometry explored first"

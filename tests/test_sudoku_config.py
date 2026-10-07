@@ -5,7 +5,7 @@ import tomllib
 import pytest
 
 from explorations.sudoku import ExplorationConfig, available_configs, load_config
-from explorations.sudoku.explore import main
+from explorations.sudoku.explore import expert_label, main
 
 
 @pytest.mark.parametrize("name", available_configs())
@@ -90,3 +90,10 @@ def test_runner_checks_every_configuration_before_running(capsys):
     with pytest.raises(SystemExit):
         main(["solved-pairs", "no-such-configuration"])
     assert "SUDOKU" not in capsys.readouterr().out
+
+
+def test_the_expert_is_named_for_what_it_is():
+    assert expert_label(load_config("partial9-locked")).startswith("CEGAR")
+    assert "listing every solved 4x4 grid" in expert_label(load_config("partial-row"))
+    assert expert_label(load_config("solved-pairs")) == "SAT (PySAT)"
+    assert expert_label(load_config("solved-pairs").with_overrides(expert="z3")) == "SMT (Z3)"
