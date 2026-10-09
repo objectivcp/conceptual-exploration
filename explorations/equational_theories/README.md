@@ -49,6 +49,12 @@ The solver searches for counterexample magmas of sizes `--min-search-size` to `-
 python explorations/equational_theories/explore.py --min-search-size 4 --max-search-size 7
 ```
 
+For equations in one variable, `--background-order N` adds as background the implications provable with equations of at most `N` operations by multiplying both sides by the same term from the same side, substituting a term for the variable, and replacing a subterm by an equal one; `N` must be at least the order of every equation explored:
+
+```bash
+python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --background-order 4
+```
+
 Progress reporting is controlled with `--report-every` (default `1`, showing every question the expert is asked; `0` or less prints nothing):
 
 ```bash

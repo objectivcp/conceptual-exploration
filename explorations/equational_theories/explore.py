@@ -15,6 +15,8 @@ Using conceptual exploration:
    to automatically map implications and reduce expert queries.
 5. Queries where the solver runs out of its per-size budget are accepted but
    flagged [UNCONFIRMED], since they were neither refuted nor decided.
+6. Optionally, implications provable by equational reasoning with equations up
+   to a given order are added as background knowledge and never asked.
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from conceptual_exploration import AttributeExploration, reduced_basis, report_every
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
+from explorations.equational_theories.background import background_implications
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 
 
@@ -45,12 +48,14 @@ def run_magma_exploration(
     report_interval: int = 20,
     min_search_size: int = 1,
     max_search_size: int = 6,
+    background_order: int | None = None,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
     print(f"Search Sizes:             {min_search_size}..{max_search_size}")
+    print(f"Background Derivations:   {f'order <= {background_order}' if background_order is not None else 'off'}")
     print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     print("=" * 70)
@@ -67,8 +72,14 @@ def run_magma_exploration(
         duality_map = ETP.get_duality_mapping(equations)
         mappings.append(duality_map)
 
+    background = []
+    if background_order is not None:
+        background = background_implications(equations, background_order)
+        print(f"\nBackground Implications (order <= {background_order}): {len(background)}")
+
     base = ExplorationBase[Magma, Equation](
         attributes=equations,
+        background_implications=background,
         mappings=mappings,
     )
     expert = MagmaExpert(
@@ -167,6 +178,20 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--background-order",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Add as background the implications provable by equational "
+            "reasoning (multiplying both sides by a term, substituting a term "
+            "for the variable, replacing a subterm by an equal one) with "
+            "equations of at most N operations (default: no background). N "
+            "must be at least the order of every equation explored, and the "
+            "equations must all be in one variable."
+        ),
+    )
+    parser.add_argument(
         "--z3-timeout-ms",
         type=int,
         default=30000,
@@ -193,6 +218,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
+    if args.background_order is not None and args.background_order < 0:
+        parser.error("--background-order must be non-negative")
     run_magma_exploration(
         equations_path=args.equations,
         use_duality_symmetry=True,
@@ -200,4 +227,5 @@ if __name__ == "__main__":
         report_interval=args.report_every,
         min_search_size=args.min_search_size,
         max_search_size=args.max_search_size,
+        background_order=args.background_order,
     )
