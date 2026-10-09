@@ -15,6 +15,8 @@ Using conceptual exploration:
    to automatically map implications and reduce expert queries.
 5. Queries where the solver runs out of its per-size budget are accepted but
    flagged [UNCONFIRMED], since they were neither refuted nor decided.
+6. Optionally, implications derivable by equational reasoning within a bounded
+   order are given to the exploration as background knowledge beforehand.
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from conceptual_exploration import AttributeExploration, reduced_basis, report_every
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
+from explorations.equational_theories.background import background_implications
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 
 
@@ -45,6 +48,8 @@ def run_magma_exploration(
     report_interval: int = 20,
     min_search_size: int = 1,
     max_search_size: int = 6,
+    background_order: int | None = None,
+    background_premise_size: int | None = 2,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
@@ -53,6 +58,11 @@ def run_magma_exploration(
     print(f"Search Sizes:             {min_search_size}..{max_search_size}")
     print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
+    if background_order is None:
+        print("Background Implications:  off")
+    else:
+        premise_bound = background_premise_size if background_premise_size is not None else "any"
+        print(f"Background Implications:  order {background_order}, premise size {premise_bound}")
     print("=" * 70)
 
     equations = ETP.load_equations(equations_path)
@@ -67,8 +77,14 @@ def run_magma_exploration(
         duality_map = ETP.get_duality_mapping(equations)
         mappings.append(duality_map)
 
+    background = []
+    if background_order is not None:
+        background = background_implications(equations, background_order, background_premise_size)
+        print(f"\nDerived {len(background)} Background Implications.")
+
     base = ExplorationBase[Magma, Equation](
         attributes=equations,
+        background_implications=background,
         mappings=mappings,
     )
     expert = MagmaExpert(
@@ -190,6 +206,31 @@ if __name__ == "__main__":
             "question the expert is asked."
         ),
     )
+    parser.add_argument(
+        "--background-order",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Derive background implications with equational reasoning "
+            "(multiplying both sides by a term, substituting a term for the "
+            "variable, replacing a subterm by an equivalent one) through "
+            "equations of at most N operations, at least the largest order "
+            "among the explored equations (default: no background "
+            "implications). Only one-variable equations are supported."
+        ),
+    )
+    parser.add_argument(
+        "--background-premise-size",
+        type=int,
+        default=2,
+        metavar="K",
+        help=(
+            "Largest premise of a background implication (default: 2); 0 or "
+            "less computes the canonical basis of everything derivable, whose "
+            "premises may be of any size, at a much higher cost."
+        ),
+    )
     args = parser.parse_args()
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
@@ -200,4 +241,8 @@ if __name__ == "__main__":
         report_interval=args.report_every,
         min_search_size=args.min_search_size,
         max_search_size=args.max_search_size,
+        background_order=args.background_order,
+        background_premise_size=(
+            args.background_premise_size if args.background_premise_size > 0 else None
+        ),
     )
