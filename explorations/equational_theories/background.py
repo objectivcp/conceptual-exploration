@@ -18,12 +18,26 @@ order: every equation they pass through, the premises and the conclusion
 included, has at most `order` binary operations in its two sides together.
 A larger order finds more implications, at a cost that grows quickly with it.
 
-A second, transient order lets a single step go beyond that bound: rule 1 or
-rule 2 may produce an equation of up to `transient_order` operations, provided
-rule 3, rewriting with equations already derived, brings it back within
-`order` before it is kept. Substituting x * x for x in x * x = ((x * x) * x) * x
-gives an equation of order 10, for instance, which x = (x * x) * (x * x)
-rewrites to x = (x * (x * x)) * (x * x), of order 4.
+Within that bound the rules are instantiated in advance, each instance an
+implication from one or two equations of order at most `order` to a third,
+and the equations a set derives are its closure under those implications.
+
+A second, transient order lets derivations of one further shape pass beyond
+the bound. A derived equation is multiplied (rule 1) or substituted into
+(rule 2) once, giving an equation of more than `order` but at most
+`transient_order` operations. Each of its sides is then rewritten
+independently by rule 3, with the derived equations as rules, each
+replacing one occurrence of a side by the other side when that is no bigger,
+so that no rewrite enlarges a term. Every pair of a term reached from one side
+and a term reached from the other that makes an equation of order at most
+`order` is derived; the big equation and the terms between are discarded.
+Substituting x * x for x in x * x = ((x * x) * x) * x gives an equation of
+order 10, for instance, which x = (x * x) * (x * x) rewrites to
+x = (x * (x * x)) * (x * x), of order 4. Such steps and the closure under the
+instances alternate until neither derives anything new, so a later step may
+rewrite with what an earlier one derived. A big equation is never multiplied
+or substituted into again, nor used to rewrite another, so derivations that
+grow beyond `order` twice before returning within it are not found.
 
 Only laws in a single variable are supported: with more variables, rule 2
 would have to rename variables apart and identify laws up to renaming.
