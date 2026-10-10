@@ -317,3 +317,18 @@ if __name__ == "__main__":
     test_context_closure_matches_the_context_on_random_runs()
     test_a_background_orbit_is_mapped_once()
     print("All exploration base tests passed successfully!")
+
+
+def test_reduce_objects_keeps_the_objects_the_theory_needs():
+    from conceptual_exploration.core.context import PartialObject, reduce_objects
+
+    objects = [
+        PartialObject("ab", {"a", "b"}, {"c"}),
+        PartialObject("ac", {"a", "c"}, {"b"}),
+        PartialObject("a", {"a"}, {"b", "c"}),        # the intersection of ab and ac
+        PartialObject("ab again", {"a", "b"}, {"c"}),  # the same row as ab
+        PartialObject("b?", {"b"}, set()),             # refutes nothing
+        PartialObject("a, not c", {"a"}, {"c"}),       # partial: ab refutes what it does
+    ]
+    # Of the two copies of ab, the first is tried first and dropped for the second.
+    assert [o.object for o in reduce_objects(objects)] == ["ac", "ab again"]

@@ -269,3 +269,28 @@ if __name__ == "__main__":
     test_etp_catalog()
     test_magma_attribute_exploration()
     print("All Magma ETP tests passed successfully!")
+
+
+def test_expert_pool_can_be_seeded_from_a_file(tmp_path):
+    import json
+
+    path = tmp_path / "magmas.json"
+    path.write_text(json.dumps([
+        {"name": "M1", "size": 2, "table": [[0, 0], [1, 1]]},
+        {"name": "M2", "size": 3, "table": [[1, 2, 0], [2, 0, 1], [0, 1, 2]]},
+    ]))
+    magmas = ETP.load_magmas(path)
+    assert [m.size for m in magmas] == [2, 3]
+    assert magmas[1].table == ((1, 2, 0), (2, 0, 1), (0, 1, 2))
+
+    expert = MagmaExpert(initial_magmas=[], max_search_size=1)
+    assert expert.add_magmas(magmas) == 2
+    assert expert.add_magmas(magmas) == 0  # tables already pooled are skipped
+
+    # Only the size-3 magma is commutative and not idempotent, and only the pool can
+    # refute the implication, since the solver searches size 1 only.
+    commutative = Equation.parse("x * y = y * x")
+    idempotent = Equation.parse("x = x * x")
+    counterexample = expert.validate(Implication({commutative}, {idempotent}))
+    assert counterexample is not None
+    assert counterexample.object.table == magmas[1].table

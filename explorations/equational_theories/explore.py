@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 # Support running directly as a script: add repo root and src to path
@@ -33,6 +34,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from conceptual_exploration import AttributeExploration, reduced_basis, report_every
+from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from explorations.equational_theories.background import background_implications
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
@@ -51,6 +53,8 @@ def run_magma_exploration(
     background_order: int | None = None,
     background_premise_size: int | None = 2,
     background_transient_order: int | None = None,
+    seed_magmas: Sequence[str | Path] = (),
+    seed_context: Sequence[str | Path] = (),
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
@@ -100,6 +104,24 @@ def run_magma_exploration(
         max_search_size=max_search_size,
         z3_timeout_ms=z3_timeout_ms,
     )
+    for path in seed_magmas:
+        added = expert.add_magmas(ETP.load_magmas(path))
+        print(f"Seeded the expert with {added} magmas from {path}.")
+    if seed_context:
+        # Each table once, evaluated on every equation, and reduced to the
+        # magmas whose rows the others do not already account for.
+        tables: dict[tuple, Magma] = {}
+        for path in seed_context:
+            for magma in ETP.load_magmas(path):
+                tables.setdefault((magma.size, magma.table), magma)
+        seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
+        reduced = reduce_objects(seeds)
+        for seed in reduced:
+            base.add_counterexample(seed)
+        print(
+            f"Seeded the context with {len(reduced)} of {len(seeds)} magmas, "
+            f"the others being redundant."
+        )
     exploration = AttributeExploration(
         base,
         expert,
@@ -239,6 +261,31 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--seed-magmas",
+        type=Path,
+        nargs="+",
+        default=[],
+        metavar="PATH",
+        help=(
+            "JSON files of magmas, such as the magmas.json of earlier results, "
+            "added to the expert's pool of standard magmas. The pool is checked "
+            "for a counterexample before the solver searches for one."
+        ),
+    )
+    parser.add_argument(
+        "--seed-context",
+        type=Path,
+        nargs="+",
+        default=[],
+        metavar="PATH",
+        help=(
+            "JSON files of magmas, such as the magmas.json of earlier results, "
+            "evaluated on every equation and added to the context before the "
+            "exploration starts, after dropping those whose rows the others "
+            "account for. No question that they refute is asked."
+        ),
+    )
+    parser.add_argument(
         "--background-transient-order",
         type=int,
         default=None,
@@ -265,4 +312,6 @@ if __name__ == "__main__":
             args.background_premise_size if args.background_premise_size > 0 else None
         ),
         background_transient_order=args.background_transient_order,
+        seed_magmas=args.seed_magmas,
+        seed_context=args.seed_context,
     )

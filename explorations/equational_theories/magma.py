@@ -17,6 +17,7 @@ from typing import ClassVar
 
 import z3
 
+from conceptual_exploration.core.bitset import bits
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.experts.base import Expert
@@ -428,6 +429,15 @@ class MagmaExpert(Expert[Magma, Equation]):
         self.z3_timeout_ms = z3_timeout_ms
         self.cached_magmas: list[Magma] = []
         self._search_inconclusive = False
+        # Which equations each pooled magma satisfies, by position in
+        # `cached_magmas`, as masks over the equations numbered in `_bits`:
+        # those evaluated so far and those of them that hold. A large pool is
+        # then scanned with integer operations, each equation being evaluated
+        # on each magma at most once.
+        self._bits: dict[Equation, int] = {}
+        self._equations: list[Equation] = []
+        self._evaluated: list[int] = []
+        self._holding: list[int] = []
 
         # Seed pool with standard magmas
         if initial_magmas is not None:
@@ -484,9 +494,11 @@ class MagmaExpert(Expert[Magma, Equation]):
         self._search_inconclusive = False
 
         # 1. Fast check against cached pool of magmas
-        for magma in self.cached_magmas:
-            if all(magma.holds(eq) for eq in implication.premise):
-                if any(not magma.holds(eq) for eq in implication.conclusion):
+        premise = self._mask(implication.premise)
+        conclusion = self._mask(implication.conclusion)
+        for k, magma in enumerate(self.cached_magmas):
+            if self._holding_mask(k, premise) & premise == premise:
+                if conclusion & ~self._holding_mask(k, conclusion):
                     return self._build_counterexample(magma, eval_attrs, implication)
 
         # 2. Dynamic search for a counterexample magma of size min_search_size..max_search_size
@@ -501,6 +513,44 @@ class MagmaExpert(Expert[Magma, Equation]):
             return self._build_counterexample(found, eval_attrs, implication)
 
         return None
+
+    def add_magmas(self, magmas: Iterable[Magma]) -> int:
+        """Add magmas to the pool, skipping tables it already holds; return
+        how many were added."""
+        seen = {(m.size, m.table) for m in self.cached_magmas}
+        added = 0
+        for magma in magmas:
+            key = (magma.size, magma.table)
+            if key not in seen:
+                seen.add(key)
+                self.cached_magmas.append(magma)
+                added += 1
+        return added
+
+    def _mask(self, equations: Iterable[Equation]) -> int:
+        mask = 0
+        for eq in equations:
+            bit = self._bits.get(eq)
+            if bit is None:
+                bit = self._bits[eq] = 1 << len(self._equations)
+                self._equations.append(eq)
+            mask |= bit
+        return mask
+
+    def _holding_mask(self, k: int, mask: int) -> int:
+        """The equations in `mask` that pooled magma k satisfies, evaluating
+        those not evaluated on it yet."""
+        while len(self._evaluated) < len(self.cached_magmas):
+            self._evaluated.append(0)
+            self._holding.append(0)
+        missing = mask & ~self._evaluated[k]
+        if missing:
+            magma = self.cached_magmas[k]
+            for position in bits(missing):
+                if magma.holds(self._equations[position]):
+                    self._holding[k] |= 1 << position
+            self._evaluated[k] |= missing
+        return self._holding[k] & mask
 
     def is_conclusive(self) -> bool:
         """False when some size in the last search ended in a Z3 timeout, so that
@@ -652,6 +702,24 @@ class ETP:
         entries = json.loads(Path(path).read_text(encoding="utf-8"))
         return [
             Equation.parse(entry["equation"], name=entry.get("name"), id=entry.get("id"))
+            for entry in entries
+        ]
+
+    @staticmethod
+    def load_magmas(path: str | Path) -> list[Magma]:
+        """Load magmas from a JSON file, such as the magmas.json an
+        exploration's results are saved with.
+
+        The file holds a list of objects with a "size", a "table" (a list of
+        rows) and an optional "name".
+        """
+        entries = json.loads(Path(path).read_text(encoding="utf-8"))
+        return [
+            Magma(
+                entry["size"],
+                tuple(tuple(row) for row in entry["table"]),
+                name=entry.get("name", ""),
+            )
             for entry in entries
         ]
 

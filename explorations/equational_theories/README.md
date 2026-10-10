@@ -61,6 +61,12 @@ With `--background-order N`, implications derivable by equational reasoning are 
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --background-order 4 --background-transient-order 10
 ```
 
+Magmas found earlier, such as the `magmas.json` of saved results, can be reused. `--seed-magmas PATH...` adds them to the expert's pool, which is checked for a counterexample before the solver searches. `--seed-context PATH...` instead evaluates them on every equation and adds them to the context before the exploration starts, dropping those whose rows the others account for, so that no question they refute is asked:
+
+```bash
+python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
+```
+
 Or open the interactive Jupyter notebook:
 
 ```bash

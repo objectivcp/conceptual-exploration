@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, TypeVar, TextIO, AbstractSet
 
+from .bitset import AttributeIndex, bits
 from .implication import Implication
 
 A = TypeVar("A")
@@ -38,6 +39,44 @@ class PartialObject(Generic[O, A]):
         positive = ", ".join(map(str, self.positive))
         negative = ", ".join(map(str, self.negative))
         return f"{self.object}\nSatisfies: {positive}\nDoes not satisfy: {negative}"
+
+
+def reduce_objects(objects: Iterable[PartialObject[O, A]]) -> list[PartialObject[O, A]]:
+    """The objects that remain once each one refuting nothing the others do
+    not refute is dropped, in their original order.
+
+    An object refutes the implications A -> b with A among its positive
+    attributes and b among its negative ones, so it can be dropped when, for
+    every negative attribute b, another object has all of its positive
+    attributes and lacks b as well. For objects known on every attribute
+    this is the usual object reduction: the intent is the intersection of
+    the other intents containing it. Redundancy is judged against the
+    objects not yet dropped, so of several with the same attribute sets one
+    stays; implications only add values to both sides of the remaining
+    objects, which keeps a dropped object redundant.
+    """
+    objects = list(objects)
+    index = AttributeIndex[A]()
+    rows = [(index.encode(o.positive), index.encode(o.negative)) for o in objects]
+    # Transposed: for each attribute, the objects having it and those lacking it.
+    having: dict[int, int] = {}
+    lacking: dict[int, int] = {}
+    for i, (positive, negative) in enumerate(rows):
+        for position in bits(positive):
+            having[position] = having.get(position, 0) | 1 << i
+        for position in bits(negative):
+            lacking[position] = lacking.get(position, 0) | 1 << i
+
+    alive = (1 << len(objects)) - 1
+    # Objects knowing fewer negatives refute less, so they are tried first.
+    for i in sorted(range(len(objects)), key=lambda i: rows[i][1].bit_count()):
+        positive, negative = rows[i]
+        others = alive & ~(1 << i)
+        for position in bits(positive):
+            others &= having[position]
+        if all(others & lacking[position] for position in bits(negative)):
+            alive &= ~(1 << i)
+    return [o for i, o in enumerate(objects) if alive >> i & 1]
 
 
 class PartialContext(Generic[O, A]):
