@@ -15,8 +15,8 @@ EQUATIONS_PATH = (
 )
 
 
-def derives(order: int, premises: list[str], conclusion: str) -> bool:
-    derivations = Derivations("x", order)
+def derives(order: int, premises: list[str], conclusion: str, transient_order: int | None = None) -> bool:
+    derivations = Derivations("x", order, transient_order)
     seeds = [derivations.pair(eq.lhs, eq.rhs) for eq in map(Equation.parse, premises)]
     target = Equation.parse(conclusion)
     return derivations.pair(target.lhs, target.rhs) in derivations.closure(seeds)
@@ -56,9 +56,24 @@ def test_derivations_stay_within_the_order():
     assert not derives(4, ["x * x = x * (x * x)"], "x = x * x")
 
 
+def test_transient_steps_go_beyond_the_order():
+    # Substituting x * x into the second premise gives an equation of order 10,
+    # which the first premise rewrites to the conclusion, of order 4.
+    premises = ["x = (x * x) * (x * x)", "x * x = ((x * x) * x) * x"]
+    conclusion = "x = (x * (x * x)) * (x * x)"
+    assert not derives(4, premises, conclusion)
+    assert not derives(4, premises, conclusion, transient_order=9)
+    assert derives(4, premises, conclusion, transient_order=10)
+
+
+def test_transient_order_below_the_order_is_rejected():
+    with pytest.raises(ValueError, match="transient_order"):
+        Derivations("x", 4, 3)
+
+
 def test_background_implications_hold_in_small_magmas():
     equations = ETP.load_equations(EQUATIONS_PATH)
-    background = background_implications(equations, order=4)
+    background = background_implications(equations, order=4, transient_order=10)
     assert background
     for magma in magmas_up_to(2):
         holds = frozenset(eq for eq in equations if magma.holds(eq))

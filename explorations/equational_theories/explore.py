@@ -50,6 +50,7 @@ def run_magma_exploration(
     max_search_size: int = 6,
     background_order: int | None = None,
     background_premise_size: int | None = 2,
+    background_transient_order: int | None = None,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
@@ -62,7 +63,11 @@ def run_magma_exploration(
         print("Background Implications:  off")
     else:
         premise_bound = background_premise_size if background_premise_size is not None else "any"
-        print(f"Background Implications:  order {background_order}, premise size {premise_bound}")
+        transient = background_transient_order if background_transient_order is not None else background_order
+        print(
+            f"Background Implications:  order {background_order}, transient order {transient}, "
+            f"premise size {premise_bound}"
+        )
     print("=" * 70)
 
     equations = ETP.load_equations(equations_path)
@@ -79,7 +84,9 @@ def run_magma_exploration(
 
     background = []
     if background_order is not None:
-        background = background_implications(equations, background_order, background_premise_size)
+        background = background_implications(
+            equations, background_order, background_premise_size, background_transient_order
+        )
         print(f"\nDerived {len(background)} Background Implications.")
 
     base = ExplorationBase[Magma, Equation](
@@ -231,6 +238,18 @@ if __name__ == "__main__":
             "premises may be of any size, at a much higher cost."
         ),
     )
+    parser.add_argument(
+        "--background-transient-order",
+        type=int,
+        default=None,
+        metavar="M",
+        help=(
+            "Let a single multiplication or substitution reach equations of up "
+            "to M operations, provided rewriting with derived equations brings "
+            "the result back within --background-order (default: the "
+            "background order itself, so no step goes beyond it)."
+        ),
+    )
     args = parser.parse_args()
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
@@ -245,4 +264,5 @@ if __name__ == "__main__":
         background_premise_size=(
             args.background_premise_size if args.background_premise_size > 0 else None
         ),
+        background_transient_order=args.background_transient_order,
     )

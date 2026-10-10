@@ -55,10 +55,10 @@ Progress reporting is controlled with `--report-every` (default `1`, showing eve
 python explorations/equational_theories/explore.py --report-every 1
 ```
 
-With `--background-order N`, implications derivable by equational reasoning are given to the exploration as background knowledge (one-variable equations only). The rules are multiplying both sides by the same term from the same side, substituting a term for the variable, and replacing a subterm by an equivalent one, applied through equations of at most `N` operations. `--background-premise-size K` (default `2`) bounds their premises; `0` computes the canonical basis of everything derivable instead, which is slower:
+With `--background-order N`, implications derivable by equational reasoning are given to the exploration as background knowledge (one-variable equations only). The rules are multiplying both sides by the same term from the same side, substituting a term for the variable, and replacing a subterm by an equivalent one, applied through equations of at most `N` operations. `--background-premise-size K` (default `2`) bounds their premises; `0` computes the canonical basis of everything derivable instead, which is slower. `--background-transient-order M` lets a single multiplication or substitution reach equations of up to `M` operations, as long as rewriting with derived equations brings the result back within `N`:
 
 ```bash
-python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --background-order 5
+python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --background-order 4 --background-transient-order 10
 ```
 
 Or open the interactive Jupyter notebook:
