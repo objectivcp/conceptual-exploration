@@ -18,8 +18,8 @@ Given a signature with binary operation $*$ and variables $x, y, z, \dots$, an e
 - **AST Representation & Evaluation**: Expressive term trees (`Term`, `Var`, `Op`) and equations (`Equation`) evaluated against finite Cayley tables.
 - **Duality Symmetries**: Anti-automorphism mappings $(x * y)^{\text{op}} = y^{\text{op}} * x^{\text{op}}$ integrated into `ExplorationBase` to reduce redundant expert queries by up to 50%.
 - **Automated Counterexample Oracle (`MagmaExpert`)**: Checks candidate implications against a catalog of standard finite magmas (cyclic groups, projections, tournaments, boolean magmas), then searches for a counterexample Cayley table with the **Z3 SMT solver**, representing the operation as an uninterpreted function over the finite domain of each candidate size $n$.
-- **Unconfirmed Results**: A query whose per-size solver budget runs out was neither refuted nor decided, so its implication is accepted but reported `[UNCONFIRMED]` instead of being presented as verified.
 - **Theorem-Proving Oracle (`VampireExpert`)**: Proves implications in equational logic with the Vampire theorem prover and refutes them with finite counterexamples of any size or with free magmas over the premise, which are usually infinite.
+- **Unconfirmed Results**: An implication the expert could neither refute nor prove, because Z3's per-size solver budget ran out or Vampire found neither a proof nor a counterexample in its time limits, is accepted but reported `[UNCONFIRMED]` instead of being presented as verified; Vampire leaves it open instead when it shows the implication false without a counterexample.
 - **Canonical Implication Basis**: Computes the minimal Duquenne–Guigues implication basis for equational theories.
 
 ## Quick Start
