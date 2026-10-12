@@ -247,3 +247,17 @@ def test_lectic_order():
                 y,
                 attrs,
             )
+
+def test_enumeration_resumes_from_any_set():
+    random.seed(7)
+    attributes = list("abcdef")
+    for _ in range(20):
+        theory = random_theory(attributes)
+        enumerator = NextClosure(attributes, mask_closure_operator=theory.closure_mask)
+        full = list(enumerator.generate_masks())
+        for start in range(1 << len(attributes)):
+            # The closed sets lectically at or after `start`: low bits weigh most.
+            def lectic_key(mask):
+                return [(mask >> i) & 1 for i in range(len(attributes))]
+            expected = [m for m in full if lectic_key(m) >= lectic_key(start)]
+            assert list(enumerator.generate_masks(start)) == expected

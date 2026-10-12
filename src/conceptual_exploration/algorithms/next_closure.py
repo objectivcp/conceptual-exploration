@@ -41,12 +41,26 @@ class NextClosure(Generic[A]):
         except StopIteration:
             return
 
-    def generate_masks(self) -> Generator[int, bool | None, None]:
+    def generate_masks(self, start: int | None = None) -> Generator[int, bool | None, None]:
+        """The closed sets in lectic order, from the first or from `start` on.
+
+        Started at a set, the enumeration yields it if it is closed and goes
+        on with the closed sets lectically after it. Any set will do, since
+        the step from a set to the next closed one does not need it to be
+        closed itself; this is how an enumeration is resumed.
+        """
         closure = self.mask_closure_operator
 
-        s = closure(0)
-        if (yield s):  # closure of s changed by caller
-            s = closure(s)
+        if start is None:
+            s = closure(0)
+            if (yield s):  # closure of s changed by caller
+                s = closure(s)
+        else:
+            s = start
+            if closure(s) == s:
+                # Whatever the caller does with it, the next closed set is
+                # the one after `start` under the closure as it then stands.
+                yield s
 
         i = len(self.attributes)
         while i > 0:

@@ -14,7 +14,10 @@ Using conceptual exploration:
 4. Duality symmetries (the anti-automorphism (x * y)^op = y^op * x^op) are leveraged
    to automatically map implications and reduce expert queries.
 5. Queries where the solver runs out of its per-size budget are accepted but
-   flagged [UNCONFIRMED], since they were neither refuted nor decided.
+   flagged [UNCONFIRMED], since they were neither refuted nor decided. With
+   the Vampire expert, an implication is instead confirmed only when proved,
+   counterexamples are searched for at any size, and an implication shown
+   false without a counterexample on a particular law is left open.
 6. Optionally, implications derivable by equational reasoning within a bounded
    order are given to the exploration as background knowledge beforehand.
 7. The log, the implication theory and the context are saved to a results
@@ -37,11 +40,13 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration, reduced_basis, report_every
+from conceptual_exploration import Implication, reduced_basis, report_every
 from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
+from conceptual_exploration.exploration.rounds import explore_in_rounds
 from explorations.equational_theories.background import background_implications
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
+from explorations.equational_theories.vampire import FreeMagma, VampireExpert
 
 
 DEFAULT_EQUATIONS_PATH = Path(__file__).resolve().parent / "equations.json"
@@ -64,52 +69,73 @@ class _Tee:
             stream.flush()
 
 
-def save_results(base: ExplorationBase, equations: Sequence[Equation], directory: Path, settings: str) -> None:
+def save_results(
+    base: ExplorationBase,
+    equations: Sequence[Equation],
+    directory: Path,
+    settings: str,
+    refuted: Sequence[Implication[Equation]] = (),
+) -> None:
     """Write the implication theory and the context of an exploration.
 
     implications.txt and implications.json list every implication of the
-    theory with its source; magmas.json and context.cxt (Burmeister format)
-    hold the objects of the context, a dual image being named after its
-    original with ^op. Every object of the context is fully evaluated, the
-    expert being asked to evaluate all attributes.
+    theory with its source, and the questions left open; magmas.json holds
+    the finite magmas of the context and free_magmas.json the free magmas,
+    with their rows, which Vampire may have left partial; context.cxt
+    (Burmeister format) holds every object whose row is complete. A dual
+    image is named after its original with ^op.
     """
     directory.mkdir(parents=True, exist_ok=True)
-    ordered = sorted(equations, key=lambda eq: eq.id)
-    label = lambda eq: f"Eq{eq.id}"
+    # Equations are identified by their id, or else by their name or text,
+    # and listed in that order.
+    position = {eq: k for k, eq in enumerate(equations)}
+    order = lambda eq: (eq.id is None, eq.id or 0, position[eq])
+    ordered = sorted(equations, key=order)
+    ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+    label = lambda eq: f"Eq{eq.id}" if eq.id is not None else ident(eq)
+    ids = lambda eqs: [ident(eq) for eq in sorted(eqs, key=order)]
 
-    names: dict[Magma, str] = {}
-    objects = []  # (name, magma, found_as, dual_of, positive)
+    names: dict[object, str] = {}
+    magmas, free, rows = [], [], []  # rows: (name, positive, negative)
     for version, obj in base.context.objects.items():
-        magma = version.original
-        name = names.setdefault(magma, f"M{len(names) + 1}")
-        if version.version == 0:
-            objects.append((name, magma.table, magma.name, None, obj.positive))
+        original = version.original
+        prefix = "F" if isinstance(original, FreeMagma) else "M"
+        count = sum(1 for o in names if isinstance(o, FreeMagma) == (prefix == "F"))
+        name = names.setdefault(original, f"{prefix}{count + 1}")
+        # The only mapping is duality, whose image of a table is its transpose.
+        dual_of = name if version.version else None
+        if version.version:
+            name += "^op"
+        rows.append((name, obj.positive, obj.negative))
+        if isinstance(original, FreeMagma):
+            free.append({
+                "name": name, "dual_of": dual_of,
+                "premise": ids(original.premise),
+                "positive": ids(obj.positive),
+                "negative": ids(obj.negative),
+            })
         else:
-            # The only mapping is duality, whose image is the transposed table.
-            table = tuple(zip(*magma.table))
-            objects.append((name + "^op", table, magma.name, name, obj.positive))
+            table = tuple(zip(*original.table)) if version.version else original.table
+            magmas.append({"name": name, "size": len(table), "table": [list(r) for r in table],
+                           "found_as": original.name, "dual_of": dual_of})
 
-    cxt = ["B", "", str(len(objects)), str(len(ordered)), ""]
-    cxt += [o[0] for o in objects]
+    complete = [(n, pos) for n, pos, neg in rows if len(pos) + len(neg) == len(ordered)]
+    cxt = ["B", "", str(len(complete)), str(len(ordered)), ""]
+    cxt += [n for n, _ in complete]
     cxt += [label(eq) for eq in ordered]
-    cxt += ["".join("X" if eq in o[4] else "." for eq in ordered) for o in objects]
+    cxt += ["".join("X" if eq in pos else "." for eq in ordered) for _, pos in complete]
     (directory / "context.cxt").write_text("\n".join(cxt) + "\n", encoding="utf-8")
-    (directory / "magmas.json").write_text(
-        "[\n" + ",\n".join(
-            "  " + json.dumps({"name": n, "size": len(t), "table": [list(r) for r in t],
-                               "found_as": f, "dual_of": d})
-            for n, t, f, d, _ in objects
-        ) + "\n]\n",
-        encoding="utf-8",
-    )
+    for filename, entries in (("magmas.json", magmas), ("free_magmas.json", free)):
+        (directory / filename).write_text(
+            "[\n" + ",\n".join("  " + json.dumps(e) for e in entries) + "\n]\n", encoding="utf-8"
+        )
 
     records, lines = [], []
     for idx, implication in enumerate(base.implications, start=1):
-        premise = sorted(implication.premise, key=lambda eq: eq.id)
-        conclusion = sorted(implication.conclusion, key=lambda eq: eq.id)
+        premise = sorted(implication.premise, key=order)
+        conclusion = sorted(implication.conclusion, key=order)
         source = base.implication_sources[implication].value
-        records.append({"premise": [eq.id for eq in premise],
-                        "conclusion": [eq.id for eq in conclusion], "source": source})
+        records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": source})
         lines.append(
             f"[{idx}] {', '.join(map(label, premise)) or 'Ø'} ==> "
             f"{', '.join(map(label, conclusion))}   ({source})"
@@ -117,14 +143,36 @@ def save_results(base: ExplorationBase, equations: Sequence[Equation], directory
     header = [
         f"Implication theory of an exploration ({settings}).",
         "background = derived by equational reasoning; confirmed = no counterexample in the",
-        "searched sizes; unconfirmed = no counterexample found, but the solver ran out of time",
-        "at some size; mapped = dual of another implication, added when not already entailed.",
+        "searched sizes, or proved by Vampire; unconfirmed = neither refuted nor decided;",
+        "mapped = dual of another implication, added when not already entailed. Open questions",
+        "are implications shown false without a counterexample known to violate their conclusion.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
         "",
     ]
-    (directory / "implications.txt").write_text("\n".join(header + lines) + "\n", encoding="utf-8")
+    for implication in refuted:
+        records.append({"premise": ids(implication.premise),
+                        "conclusion": ids(implication.conclusion),
+                        "source": "refuted"})
+    for implication in base.open_questions:
+        premise = sorted(implication.premise, key=order)
+        conclusion = sorted(implication.conclusion, key=order)
+        records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "open"})
+    extra = []
+    if refuted:
+        extra += ["", "Unconfirmed implications refuted by a later object, and dropped:"]
+        extra += [f"  {', '.join(map(label, sorted(i.premise, key=order)))} ==> "
+                  f"{', '.join(map(label, sorted(i.conclusion, key=order)))}"
+                  for i in refuted]
+    if base.open_questions:
+        extra += ["", "Open questions:"]
+        extra += [f"  {', '.join(map(label, sorted(i.premise, key=order)))} ==> "
+                  f"{', '.join(map(label, sorted(i.conclusion, key=order)))}"
+                  for i in base.open_questions]
+    (directory / "implications.txt").write_text(
+        "\n".join(header + lines + extra) + "\n", encoding="utf-8"
+    )
     (directory / "implications.json").write_text(
         "[\n" + ",\n".join("  " + json.dumps(r) for r in records) + "\n]\n", encoding="utf-8"
     )
@@ -143,13 +191,23 @@ def run_magma_exploration(
     seed_magmas: Sequence[str | Path] = (),
     seed_context: Sequence[str | Path] = (),
     results_dir: str | Path | None = None,
+    expert_kind: str = "z3",
+    vampire_prove_time_limit: int = 10,
+    vampire_model_time_limit: int = 10,
+    vampire_quick_model_time_limit: int = 1,
 ):
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
-    print(f"Search Sizes:             {min_search_size}..{max_search_size}")
-    print(f"Solver Budget Per Size:   {f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'}")
+    if expert_kind == "vampire":
+        print(
+            f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove, "
+            f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
+        )
+    else:
+        print(f"Expert:                   Z3, sizes {min_search_size}..{max_search_size}, "
+              f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     if background_order is None:
         print("Background Implications:  off")
@@ -183,20 +241,24 @@ def run_magma_exploration(
         )
         print(f"\nDerived {len(background)} Background Implications.")
 
-    base = ExplorationBase[Magma, Equation](
-        attributes=equations,
-        background_implications=background,
-        mappings=mappings,
-    )
-    expert = MagmaExpert(
-        attributes=equations,
-        min_search_size=min_search_size,
-        max_search_size=max_search_size,
-        z3_timeout_ms=z3_timeout_ms,
-    )
+    if expert_kind == "vampire":
+        expert = VampireExpert(
+            attributes=equations,
+            prove_time_limit=vampire_prove_time_limit,
+            model_time_limit=vampire_model_time_limit,
+            quick_model_time_limit=vampire_quick_model_time_limit,
+        )
+    else:
+        expert = MagmaExpert(
+            attributes=equations,
+            min_search_size=min_search_size,
+            max_search_size=max_search_size,
+            z3_timeout_ms=z3_timeout_ms,
+        )
     for path in seed_magmas:
         added = expert.add_magmas(ETP.load_magmas(path))
         print(f"Seeded the expert with {added} magmas from {path}.")
+    reduced = []
     if seed_context:
         # Each table once, evaluated on every equation, and reduced to the
         # magmas whose rows the others do not already account for.
@@ -206,21 +268,31 @@ def run_magma_exploration(
                 tables.setdefault((magma.size, magma.table), magma)
         seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
         reduced = reduce_objects(seeds)
-        for seed in reduced:
-            base.add_counterexample(seed)
         print(
             f"Seeded the context with {len(reduced)} of {len(seeds)} magmas, "
             f"the others being redundant."
         )
-    exploration = AttributeExploration(
-        base,
-        expert,
-        evaluate_all=True,
-        on_question=report_every(report_interval),
-    )
+
+    def resumed(implication, refuter):
+        print(f"\nRefuted the unconfirmed implication {implication} by {getattr(refuter, 'name', refuter)}; "
+              f"resuming at its premise.")
 
     print("\nStarting Attribute Exploration...")
-    state = exploration.run()
+    result = explore_in_rounds(
+        equations,
+        expert,
+        background_implications=background,
+        mappings=mappings,
+        objects=reduced,
+        evaluate_all=True,
+        on_question=report_every(report_interval),
+        on_resume=resumed,
+    )
+    base, state = result.base, result.state
+    state.questions_asked = result.questions_asked
+    state.counterexamples = result.counterexamples
+    refuted = [(i, getattr(o, "name", str(o))) for i, o in result.refuted]
+    rounds = result.rounds
 
     print("\n" + "=" * 70)
     print("EXPLORATION RESULTS")
@@ -229,7 +301,12 @@ def run_magma_exploration(
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
     print(f"  of which unconfirmed:       {len(base.unconfirmed_implications)}")
     print(f"Total Implications in Theory: {len(base.implications.implications)}")
-    print(f"Counterexample Magmas Found:  {len(state.counterexamples)}")
+    print(f"Counterexamples Found:        {len(state.counterexamples)}")
+    print(f"Open Questions:               {len(base.open_questions)}")
+    print(f"Rounds:                       {rounds}")
+    if isinstance(expert, VampireExpert):
+        answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
+        print(f"Expert Answers:               {answers}")
 
     # Display the implication basis, reduced for reading
     rules = reduced_basis(base)
@@ -239,7 +316,20 @@ def run_magma_exploration(
         marker = "   [UNCONFIRMED]" if unconfirmed else ""
         print(f"  [{idx}] {rule.format(lambda eq: eq.name or str(eq))}{marker}")
 
-    if base.unconfirmed_implications:
+    if base.unconfirmed_implications and expert_kind == "vampire":
+        print(
+            "\n  [UNCONFIRMED] = Vampire decided nothing about the implication in time,"
+            "\n  so it remains open."
+        )
+    if refuted:
+        print("\nUnconfirmed Implications Refuted by a Later Object (and dropped):")
+        for implication, name in refuted:
+            print(f"  {implication}   (by {name})")
+    if base.open_questions:
+        print("\nOpen Questions (shown false, but no known object violates the conclusion):")
+        for implication in base.open_questions:
+            print(f"  {implication}")
+    if base.unconfirmed_implications and expert_kind != "vampire":
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
             "\n  of time at some magma size, so these implications remain open rather"
@@ -252,6 +342,8 @@ def run_magma_exploration(
     seen = set()
     for cex in state.counterexamples:
         m = cex.object.original if hasattr(cex.object, "original") else cex.object
+        if not isinstance(m, Magma):
+            continue
         key = (m.size, m.table)
         if key not in seen:
             seen.add(key)
@@ -262,18 +354,25 @@ def run_magma_exploration(
         print(m)
 
     if results_dir is not None:
-        settings = (
-            f"{Path(equations_path).name}, {state.questions_asked} questions, search sizes "
-            f"{expert.min_search_size}..{expert.max_search_size}, "
-            f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size"
-        )
+        if expert_kind == "vampire":
+            expert_settings = (
+                f"Vampire expert, {vampire_prove_time_limit} s to prove, "
+                f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
+            )
+        else:
+            expert_settings = (
+                f"search sizes {expert.min_search_size}..{expert.max_search_size}, "
+                f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size"
+            )
+        settings = f"{Path(equations_path).name}, {state.questions_asked} questions, {expert_settings}"
+
         if background_order is not None:
             settings += (
                 f", background order {background_order}, transient order "
                 f"{background_transient_order or background_order}, premise size "
                 f"{background_premise_size or 'any'}"
             )
-        save_results(base, equations, Path(results_dir), settings)
+        save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted])
         print(f"\nResults saved to {results_dir}.")
 
     return state, base
@@ -291,6 +390,49 @@ if __name__ == "__main__":
             "(default: equations.json next to this script). Each entry has an "
             '"equation" string and optional "name" and "id" fields; the set '
             "must be closed under duality."
+        ),
+    )
+    parser.add_argument(
+        "--expert",
+        choices=("z3", "vampire"),
+        default="z3",
+        help=(
+            "How questions are answered (default: z3). z3 searches for "
+            "counterexamples of the sizes given below and accepts an implication "
+            "when it finds none; vampire tries to prove the implication with the "
+            "Vampire theorem prover and searches for a counterexample of any "
+            "size, accepting the implication as confirmed only when proved."
+        ),
+    )
+    parser.add_argument(
+        "--vampire-prove-time-limit",
+        type=int,
+        default=10,
+        metavar="S",
+        help="Seconds Vampire gets to prove an implication or a single law (default: 10).",
+    )
+    parser.add_argument(
+        "--vampire-model-time-limit",
+        type=int,
+        default=10,
+        metavar="S",
+        help=(
+            "Seconds Vampire gets for a second search for a finite "
+            "counterexample, made for each law of the conclusion not proved "
+            "when the free magma over the premise does not refute the "
+            "implication (default: 10)."
+        ),
+    )
+    parser.add_argument(
+        "--vampire-quick-model-time-limit",
+        type=int,
+        default=1,
+        metavar="S",
+        help=(
+            "Seconds Vampire first gets to find a finite counterexample "
+            "(default: 1). Failing that, it decides each law separately for "
+            "the free magma over the premise, with the proving time limit per "
+            "law."
         ),
     )
     parser.add_argument(
@@ -442,6 +584,10 @@ if __name__ == "__main__":
                 seed_magmas=args.seed_magmas,
                 seed_context=args.seed_context,
                 results_dir=results_dir,
+                expert_kind=args.expert,
+                vampire_prove_time_limit=args.vampire_prove_time_limit,
+                vampire_model_time_limit=args.vampire_model_time_limit,
+                vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
             )
         finally:
             sys.stdout = sys.__stdout__

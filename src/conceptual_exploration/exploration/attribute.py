@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-from ..experts.base import Expert
+from ..experts.base import Expert, Undecided
 from .base import ExplorationBase, ImplicationSource
 from .state import ExplorationState
 from ..algorithms.next_closure import NextClosure
@@ -17,9 +17,11 @@ O = TypeVar("O")
 class QuestionReport(Generic[O, A]):
     """One question put to the expert, together with the answer it gave.
 
-    `source` is None exactly when the implication was refuted, in which case
-    `counterexample` holds the refuting object. The counts describe the theory
-    as it stood when the question was answered, before the answer was applied.
+    `source` is None when the implication was refuted, in which case
+    `counterexample` holds the refuting object, and when the expert left it
+    undecided, in which case `undecided` holds its answer. The counts describe
+    the theory as it stood when the question was answered, before the answer
+    was applied.
     """
 
     number: int
@@ -28,6 +30,7 @@ class QuestionReport(Generic[O, A]):
     source: ImplicationSource | None
     implication_count: int
     object_count: int
+    undecided: Undecided[O, A] | None = None
 
 
 def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
@@ -45,6 +48,10 @@ def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
         print(f'Question {question.number}: {question.implication}')
         if question.counterexample is not None:
             print(f'Counterexample found: {question.counterexample}\n')
+        elif question.undecided is not None:
+            outcome = "Unconfirmed" if question.undecided.unconfirmed else "Open"
+            proved = ", ".join(map(str, question.undecided.proved))
+            print(f'{outcome}{f"; proved {proved}" if proved else ""}\n')
         else:
             print(f'{question.source.value.capitalize()}\n')
 
@@ -66,7 +73,15 @@ class AttributeExploration:
         self.evaluate_all = evaluate_all
         self.on_question = on_question
 
-    def run(self):
+    def run(self, start=None):
+        """Explore from the first closed set, or from the first closed set
+        lectically at or after `start`, which resumes an exploration.
+
+        The exploration stops early if an object refutes an implication
+        accepted as unconfirmed: that implication has steered the enumeration,
+        which has to be resumed from the question it was accepted at without
+        it. `state.stopped_by` then holds it.
+        """
         # Premises and closures are bitmasks over the base's index; only the
         # implication put to the expert is turned back into sets.
         index = self.base.index
@@ -74,7 +89,9 @@ class AttributeExploration:
             self.base.attributes,
             mask_closure_operator=self.base.implications.closure_mask,
         )
-        premises = generator.generate_masks()
+        premises = self._premises = generator.generate_masks(
+            None if start is None else index.encode(start)
+        )
 
         try:
             premise = next(premises)
@@ -91,6 +108,11 @@ class AttributeExploration:
                         self.base.attributes if self.evaluate_all else None
                     )
                     self.state.questions_asked += 1
+                    if isinstance(counterexample, Undecided):
+                        premise = self._leave_open(implication, counterexample)
+                        if self._stopped():
+                            return self.state
+                        break
                     if counterexample:
                         if not counterexample.refutes(implication):
                             raise ValueError(
@@ -99,6 +121,8 @@ class AttributeExploration:
                         self._report(implication, counterexample, None)
                         self.base.add_counterexample(counterexample)
                         self.state.counterexamples.append(counterexample)
+                        if self._stopped():
+                            return self.state
                         closure = self.base.context_closure_mask(premise)
                     else:
                         source = (
@@ -109,6 +133,8 @@ class AttributeExploration:
                         self._report(implication, None, source)
                         self.base.accept(implication, source)
                         self.state.accepted_implications.append(implication)
+                        if self._stopped():
+                            return self.state
                         premise = premises.send(True)
                         break
                 else:
@@ -119,11 +145,51 @@ class AttributeExploration:
 
         return self.state
 
+    def _stopped(self) -> bool:
+        if not self.base.refuted:
+            return False
+        self.state.stopped_by = self.base.origin(next(iter(self.base.refuted)))
+        return True
+
+    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int:
+        """Take an answer the expert could not decide: accept the part of the
+        conclusion it did confirm, record the rest as an open question or
+        accept it as unconfirmed, and return the next premise.
+
+        If nothing is accepted, the premise stays closed under the
+        implications, and the enumeration goes on to the next closed set as
+        if the context had no question about this one.
+        """
+        self._report(implication, None, None, answer)
+        if answer.object is not None:
+            if answer.object.refutes(implication):
+                raise ValueError(
+                    f'Undecided answer to {implication} carries a refuting object'
+                )
+            self.base.add_counterexample(answer.object)
+        proved = answer.proved & implication.conclusion
+        rest = Implication(implication.premise, implication.conclusion - proved)
+        if not answer.unconfirmed:
+            self.base.open_questions.append(rest)
+        accepted = []
+        if proved:
+            accepted.append((Implication(implication.premise, proved), ImplicationSource.CONFIRMED))
+        if answer.unconfirmed and rest.conclusion:
+            # After the confirmed part, which a resumed round then keeps.
+            accepted.append((rest, ImplicationSource.UNCONFIRMED))
+        if not accepted:
+            return next(self._premises)
+        for accepted_implication, source in accepted:
+            self.base.accept(accepted_implication, source)
+            self.state.accepted_implications.append(accepted_implication)
+        return self._premises.send(True)
+
     def _report(
             self,
             implication: Implication[A],
             counterexample: PartialObject[O, A] | None,
             source: ImplicationSource | None,
+            undecided: Undecided[O, A] | None = None,
     ) -> None:
         if self.on_question is None:
             return
@@ -135,5 +201,6 @@ class AttributeExploration:
                 source=source,
                 implication_count=len(self.base.implications.implications),
                 object_count=len(self.base.context.objects),
+                undecided=undecided,
             )
         )

@@ -55,6 +55,12 @@ Progress reporting is controlled with `--report-every` (default `1`, showing eve
 python explorations/equational_theories/explore.py --report-every 1
 ```
 
+With `--expert vampire`, questions the pool does not refute go to the [Vampire](https://vprover.github.io) theorem prover (installed separately, e.g. `brew install vampire`). It tries to prove the implication (`--vampire-prove-time-limit`, default `10` seconds) and then, briefly, to find a counterexample of any size (`--vampire-quick-model-time-limit`, default `1`). Failing both, it decides each law on its own for the free magma over the premise, whose elements are terms modulo the equations the premise derives: that magma, usually infinite, refutes the implication when a law of the conclusion is not derivable, and the implication is proved when every law of the conclusion is. Otherwise it searches for a counterexample again, to each law of the conclusion not proved, separately and in parallel (`--vampire-model-time-limit`, default `10`). The laws of the conclusion it proves are then accepted; the rest is left as an open question if Vampire shows the implication false, and accepted as `[UNCONFIRMED]` otherwise. Objects are completed only with background and confirmed implications. When a later object refutes an unconfirmed implication, which has steered the enumeration since it was accepted, the exploration resumes at the question it was accepted at, keeping what was accepted before, the confirmed implications found after, and every object; the refuted implication is reported and dropped. The search sizes and solver budget above apply to the default `z3` expert only:
+
+```bash
+python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --expert vampire
+```
+
 With `--background-order N`, implications derivable by equational reasoning are given to the exploration as background knowledge (one-variable equations only). The rules are multiplying both sides by the same term from the same side, substituting a term for the variable, and replacing a subterm by an equivalent one, applied through equations of at most `N` operations. `--background-premise-size K` (default `2`) bounds their premises; `0` computes the canonical basis of everything derivable instead, which is slower. `--background-transient-order M` lets a single multiplication or substitution reach equations of up to `M` operations, as long as rewriting with derived equations brings the result back within `N`:
 
 ```bash
@@ -67,7 +73,7 @@ Magmas found earlier, such as the `magmas.json` of saved results, can be reused.
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
 ```
 
-Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) and its context (`magmas.json`, `context.cxt`) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
+Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, and `context.cxt` with the objects whose rows are complete) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
 
 Or open the interactive Jupyter notebook:
 

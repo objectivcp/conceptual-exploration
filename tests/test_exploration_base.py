@@ -332,3 +332,81 @@ def test_reduce_objects_keeps_the_objects_the_theory_needs():
     ]
     # Of the two copies of ab, the first is tried first and dropped for the second.
     assert [o.object for o in reduce_objects(objects)] == ["ac", "ab again"]
+
+
+def test_unconfirmed_implications_do_not_complete_objects():
+    """An unconfirmed implication may be false, so it must not fill in a row,
+    and an object violating it is recorded rather than rejected."""
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    unconfirmed = Implication(frozenset(["a"]), frozenset(["b"]))
+    base.accept(unconfirmed, ImplicationSource.UNCONFIRMED)
+
+    base.add_counterexample(PartialObject("g", {"a"}, set()))
+    assert base.context.objects[next(iter(base.context.objects))].positive == {"a"}
+
+    base.add_counterexample(PartialObject("h", {"a"}, {"b"}))
+    assert base.refuted[unconfirmed].original == "h"
+
+    # Once confirmed, the implication completes the objects it applies to.
+    base.accept(Implication(frozenset(["a"]), frozenset(["c"])), ImplicationSource.CONFIRMED)
+    assert all("c" in obj.positive for obj in base.context.objects.values())
+
+
+def test_undecided_questions_are_left_open():
+    from conceptual_exploration import AttributeExploration, Undecided
+    from conceptual_exploration.experts.base import Expert
+
+    class Partial(Expert):
+        """Proves b from a, leaves the rest of every question undecided,
+        and refutes nothing."""
+
+        def validate(self, implication, attributes=None):
+            if implication.premise == {"a"} and "b" in implication.conclusion:
+                return Undecided(frozenset(["b"]), PartialObject("F(a)", {"a"}, set()))
+            return Undecided()
+
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    AttributeExploration(base, Partial()).run()
+
+    assert Implication(frozenset(["a"]), frozenset(["b"])) in base.implications
+    assert base.implication_sources[Implication(frozenset(["a"]), frozenset(["b"]))] is (
+        ImplicationSource.CONFIRMED
+    )
+    assert Implication(frozenset(["a"]), frozenset(["c"])) in base.open_questions
+    # Nothing is accepted for the questions left wholly open, and the partial
+    # object is completed by the confirmed part.
+    assert len(base.implications.implications) == 1
+    assert base.context.objects[next(iter(base.context.objects))].positive == {"a", "b"}
+
+
+def test_undecided_answers_may_accept_the_rest_as_unconfirmed():
+    from conceptual_exploration import AttributeExploration, Undecided
+    from conceptual_exploration.experts.base import Expert
+
+    class Partial(Expert):
+        """Refutes questions without premise, proves b from a, and knows
+        nothing against the rest of any question."""
+
+        def validate(self, implication, attributes=None):
+            if not implication.premise:
+                return PartialObject("none", set(), {"a", "b", "c"})
+            proved = frozenset(["b"]) if implication.premise == {"a"} else frozenset()
+            return Undecided(proved & implication.conclusion, unconfirmed=True)
+
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    exploration = AttributeExploration(base, Partial())
+    exploration.run()
+
+    assert base.implication_sources[Implication(frozenset(["a"]), frozenset(["b"]))] is (
+        ImplicationSource.CONFIRMED
+    )
+    assert base.implication_sources[Implication(frozenset(["a"]), frozenset(["c"]))] is (
+        ImplicationSource.UNCONFIRMED
+    )
+    # The confirmed part is accepted first.
+    assert exploration.state.accepted_implications.index(
+        Implication(frozenset(["a"]), frozenset(["b"]))
+    ) < exploration.state.accepted_implications.index(
+        Implication(frozenset(["a"]), frozenset(["c"]))
+    )
+    assert not base.open_questions

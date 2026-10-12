@@ -14,3 +14,7 @@ class ExplorationState:
     counterexamples: list = field(
         default_factory=list
     )
+
+    # The unconfirmed implication whose refutation stopped the exploration,
+    # if one did.
+    stopped_by: object = None

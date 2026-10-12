@@ -44,6 +44,13 @@ class ExplorationBase(Generic[O, A]):
     Each implication and each object is mapped by each mapping once, never by
     a composition of them, so the mappings should be closed under
     composition: a group of symmetries, or all substitutions of variables.
+
+    Objects are completed only with the trusted implications: background,
+    confirmed and their images. An unconfirmed implication may be false, and
+    completing with it could put a false value into a row; it still takes part
+    in `implications` and so in choosing the questions. An object that turns
+    out to violate one is recorded in `refuted` rather than rejected.
+    `open_questions` collects the questions the expert left undecided.
     """
 
     def __init__(
@@ -68,6 +75,14 @@ class ExplorationBase(Generic[O, A]):
             self._extend_table(k, len(self.attributes))
         self.implications = ImplicationTheory[A](index=self.index)
         self.implication_sources: dict[Implication[A], ImplicationSource] = {}
+        # The implications objects are completed with, and the masks of the
+        # others, checked against every stored row.
+        self._trusted = ImplicationTheory[A](index=self.index)
+        self._untrusted: dict[Implication[A], tuple[int, int]] = {}
+        self.refuted: dict[Implication[A], VersionedObject[O]] = {}
+        # The implication each mapped image was mapped from.
+        self._origins: dict[Implication[A], Implication[A]] = {}
+        self.open_questions: list[Implication[A]] = []
         self._rows: dict[VersionedObject[O], tuple[int, int]] = {}
         # The objects sharing each distinct row. Many versions of an object
         # repeat a row under another name, and the context closure and the
@@ -126,34 +141,57 @@ class ExplorationBase(Generic[O, A]):
         already holds or entails. A background made of whole orbits is thus
         mapped once per orbit rather than once per implication.
         """
+        trusted = source is not ImplicationSource.UNCONFIRMED
         if implication in self.implication_sources:
             self.implication_sources[implication] = source
+            if trusted and implication in self._untrusted:
+                masks = self._untrusted.pop(implication)
+                self._trusted.add(implication)
+                self._update([masks, *self._add_mapped(*masks, trusted)])
+                for other, other_masks in list(self._untrusted.items()):
+                    if self._trusted.entails_mask(*other_masks):
+                        del self._untrusted[other]
             return
-        masks = self._add_implication(implication, source)
-        added = [masks, *self._add_mapped(*masks)]
-        self._update(added)
+        masks = self._add_implication(implication, source, trusted)
+        added = self._add_mapped(*masks, trusted, implication)
+        if trusted:
+            self._update([masks, *added])
 
-    def _add_mapped(self, premise: int, conclusion: int) -> list[tuple[int, int]]:
+    def origin(self, implication: Implication[A]) -> Implication[A]:
+        """The implication accepted or given as background that `implication`
+        is, or is an image of."""
+        return self._origins.get(implication, implication)
+
+    def _add_mapped(
+            self,
+            premise: int,
+            conclusion: int,
+            trusted: bool = True,
+            origin: Implication[A] | None = None,
+    ) -> list[tuple[int, int]]:
         """Add the images of an implication under the symmetry mappings and
-        return the masks of those that were not entailed already.
+        return the masks of those the trusted implications did not entail
+        already, if the implication is trusted itself.
 
         Keeping the theory closed under the mappings is what lets a mapped copy
         of a completed object be completed itself, so background implications
-        are mapped for the same reason confirmed ones are.
+        are mapped for the same reason confirmed ones are. The image of an
+        unconfirmed implication is no more trustworthy than the implication.
         """
         added = []
         for mapped_premise, mapped_conclusion in self.mapped_images(premise, conclusion):
+            mapped_implication = Implication(
+                self.index.decode(mapped_premise),
+                self.index.decode(mapped_conclusion),
+            )
             if not self.implications.entails_mask(mapped_premise, mapped_conclusion):
-                mapped_implication = Implication(
-                    self.index.decode(mapped_premise),
-                    self.index.decode(mapped_conclusion),
-                )
-                added.append(
-                    self._add_implication(
-                        mapped_implication,
-                        ImplicationSource.MAPPED,
-                    )
-                )
+                masks = self._add_implication(mapped_implication, ImplicationSource.MAPPED, trusted)
+                if origin is not None:
+                    self._origins[mapped_implication] = origin
+                if trusted:
+                    added.append(masks)
+            elif trusted and not self._trusted.entails_mask(mapped_premise, mapped_conclusion):
+                added.append(self._trusted.add(mapped_implication))
         return added
 
     def mapped_images(self, premise: int, conclusion: int) -> list[tuple[int, int]]:
@@ -304,6 +342,8 @@ class ExplorationBase(Generic[O, A]):
 
     def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
         self._set_row(name, row)
+        for implication, masks in self._untrusted.items():
+            self._check_untrusted(implication, masks, name, *row)
         obj = self.context.objects.get(name)
         if obj is None:
             self.context.add(
@@ -374,7 +414,7 @@ class ExplorationBase(Generic[O, A]):
         Completing the positive side is what can clash with the negative one,
         so the check lives here, where the closure is computed anyway.
         """
-        closure = self.implications.closure_mask
+        closure = self._trusted.closure_mask
         positive = closure(positive)
         if positive & negative:
             raise ValueError(
@@ -395,8 +435,21 @@ class ExplorationBase(Generic[O, A]):
             self,
             implication: Implication[A],
             source: ImplicationSource,
+            trusted: bool = True,
     ) -> tuple[int, int]:
         """Record an implication in the theory without touching the objects;
         return its masks."""
         self.implication_sources[implication] = source
-        return self.implications.add(implication)
+        masks = self.implications.add(implication)
+        if not trusted:
+            self._untrusted[implication] = masks
+            for name, (positive, negative) in self._rows.items():
+                self._check_untrusted(implication, masks, name, positive, negative)
+        else:
+            self._trusted.add(implication)
+        return masks
+
+    def _check_untrusted(self, implication, masks, name, positive: int, negative: int) -> None:
+        premise, conclusion = masks
+        if premise & positive == premise and conclusion & negative and implication not in self.refuted:
+            self.refuted[implication] = name
