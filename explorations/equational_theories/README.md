@@ -73,7 +73,7 @@ Magmas found earlier, such as the `magmas.json` of saved results, can be reused.
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
 ```
 
-Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, and `context.cxt` with the objects whose rows are complete) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
+Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
 
 Or open the interactive Jupyter notebook:
 

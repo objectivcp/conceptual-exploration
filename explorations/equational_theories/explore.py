@@ -82,8 +82,10 @@ def save_results(
     theory with its source, and the questions left open; magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
     with their rows, which Vampire may have left partial; context.cxt
-    (Burmeister format) holds every object whose row is complete. A dual
-    image is named after its original with ^op.
+    (Burmeister format) holds every object whose row is complete, and
+    partial_context.cxt every object, in the same format with ? where it is
+    not known whether the object satisfies the equation. A dual image is
+    named after its original with ^op.
     """
     directory.mkdir(parents=True, exist_ok=True)
     # Equations are identified by their id, or else by their name or text,
@@ -119,12 +121,16 @@ def save_results(
             magmas.append({"name": name, "size": len(table), "table": [list(r) for r in table],
                            "found_as": original.name, "dual_of": dual_of})
 
-    complete = [(n, pos) for n, pos, neg in rows if len(pos) + len(neg) == len(ordered)]
-    cxt = ["B", "", str(len(complete)), str(len(ordered)), ""]
-    cxt += [n for n, _ in complete]
-    cxt += [label(eq) for eq in ordered]
-    cxt += ["".join("X" if eq in pos else "." for eq in ordered) for _, pos in complete]
-    (directory / "context.cxt").write_text("\n".join(cxt) + "\n", encoding="utf-8")
+    def cell(eq, positive, negative):
+        return "X" if eq in positive else "." if eq in negative else "?"
+
+    complete = [row for row in rows if len(row[1]) + len(row[2]) == len(ordered)]
+    for filename, objects in (("context.cxt", complete), ("partial_context.cxt", rows)):
+        cxt = ["B", "", str(len(objects)), str(len(ordered)), ""]
+        cxt += [n for n, _, _ in objects]
+        cxt += [label(eq) for eq in ordered]
+        cxt += ["".join(cell(eq, pos, neg) for eq in ordered) for _, pos, neg in objects]
+        (directory / filename).write_text("\n".join(cxt) + "\n", encoding="utf-8")
     for filename, entries in (("magmas.json", magmas), ("free_magmas.json", free)):
         (directory / filename).write_text(
             "[\n" + ",\n".join("  " + json.dumps(e) for e in entries) + "\n]\n", encoding="utf-8"
