@@ -21,7 +21,7 @@
   - [2. First-Order Rule Exploration](#2-first-order-rule-exploration)
   - [3. Loading Formal Contexts from `.cxt` Files](#3-loading-formal-contexts-from-cxt-files)
 - [Symmetries & Background Knowledge](#symmetries--background-knowledge)
-- [Included Examples](#included-examples)
+- [Explorations & Examples](#explorations--examples)
 - [Testing](#testing)
 - [License](#license)
 
