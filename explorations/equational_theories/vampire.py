@@ -12,6 +12,10 @@ model. A counterexample still exists: the free magma over the premise laws,
 whose elements are the terms modulo the equations derivable from the premise,
 satisfies exactly the derivable laws. Asking Vampire about each law in turn
 gives its row, as far as Vampire decides them.
+
+The Mace4 model finder (https://www.cs.unm.edu/~mccune/prover9/) can search
+for finite counterexamples alongside Vampire; it sometimes finds models of
+sizes that Vampire's model builder does not reach in time.
 """
 
 from __future__ import annotations
@@ -57,6 +61,35 @@ def tptp_problem(premise: Iterable[Equation], conclusion: Iterable[Equation]) ->
     goal = " & ".join(f"({tptp_law(eq)})" for eq in sorted(conclusion))
     lines.append(f"fof(conclusion, conjecture, {goal}).")
     return "\n".join(lines) + "\n"
+
+
+def ladr_term(term: Term) -> str:
+    if isinstance(term, Var):
+        return "x" + term.name  # LADR variables start with u to z
+    if isinstance(term, Op):
+        return f"({ladr_term(term.left)} * {ladr_term(term.right)})"
+    raise TypeError(f"Unsupported term {term!r}")
+
+
+def ladr_problem(premise: Iterable[Equation], law: Equation) -> str:
+    """The implication of `law` from the premise laws as Mace4 input."""
+    lines = ["formulas(assumptions)."]
+    lines += [f"{ladr_term(eq.lhs)} = {ladr_term(eq.rhs)}." for eq in sorted(premise)]
+    lines += ["end_of_list.", "formulas(goals).", f"{ladr_term(law.lhs)} = {ladr_term(law.rhs)}.", "end_of_list."]
+    return "\n".join(lines) + "\n"
+
+
+_MACE4_TABLE = re.compile(r"interpretation\(\s*(\d+).*?function\(\*\(_,_\),\s*\[([\d,\s]*)\]", re.S)
+
+
+def parse_mace4_model(output: str) -> tuple[tuple[int, ...], ...] | None:
+    """The Cayley table of the first model in Mace4's output, or None."""
+    match = _MACE4_TABLE.search(output)
+    if match is None:
+        return None
+    size = int(match.group(1))
+    values = [int(v) for v in match.group(2).split(",")]
+    return tuple(tuple(values[i * size:(i + 1) * size]) for i in range(size))
 
 
 _CELL = re.compile(r"m\('?fmb_\$i_(\d+)'?,'?fmb_\$i_(\d+)'?\) = '?fmb_\$i_(\d+)'?")
@@ -122,7 +155,8 @@ class VampireExpert(MagmaExpert):
        proved, so is the implication.
     4. Otherwise the model builder searches again, for each law of the
        conclusion not proved separately (`model_time_limit` seconds each, in
-       parallel).
+       parallel), and so does Mace4 if `mace4_time_limit` is positive
+       (`mace4_time_limit` seconds each).
     5. Failing that, the answer is Undecided: the laws of the conclusion that
        were proved are accepted, and the partial row goes into the context.
        If Vampire has shown the implication false as a whole, the rest is left
@@ -150,6 +184,8 @@ class VampireExpert(MagmaExpert):
         workers: int | None = None,
         background: Iterable[Implication[Equation]] = (),
         row_time_limit: int | None = None,
+        mace4_time_limit: int = 0,
+        mace4: str = "mace4",
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -160,6 +196,12 @@ class VampireExpert(MagmaExpert):
         self.model_time_limit = model_time_limit
         self.quick_model_time_limit = quick_model_time_limit
         self.row_time_limit = prove_time_limit if row_time_limit is None else row_time_limit
+        self.mace4_time_limit = mace4_time_limit
+        self.mace4 = None
+        if mace4_time_limit > 0:
+            self.mace4 = shutil.which(mace4)
+            if self.mace4 is None:
+                raise FileNotFoundError(f"Mace4 executable {mace4!r} not found")
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
@@ -270,16 +312,39 @@ class VampireExpert(MagmaExpert):
     ) -> Magma | None:
         """A finite model of the premise violating one of the laws, searched
         for each law separately and in parallel, which is much faster than a
-        search for a model violating their conjunction."""
+        search for a model violating their conjunction, by Vampire and, if
+        enabled, by Mace4."""
         premise = frozenset(implication.premise)
-        laws = sorted(laws)
+        searches = [(False, law) for law in sorted(laws)]
+        if self.mace4 is not None:
+            searches += [(True, law) for law in sorted(laws)]
 
-        def search(law: Equation) -> Magma | None:
+        def search(job: tuple[bool, Equation]) -> Magma | None:
+            mace4, law = job
+            if mace4:
+                return self._search_mace4_model(implication, law)
             problem = tptp_problem(premise, [law])
             return self._search_model(implication, problem, self.model_time_limit)
 
         with ThreadPoolExecutor(self.workers) as pool:
-            return next((m for m in pool.map(search, laws) if m is not None), None)
+            return next((m for m in pool.map(search, searches) if m is not None), None)
+
+    def _search_mace4_model(self, implication: Implication[Equation], law: Equation) -> Magma | None:
+        limit = self.mace4_time_limit
+        try:
+            run = subprocess.run(
+                [self.mace4, "-n", "2", "-N", "-1", "-t", str(limit)],
+                input=ladr_problem(implication.premise, law),
+                capture_output=True,
+                text=True,
+                timeout=limit + 30,
+            )
+        except subprocess.TimeoutExpired:
+            return None
+        table = parse_mace4_model(run.stdout)
+        if table is None:
+            return None
+        return self._checked_model(implication, table, "Mace4")
 
     def _free_magma(
         self,
@@ -328,9 +393,17 @@ class VampireExpert(MagmaExpert):
         table = parse_model(output)
         if table is None:
             return None
-        magma = Magma(len(table), table, name=f"Vampire-Counterexample-Size{len(table)}")
+        return VampireExpert._checked_model(implication, table, "Vampire")
+
+    @staticmethod
+    def _checked_model(
+        implication: Implication[Equation],
+        table: tuple[tuple[int, ...], ...],
+        finder: str,
+    ) -> Magma:
+        magma = Magma(len(table), table, name=f"{finder}-Counterexample-Size{len(table)}")
         holds = all(magma.holds(eq) for eq in implication.premise)
         fails = any(not magma.holds(eq) for eq in implication.conclusion)
         if not (holds and fails):
-            raise ValueError(f"Vampire's model does not refute {implication}:\n{magma}")
+            raise ValueError(f"{finder}'s model does not refute {implication}:\n{magma}")
         return magma

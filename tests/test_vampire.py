@@ -6,7 +6,13 @@ import pytest
 
 from conceptual_exploration import Implication
 from explorations.equational_theories.magma import Equation, Magma
-from explorations.equational_theories.vampire import VampireExpert, parse_model, tptp_law
+from explorations.equational_theories.vampire import (
+    VampireExpert,
+    ladr_problem,
+    parse_mace4_model,
+    parse_model,
+    tptp_law,
+)
 
 pytestmark = pytest.mark.skipif(shutil.which("vampire") is None, reason="Vampire not installed")
 
@@ -28,6 +34,28 @@ def test_parse_model_reads_a_cayley_table():
     )
     assert parse_model(output) == ((0, 1), (1, 0))
     assert parse_model("no model") is None
+
+
+def test_ladr_problem_names_variables_for_mace4():
+    problem = ladr_problem([Equation.parse("x * y = y * x")], Equation.parse("x = x * x"))
+    assert "(xx * xy) = (xy * xx)." in problem
+    assert "formulas(goals).\nxx = (xx * xx).\nend_of_list." in problem
+
+
+def test_parse_mace4_model_reads_a_cayley_table():
+    output = "interpretation( 2, [number=1, seconds=0], [\n  function(*(_,_), [\n\t 1, 0,\n\t 0, 0 ])\n])."
+    assert parse_mace4_model(output) == ((1, 0), (0, 0))
+    assert parse_mace4_model("no model") is None
+
+
+@pytest.mark.skipif(shutil.which("mace4") is None, reason="Mace4 not installed")
+def test_mace4_finds_a_checked_model():
+    expert = VampireExpert(initial_magmas=[], mace4_time_limit=5)
+    question = implication(["x * y = y * x"], ["(x * y) * z = x * (y * z)"])
+    magma = expert._search_mace4_model(question, next(iter(question.conclusion)))
+    assert magma.name.startswith("Mace4-Counterexample")
+    assert magma.holds(Equation.parse("x * y = y * x"))
+    assert not magma.holds(Equation.parse("(x * y) * z = x * (y * z)"))
 
 
 def test_proves_a_valid_implication():

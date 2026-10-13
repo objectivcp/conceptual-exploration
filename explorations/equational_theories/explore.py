@@ -204,6 +204,7 @@ def run_magma_exploration(
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
+    mace4_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
 ):
@@ -212,7 +213,7 @@ def run_magma_exploration(
     row_setting = (
         "" if vampire_row_time_limit is None
         else f", {vampire_row_time_limit} s per other law of a free magma"
-    )
+    ) + (f", Mace4 {mace4_time_limit} s for a model" if mace4_time_limit > 0 else "")
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -278,6 +279,7 @@ def run_magma_exploration(
             quick_model_time_limit=vampire_quick_model_time_limit,
             background=background,
             row_time_limit=vampire_row_time_limit,
+            mace4_time_limit=mace4_time_limit,
         )
     else:
         expert = MagmaExpert(
@@ -482,6 +484,17 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--mace4-time-limit",
+        type=int,
+        default=0,
+        metavar="S",
+        help=(
+            "Seconds the Mace4 model finder gets, alongside Vampire's second "
+            "search, for a finite counterexample to each law of the "
+            "conclusion not proved (default: 0, Mace4 not used)."
+        ),
+    )
+    parser.add_argument(
         "--min-search-size",
         type=int,
         default=1,
@@ -660,6 +673,7 @@ if __name__ == "__main__":
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,
+                mace4_time_limit=args.mace4_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
             )
