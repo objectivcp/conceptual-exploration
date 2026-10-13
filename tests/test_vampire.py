@@ -170,3 +170,44 @@ def test_nothing_decided_is_unconfirmed():
     answer = expert.validate(question)
     assert answer.unconfirmed and not answer.proved
     assert expert.last_status == "unconfirmed"
+
+
+def test_a_free_magma_takes_known_implications_without_asking():
+    flexible = Equation.parse("x * (x * x) = (x * x) * x")
+    background = [Implication(QUESTION.premise, [flexible])]
+    expert = VampireExpert(initial_magmas=[], workers=2, background=background)
+    asked = []
+    answer = laws("CounterSatisfiable", "CounterSatisfiable")
+
+    def recording(conjecture, options):
+        asked.append(conjecture)
+        return answer(conjecture, options)
+
+    scripted(expert, recording)
+    counterexample = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion | {flexible})
+    assert expert.last_status == "free magma"
+    assert flexible in counterexample.positive
+    assert not any("m(m(Vx,Vx),Vx)" in conjecture for conjecture in asked)
+
+
+@pytest.mark.parametrize("row_time_limit, asked_other", [(0, False), (2, True)])
+def test_laws_outside_the_conclusion_get_their_own_time_limit(row_time_limit, asked_other):
+    flexible = Equation.parse("x * (x * x) = (x * x) * x")
+    expert = VampireExpert(initial_magmas=[], workers=2, row_time_limit=row_time_limit)
+    limits = {}
+    answer = laws("CounterSatisfiable", "CounterSatisfiable")
+
+    def run(problem, options, time_limit):
+        conjecture = next(line for line in problem.splitlines() if "conjecture" in line)
+        if "casc" in options and "&" not in conjecture:
+            limits[conjecture] = time_limit
+        return answer(conjecture, options)
+    expert._run = run
+
+    counterexample = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion | {flexible})
+    assert expert.last_status == "free magma"
+    conclusion_limits = [v for k, v in limits.items() if "m(m(Vx,Vx),Vx)" not in k]
+    assert conclusion_limits == [expert.prove_time_limit] * 2
+    other = [v for k, v in limits.items() if "m(m(Vx,Vx),Vx)" in k]
+    assert other == ([row_time_limit] if asked_other else [])
+    assert (flexible in counterexample.positive | counterexample.negative) == asked_other

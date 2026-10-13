@@ -203,11 +203,16 @@ def run_magma_exploration(
     vampire_prove_time_limit: int = 10,
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
+    vampire_row_time_limit: int | None = None,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
+    row_setting = (
+        "" if vampire_row_time_limit is None
+        else f", {vampire_row_time_limit} s per other law of a free magma"
+    )
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -216,6 +221,7 @@ def run_magma_exploration(
         print(
             f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove, "
             f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
+            f"{row_setting}"
         )
     else:
         print(f"Expert:                   Z3, sizes {min_search_size}..{max_search_size}, "
@@ -270,6 +276,8 @@ def run_magma_exploration(
             prove_time_limit=vampire_prove_time_limit,
             model_time_limit=vampire_model_time_limit,
             quick_model_time_limit=vampire_quick_model_time_limit,
+            background=background,
+            row_time_limit=vampire_row_time_limit,
         )
     else:
         expert = MagmaExpert(
@@ -381,6 +389,7 @@ def run_magma_exploration(
             expert_settings = (
                 f"Vampire expert, {vampire_prove_time_limit} s to prove, "
                 f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
+                f"{row_setting}"
             )
         else:
             expert_settings = (
@@ -458,6 +467,18 @@ if __name__ == "__main__":
             "(default: 1). Failing that, it decides each law separately for "
             "the free magma over the premise, with the proving time limit per "
             "law."
+        ),
+    )
+    parser.add_argument(
+        "--vampire-row-time-limit",
+        type=int,
+        default=None,
+        metavar="S",
+        help=(
+            "Seconds Vampire gets for each law outside the conclusion when it "
+            "computes the row of a free magma (default: the proving time "
+            "limit); 0 asks only about the laws of the conclusion and leaves "
+            "the others unknown."
         ),
     )
     parser.add_argument(
@@ -638,6 +659,7 @@ if __name__ == "__main__":
                 vampire_prove_time_limit=args.vampire_prove_time_limit,
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
+                vampire_row_time_limit=args.vampire_row_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
             )

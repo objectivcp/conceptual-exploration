@@ -29,6 +29,7 @@ from pathlib import Path
 
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
+from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Undecided
 from explorations.equational_theories.magma import Equation, Magma, MagmaExpert, Op, Term, Var
 
@@ -109,8 +110,11 @@ class VampireExpert(MagmaExpert):
     2. Its finite model builder briefly searches for a counterexample of any
        size (`quick_model_time_limit` seconds). A model is checked against the
        laws and joins the pool.
-    3. Otherwise Vampire is asked about every law outside the premise
-       separately (`prove_time_limit` seconds each, in parallel): a proof puts
+    3. Otherwise Vampire is asked about every law that the premise does not
+       imply by the background implications and those proved so far,
+       separately and in parallel, for `prove_time_limit` seconds each if the
+       law is in the conclusion and `row_time_limit` seconds otherwise (not
+       at all if that is 0, which leaves the law unknown): a proof puts
        the law on the positive side of the free magma over the premise, a
        counter-satisfiable verdict on the negative side, and a timeout leaves
        it unknown. If a law of the conclusion is on the negative side, the
@@ -144,6 +148,8 @@ class VampireExpert(MagmaExpert):
         vampire: str = "vampire",
         initial_magmas: Sequence[Magma] | None = None,
         workers: int | None = None,
+        background: Iterable[Implication[Equation]] = (),
+        row_time_limit: int | None = None,
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -153,10 +159,14 @@ class VampireExpert(MagmaExpert):
         self.prove_time_limit = prove_time_limit
         self.model_time_limit = model_time_limit
         self.quick_model_time_limit = quick_model_time_limit
+        self.row_time_limit = prove_time_limit if row_time_limit is None else row_time_limit
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
         self._proved: list[Implication[Equation]] = []
+        # Background and proved implications, by which the free magma over a
+        # premise satisfies a law without asking Vampire.
+        self._known = ImplicationTheory[Equation](background)
         self._undecided: dict[Implication[Equation], Undecided] = {}
 
     def validate(
@@ -231,6 +241,7 @@ class VampireExpert(MagmaExpert):
     def _prove(self, implication: Implication[Equation]) -> None:
         self.last_status = "proved"
         self._proved.append(implication)
+        self._known.add(implication)
         return None
 
     def _refute(
@@ -275,16 +286,25 @@ class VampireExpert(MagmaExpert):
         implication: Implication[Equation],
         attributes: Iterable[Equation],
     ) -> PartialObject[FreeMagma, Equation]:
-        """The row of the free magma over the premise, law by law."""
+        """The row of the free magma over the premise, law by law; the laws
+        the premise implies by the known implications need no asking, and
+        the laws outside the conclusion get `row_time_limit` seconds."""
         premise = frozenset(implication.premise)
-        laws = sorted(set(attributes) - premise)
+        implied = self._known.closure(premise) | premise
+        unknown = set(attributes) - implied
+        # The conclusion first, so that its laws start first.
+        laws = sorted(unknown & implication.conclusion)
+        if self.row_time_limit > 0:
+            laws += sorted(unknown - implication.conclusion)
 
         def decide(law: Equation) -> str:
-            return self._run(tptp_problem(premise, [law]), ["--mode", "casc"], self.prove_time_limit)[0]
+            limit = self.prove_time_limit if law in implication.conclusion else self.row_time_limit
+            return self._run(tptp_problem(premise, [law]), ["--mode", "casc"], limit)[0]
 
         with ThreadPoolExecutor(self.workers) as pool:
             verdicts = dict(zip(laws, pool.map(decide, laws)))
-        positive = set(premise) | {law for law, v in verdicts.items() if v == "Theorem"}
+        proved = {law for law, v in verdicts.items() if v == "Theorem"}
+        positive = (implied & set(attributes)) | premise | proved
         negative = {law for law, v in verdicts.items() if v == "CounterSatisfiable"}
         return PartialObject(FreeMagma(premise), positive, negative)
 
