@@ -45,6 +45,7 @@ from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
 from explorations.equational_theories.background import background_implications
+from explorations.equational_theories.etp import EtpLaws, ImplicationGraph, graph_background, load_magmas
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 from explorations.equational_theories.vampire import FreeMagma, VampireExpert
 
@@ -148,8 +149,9 @@ def save_results(
         )
     header = [
         f"Implication theory of an exploration ({settings}).",
-        "background = derived by equational reasoning; confirmed = no counterexample in the",
-        "searched sizes, or proved by Vampire; unconfirmed = neither refuted nor decided;",
+        "background = derived by equational reasoning or taken from the ETP graph; confirmed =",
+        "no counterexample in the searched sizes, or proved by Vampire; unconfirmed = neither",
+        "refuted nor decided;",
         "mapped = dual of another implication, added when not already entailed. Open questions",
         "are implications shown false without a counterexample known to violate their conclusion.",
         "",
@@ -201,7 +203,11 @@ def run_magma_exploration(
     vampire_prove_time_limit: int = 10,
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
+    etp_graph: str | Path | None = None,
+    etp_equations: str | Path | None = None,
 ):
+    if (etp_graph is None) != (etp_equations is None):
+        raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -224,6 +230,8 @@ def run_magma_exploration(
             f"Background Implications:  order {background_order}, transient order {transient}, "
             f"premise size {premise_bound}"
         )
+    if etp_graph is not None:
+        print(f"ETP Implication Graph:    {etp_graph}")
     if results_dir is not None:
         print(f"Results Directory:        {results_dir}")
     print("=" * 70)
@@ -246,6 +254,15 @@ def run_magma_exploration(
             equations, background_order, background_premise_size, background_transient_order
         )
         print(f"\nDerived {len(background)} Background Implications.")
+    if etp_graph is not None:
+        laws = EtpLaws.load(etp_equations)
+        listed = laws.identify(equations)
+        from_graph = graph_background(equations, ImplicationGraph.load(etp_graph), laws)
+        background += from_graph
+        print(
+            f"\nTook {len(from_graph)} Background Implications from the ETP graph, "
+            f"which lists {len(listed)} of the {len(equations)} equations."
+        )
 
     if expert_kind == "vampire":
         expert = VampireExpert(
@@ -262,7 +279,7 @@ def run_magma_exploration(
             z3_timeout_ms=z3_timeout_ms,
         )
     for path in seed_magmas:
-        added = expert.add_magmas(ETP.load_magmas(path))
+        added = expert.add_magmas(load_magmas(path))
         print(f"Seeded the expert with {added} magmas from {path}.")
     reduced = []
     if seed_context:
@@ -270,7 +287,7 @@ def run_magma_exploration(
         # magmas whose rows the others do not already account for.
         tables: dict[tuple, Magma] = {}
         for path in seed_context:
-            for magma in ETP.load_magmas(path):
+            for magma in load_magmas(path):
                 tables.setdefault((magma.size, magma.table), magma)
         seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
         reduced = reduce_objects(seeds)
@@ -372,6 +389,8 @@ def run_magma_exploration(
             )
         settings = f"{Path(equations_path).name}, {state.questions_asked} questions, {expert_settings}"
 
+        if etp_graph is not None:
+            settings += ", ETP graph as background"
         if background_order is not None:
             settings += (
                 f", background order {background_order}, transient order "
@@ -520,9 +539,10 @@ if __name__ == "__main__":
         default=[],
         metavar="PATH",
         help=(
-            "JSON files of magmas, such as the magmas.json of earlier results, "
-            "added to the expert's pool of standard magmas. The pool is checked "
-            "for a counterexample before the solver searches for one."
+            "Files of magmas, such as the magmas.json of earlier results or "
+            "ETP files of tables (any suffix but .json), added to the "
+            "expert's pool of standard magmas. The pool is checked for a "
+            "counterexample before the solver searches for one."
         ),
     )
     parser.add_argument(
@@ -532,10 +552,10 @@ if __name__ == "__main__":
         default=[],
         metavar="PATH",
         help=(
-            "JSON files of magmas, such as the magmas.json of earlier results, "
-            "evaluated on every equation and added to the context before the "
-            "exploration starts, after dropping those whose rows the others "
-            "account for. No question that they refute is asked."
+            "Files of magmas, as for --seed-magmas, evaluated on every "
+            "equation and added to the context before the exploration "
+            "starts, after dropping those whose rows the others account "
+            "for. No question that they refute is asked."
         ),
     )
     parser.add_argument(
@@ -551,6 +571,28 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--etp-graph",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "The ETP's implication graph (graph.json of its website), whose "
+            "implications between two of the equations are given to the "
+            "exploration as background implications; needs --etp-equations."
+        ),
+    )
+    parser.add_argument(
+        "--etp-equations",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "The ETP's equations.txt, by which the equations are matched with "
+            "the ETP's laws whatever their variables and ids; an id that is "
+            "not the ETP's number of the law is an error."
+        ),
+    )
+    parser.add_argument(
         "--results-dir",
         type=Path,
         default=None,
@@ -563,6 +605,8 @@ if __name__ == "__main__":
         ),
     )
     args = parser.parse_args()
+    if (args.etp_graph is None) != (args.etp_equations is None):
+        parser.error("--etp-graph and --etp-equations go together")
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
     results_dir = args.results_dir or (
@@ -594,6 +638,8 @@ if __name__ == "__main__":
                 vampire_prove_time_limit=args.vampire_prove_time_limit,
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
+                etp_graph=args.etp_graph,
+                etp_equations=args.etp_equations,
             )
         finally:
             sys.stdout = sys.__stdout__
