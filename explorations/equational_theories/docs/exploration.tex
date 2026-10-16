@@ -1,0 +1,665 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\code}[1]{\texttt{#1}}
+% A claim to be confirmed: the text in red, the reason in a footnote.
+\newcommand{\tocheck}[2]{\textcolor{red}{#1}\footnote{\textcolor{red}{To check: #2}}}
+\newcommand{\cl}{\mathcal{L}}
+\newcommand{\pos}{^{+}}
+\newcommand{\nega}{^{-}}
+\newcommand{\op}{^{\mathrm{op}}}
+\newcommand{\Eq}[1]{\mathrm{Eq}#1}
+\newcommand{\Th}{\operatorname{Th}}
+
+\fvset{fontsize=\small,frame=single,framesep=2mm}
+\setlist{itemsep=2pt,topsep=4pt}
+
+\title{Conceptual Exploration of Equational Theories of Magmas\\[4pt]
+\large Implementation notes, two case studies, and a user's guide}
+\author{The \code{conceptual-exploration} library}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document describes how the \code{conceptual-exploration} library carries out the attribute exploration of implications between equational laws of magmas, the question studied by the Equational Theories Project. It is written for a reader who knows attribute exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is done differently from the book: partial objects, symmetries, experts that cannot always decide, and the resumption of an exploration when an implication accepted without proof is refuted. It then describes what is specific to equational theories: the attributes and objects, background knowledge derived by bounded equational reasoning, and two experts, one searching for finite counterexamples with the Z3 SMT solver and one using the Vampire theorem prover, which also refutes implications with free magmas. Two explorations are discussed in detail, one of sixteen classical laws and one of all thirty-one one-variable laws with at most four operations. A user's guide closes the document.
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Introduction}
+%======================================================================
+
+A \emph{magma} is a set $G$ with a binary operation $*$. An \emph{equational law} (or \emph{law}) is an equation $s = t$ between two terms built from variables with $*$, read as universally quantified: $G$ \emph{satisfies} $s = t$, written $G \models s = t$, if the two sides agree under every assignment of elements of $G$ to the variables. Examples are commutativity $x * y = y * x$, associativity $(x * y) * z = x * (y * z)$ and idempotence $x = x * x$. The \emph{order} of a law is the number of occurrences of $*$ in its two sides together.
+
+The Equational Theories Project (ETP), initiated by Terence Tao in 2024, set out to decide, for every pair of laws $E, F$ from a list of 4694 laws of order at most four, whether every magma satisfying $E$ also satisfies $F$. Its laws are numbered, and we keep its numbers: $\Eq{43}$ is commutativity, $\Eq{4512}$ associativity, and so on.
+
+From the point of view of Formal Concept Analysis, the natural object of study is the formal context
+\[
+  \mathbb{K}_{\mathrm{Mag}} = (\mathcal{G}, M, \models),
+\]
+where $M$ is a finite set of laws and $\mathcal{G}$ is the class of all magmas. Its object class is not even a set, but its implications are perfectly well defined: $P \to C$ holds in $\mathbb{K}_{\mathrm{Mag}}$ if every magma satisfying all laws of $P$ satisfies all laws of $C$. By Birkhoff's completeness theorem, this is the case exactly when every law of $C$ can be derived from the laws of $P$ by the rules of equational logic. Its intents are the sets $\Th(G) \cap M$ for magmas $G$, the traces on $M$ of equational theories. Attribute exploration is the natural tool for computing the canonical basis of $\mathbb{K}_{\mathrm{Mag}}$ and, with it, all its intents: an expert either confirms an implication, ideally by a proof, or refutes it by a magma.
+
+The library implements the exploration algorithm of the book in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the two experts. Sections~\ref{sec:case16}, \ref{sec:case31} and~\ref{sec:case3} discuss three explorations, and Section~\ref{sec:guide} explains how to run one's own.
+
+%======================================================================
+\section{Attribute exploration as implemented}\label{sec:library}
+%======================================================================
+
+\subsection{Overview}
+
+The exploration loop is the one of the book: the premises are the sets closed under the implications known so far, enumerated with NextClosure in lectic order, and for each premise $P$ the expert is asked about $P \to C$, where $C$ is what the current context suggests $P$ implies. Four features change what happens around this loop:
+\begin{enumerate}
+  \item objects are \emph{partial}: for some attributes it may be unknown whether an object has them (Section~\ref{sec:partial});
+  \item a group of \emph{symmetries} acts on the attributes, and implications and objects are added together with their images (Section~\ref{sec:symmetry});
+  \item the expert may \emph{fail to decide} a question, in which case parts of the conclusion may be accepted without proof or left open (Section~\ref{sec:undecided});
+  \item when an implication accepted without proof is later refuted, the exploration is \emph{resumed} at the point where it went wrong (Section~\ref{sec:rounds}).
+\end{enumerate}
+Algorithm~\ref{alg:exploration} summarizes the loop; the notation is explained in the following subsections.
+
+\begin{algorithm}[t]
+\caption{The exploration loop (\code{AttributeExploration.run})}\label{alg:exploration}
+\begin{algorithmic}[1]
+\Require attributes $M$ with a linear order, background implications $\mathcal{B}$, symmetries $\Phi$, expert
+\State $\cl \gets \mathcal{B}$ closed under $\Phi$; \quad $\mathcal{T} \gets \cl$ \Comment{all implications; trusted ones}
+\State $P \gets \cl(\emptyset)$
+\Loop
+  \State $C \gets P^{\diamond} \setminus P$ \Comment{context closure, Section~\ref{sec:partial}}
+  \If{$C = \emptyset$} \State $P \gets$ next $\cl$-closed set after $P$; \textbf{continue} \EndIf
+  \State ask the expert about $P \to C$
+  \If{the answer is an object $g$ refuting $P \to C$}
+    \State add $g$ and its images under $\Phi$, completed with $\mathcal{T}$; \textbf{continue} with the same $P$
+  \ElsIf{the answer is ``accept''}
+    \State add $P \to C$ and its images to $\cl$ (and to $\mathcal{T}$ if the expert decided it)
+  \Else \Comment{undecided: proved part $D \subseteq C$, partial object, flag}
+    \State add the partial object; add $P \to D$ to $\cl$ and $\mathcal{T}$
+    \State add $P \to C \setminus D$ to $\cl$ only (unconfirmed), or record it as an open question
+  \EndIf
+  \If{an object violates an implication of $\cl \setminus \mathcal{T}$} \State \textbf{stop} and resume (Section~\ref{sec:rounds}) \EndIf
+  \State $P \gets$ next $\cl$-closed set after $P$ (or stop if there is none)
+\EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Partial objects and the question asked}\label{sec:partial}
+
+An object $g$ of the context is a \emph{partial object}: a pair $(g\pos, g\nega)$ of disjoint sets of attributes, those $g$ is known to have and those it is known not to have. The attributes in neither set are unknown. An object refutes $P \to C$ if $P \subseteq g\pos$ and $C \cap g\nega \neq \emptyset$.
+
+The conclusion offered to the expert is computed with the closure
+\[
+  P^{\diamond} = M \setminus \bigcup \{\, g\nega : g \text{ an object with } P \subseteq g\pos \,\}.
+\]
+An attribute belongs to $P^{\diamond}$ unless some object known to have all of $P$ is known not to have it; $P^{\diamond}$ is thus the largest conclusion not refuted by the data at hand. When every row is complete, $P^{\diamond} = P''$ and the question is the one of the book. It is the cautious choice for incomplete data, and it is what makes partial rows useful: an object whose row is only partly known still removes from later conclusions the attributes it is known to lack.
+
+In the equational-theories exploration, finite magmas always have complete rows (the expert evaluates every law on every counterexample), while free magmas (Section~\ref{sec:free}) may have unknown entries.
+
+\paragraph{Completion.}
+Every object is \emph{completed} with the \emph{trusted} implications $\mathcal{T}$ (background, confirmed, and their images; see Section~\ref{sec:undecided}): its positive side is replaced by its $\mathcal{T}$-closure, and every unknown attribute $m$ whose addition would force an attribute of $g\nega$ is added to the negative side:
+\[
+  g\pos := \mathcal{T}(g\pos), \qquad
+  g\nega := g\nega \cup \{\, m : \mathcal{T}(g\pos \cup \{m\}) \cap g\nega \neq \emptyset \,\},
+\]
+the second step repeated until nothing changes. If the closure of the positive side meets the negative side, the object contradicts a trusted implication, and the program stops with an error: such an object can only come from a faulty expert. Objects are completed when they are added, and all objects are brought up to date whenever new trusted implications are accepted. Completion is what eventually fills in some unknown entries of partial rows.
+
+\subsection{Background knowledge}
+
+Background implications are given before the exploration starts, as in the book. They take part in the closure of premises and in the completion of objects, and they are reported with the source \code{background}. Without the features of the next subsections, the accepted implications form the canonical basis of the context relative to the background implications.
+
+\subsection{Symmetries}\label{sec:symmetry}
+
+A \emph{symmetry} (``mapping'' in the code) is a map $\varphi$ from the attributes to the attributes. When an implication $P \to C$ is accepted, so is its image $\varphi(P) \to \varphi(C)$ for every $\varphi \in \Phi$, unless the theory already entails it; images are reported with the source \code{mapped}. When an object $g$ is added, so is, for every $\varphi \in \Phi$, a copy of $g$ with the row
+\[
+  \bigl(\varphi^{-1}(g\pos), \; \varphi^{-1}(g\nega)\bigr),
+\]
+the object that has an attribute $m$ exactly when $g$ has $\varphi(m)$. Copies are named $g\#k$, where $k$ is the number of the mapping (the original is $g\#0$), and a copy whose row repeats one already added is skipped. Each implication and each object is mapped by each $\varphi$ once and never by a composition, so $\Phi$ should be closed under composition, for instance a group. (In general a map may also send an attribute to a truth value; this is used in rule exploration, not here.)
+
+Since the theory is closed under $\Phi$ at all times, the premise $\varphi(P)$ of the image of an accepted implication is not closed and never becomes a question: the expert is asked about one implication per orbit. The price is that the resulting set of implications, background, accepted and mapped together, is a basis of the theory, but in general not its canonical basis.
+
+\subsection{Experts that cannot always decide}\label{sec:undecided}
+
+The book assumes an expert who always answers correctly. The experts used here are programs with time limits, and a question may be left undecided. The library distinguishes four sources of implications:
+\begin{description}
+  \item[\code{background}] given in advance;
+  \item[\code{confirmed}] accepted by an expert who decided the question;
+  \item[\code{unconfirmed}] accepted without a decision: the expert found no counterexample but cannot rule one out;
+  \item[\code{mapped}] the image of another implication under a symmetry.
+\end{description}
+An expert reports that it has not decided a question it accepts through \code{is\_conclusive()}. In addition, an expert may answer with an \code{Undecided} value, which carries
+\begin{itemize}
+  \item a set $D \subseteq C$ of conclusion attributes it did prove: $P \to D$ is accepted as confirmed;
+  \item optionally a partial object, which must not refute $P \to C$ and is added to the context (its unknown entries may be filled later by completion);
+  \item a flag telling what to do with the rest $P \to C \setminus D$: it is accepted as \emph{unconfirmed} if the expert knows nothing against it, or recorded as an \emph{open question} if the expert knows it to be false without knowing which attribute fails.
+\end{itemize}
+
+\paragraph{Trusted and untrusted implications.}
+Unconfirmed implications take part in the closure that generates the premises: they steer the enumeration as accepted implications do. They are, however, not used to complete objects, since they may be false and would then write false values into rows. Every object added later is checked against them; an object violating an unconfirmed implication refutes it.
+
+\paragraph{Open questions.}
+An open question is not added to the theory, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Open questions are listed separately in the results.
+
+\subsection{Resuming after a refuted unconfirmed implication}\label{sec:rounds}
+
+When an object refutes an unconfirmed implication $P \to C$, all closed sets enumerated after $P$ were computed with a false implication, and the enumeration from $P$ on cannot be trusted. The exploration then stops and is resumed (\code{explore\_in\_rounds}): a new round starts with
+\begin{itemize}
+  \item the implications accepted before $P \to C$, whatever their source;
+  \item the \emph{confirmed} implications accepted after it, which are true whatever steered the enumeration to them;
+  \item every object found so far, and the open questions recorded before $P$;
+\end{itemize}
+and resumes NextClosure at $P$. Since NextClosure can continue from any set, and every closed set lectically before $P$ was enumerated without the false implication, nothing before $P$ is repeated. The false implication and the unconfirmed implications accepted after it are dropped; their questions are asked again if they arise. The final theory is sound and complete (up to open questions) but, because the confirmed implications kept were found under a different theory, it need not be a canonical basis.
+
+\subsection{Further details}
+
+\begin{itemize}
+  \item \textbf{Several questions per premise.} After a counterexample, the context closure of the same premise is recomputed and, if it is still larger than the premise, the expert is asked again, as in the book.
+  \item \textbf{Continuing after an acceptance.} After $P \to C$ is accepted, the next closed set is computed from $P$ under the extended theory. NextClosure reuses the step that produced $P$: the closure of $P$ under the new theory is the next closed set if it adds no attribute lectically smaller than the one just added.
+  \item \textbf{Rows of counterexamples.} With \code{evaluate\_all}, the expert is given all attributes and returns the full row of a counterexample, not only its values on the question's attributes. The equational-theories exploration always does this.
+  \item \textbf{Bit sets.} Attribute sets, rows and implications are stored as bit masks, and distinct rows are stored once with the objects sharing them; the context closure and the implication closure (a variant of Wild's algorithm) are integer operations.
+  \item \textbf{Reading the result.} For display, \code{reduced\_basis} rewrites the accepted implications: each premise is reduced to the attributes the rest of it does not entail, and each conclusion to the attributes that do not follow from the premise by way of the background, the other rules and all their images. A premise that entails every attribute is shown as concluding \emph{everything}. The rewritten rules, read together with the background and the symmetries, entail exactly what the accepted implications do.
+\end{itemize}
+
+%======================================================================
+\section{Exploring equational theories}\label{sec:et}
+%======================================================================
+
+\subsection{Attributes}
+
+The attributes are the laws listed in a JSON file, each with an equation string and optionally a name and an ETP number:
+\begin{Verbatim}
+[
+  {"id": 43, "name": "Commutativity", "equation": "(x * y) = (y * x)"},
+  {"id": 4512, "name": "Associativity", "equation": "((x * y) * z) = (x * (y * z))"},
+  {"name": "Medial / Entropic", "equation": "((x * y) * (z * w)) = ((x * z) * (y * w))"}
+]
+\end{Verbatim}
+Terms are parsed into trees with variables as leaves and $*$ as the only operation; laws are compared syntactically. The set of laws must be closed under duality (Section~\ref{sec:duality}).
+
+\subsection{Objects: finite and free magmas}
+
+A \emph{finite magma} is given by its Cayley table on $\{0, \dots, n-1\}$. Whether it satisfies a law is decided by evaluating both sides under all $n^k$ assignments to the $k$ variables of the law, so rows of finite magmas are always complete.
+
+A \emph{free magma} (Section~\ref{sec:free}) is a genuine magma, but usually an infinite one, so the library does not construct it; it represents it by its premise and computes only its row, which may be partial.
+
+\subsection{Duality}\label{sec:duality}
+
+The \emph{dual} of a term reverses all products, $(s * t)\op = t\op * s\op$, and the dual of a law $s = t$ is $s\op = t\op$. The dual $G\op$ of a magma has the transposed table, $a *\op b = b * a$, and $G\op \models E\op$ if and only if $G \models E$. The map $E \mapsto E\op$, with laws identified up to renaming variables and swapping sides, is the only symmetry used; it is an involution, so $\Phi = \{\,{}\op\}$ is closed under composition. Counterexamples are thus added together with their duals, named \code{M}$k$ and \code{M}$k$\code{\^{}op} in the results, and implications together with their dual implications.
+
+\subsection{Background implications from bounded equational reasoning}\label{sec:background}
+
+For laws in a single variable, the library can derive background implications syntactically. A derivation uses three rules:
+\begin{enumerate}
+  \item multiply both sides by the same term from the same side: from $s = t$ derive $u * s = u * t$ and $s * u = t * u$;
+  \item substitute a term for the variable: from $s = t$ derive $s[x := u] = t[x := u]$;
+  \item replace one occurrence of a subterm by an equal one: from $a = b$ and an equation $e$ derive $e$ with one occurrence of $a$ replaced by $b$ (or vice versa). This includes symmetry and transitivity.
+\end{enumerate}
+\tocheck{These rules are complete for one-variable equational logic}{every equational consequence of one-variable laws should be derivable as a chain of replacements of instances $u[x := v] \to w[x := v]$ of premise laws inside contexts, which rules~2, 1 and~3 provide in this order; this argument has not been written out in full.}, but derivations may pass through arbitrarily large equations. Derivations are therefore bounded by an \emph{order} $N$: all equations they pass through have order at most $N$. Within this bound, all rule instances are computed once, as Horn clauses between numbered equations, and the laws a set of laws derives are obtained by forward chaining.
+
+A \emph{transient order} $N' > N$ admits derivations of one more shape: a derived equation is multiplied or substituted into once, giving an equation of order at most $N'$, and both sides of it are then rewritten independently with the derived equations, each rewrite replacing a side of a derived equation by the other side when that is no larger. Every pair of terms reached from the two sides that forms an equation of order at most $N$ is derived. For example, substituting $x * x$ for $x$ in $x * x = ((x * x) * x) * x$ gives an equation of order~10, which $x = (x * x) * (x * x)$ rewrites to $x = (x * (x * x)) * (x * x)$, of order~4. Such steps alternate with the forward chaining until nothing new is derived.
+
+The derivation closure $\sigma$ is a closure operator on sets of laws, and the background implications are computed from it in one of two ways:
+\begin{itemize}
+  \item with a \emph{premise size} $K$ (default $2$), every set $P$ of at most $K$ laws yields $P \to \sigma(P) \setminus P$, unless the implications kept so far entail it. The result is sound but may miss implications that need larger premises;
+  \item with premise size $0$, the canonical basis of $\sigma$ is computed with NextClosure, which visits every $\sigma$-closed set and is much slower.
+\end{itemize}
+In both cases the background is sound: every background implication is valid in all magmas. Laws with several variables are not supported, since rule~2 would then have to rename variables apart and identify laws up to renaming.
+
+\subsection{Background implications from the ETP}\label{sec:etp}
+
+The ETP has decided every implication between two of its 4694 laws, and publishes the outcomes as an implication graph\footnote{\url{https://teorth.github.io/equational_theories/implications/graph.json}}: a $4694 \times 4694$ array, row the premise and column the conclusion, run-length encoded. Together with the ETP's list of laws\footnote{\url{https://github.com/teorth/equational_theories/blob/main/data/equations.txt}}, it gives background implications for laws with any number of variables:
+\begin{itemize}
+  \item every explored law is matched with an ETP law by a canonical form: its variables are renamed in the order of their first occurrence, for both orders of the two sides, and the smaller of the two strings is taken. Two laws have the same canonical form exactly when one becomes the other by renaming variables and swapping sides. A law whose \code{id} is not the ETP's number of the matched law stops the program with an error; laws the ETP does not list take no part;
+  \item the laws that $x = x$ implies in the graph, which hold in every magma, form the conclusion of an implication with empty premise;
+  \item every other listed law $E$ yields $E \to \{F : E \text{ implies } F\}$, leaving out the laws valid in every magma.
+\end{itemize}
+The exploration then only asks about premises of several laws, since every implication with a single premise between listed laws is entailed by the background. \tocheck{The ETP's implications are proved in its Lean formalization}{the graph's outcomes 3 and 7 (implication true) and 2 and 6 (false) are read as ``explicitly or implicitly proved''; whether every such outcome is backed by a Lean proof was not checked.}, so this background is as trustworthy as the ETP; it is reported with the source \code{background}, like derived implications, and both kinds can be used together.
+
+The script \code{etp.py} writes chosen ETP laws, together with their duals, as an equations file with the ETP's numbers as ids, so that the laws to explore can be chosen by number.
+
+\subsection{The Z3 expert}\label{sec:z3}
+
+The \code{MagmaExpert} answers a question $P \to C$ as follows.
+\begin{enumerate}
+  \item It checks a \emph{pool} of magmas: 24 small standard magmas (projections, constants, cyclic groups, the two-element Boolean magmas, a rock--paper--scissors tournament, all two-element tables), every counterexample found so far, and any magmas given as seeds. The first magma satisfying $P$ and violating a law of $C$ is the counterexample.
+  \item Otherwise, for each size $n$ from a minimum to a maximum (by default $1$ to $6$), it asks the Z3 SMT solver for a table of size $n$ satisfying $P$ and violating some law of $C$. The operation is an uninterpreted function restricted to $\{0, \dots, n-1\}$, and the laws are grounded over all assignments. The first table found is the counterexample and joins the pool.
+  \item If no size yields a table, the implication is accepted. It is reported as confirmed if Z3 answered ``unsatisfiable'' for every size and as unconfirmed if it ran out of time (by default 30 seconds) for some size.
+\end{enumerate}
+A ``confirmed'' implication thus only means that it has no counterexample of the searched sizes. It may be false, refuted only by a larger or an infinite magma, and both case studies show that this happens.
+
+\subsection{The Vampire expert}\label{sec:vampire}
+
+The \code{VampireExpert} uses the first-order theorem prover Vampire. A question $P \to C$ becomes a TPTP problem whose axioms are the universal closures of the laws of $P$ and whose conjecture is the conjunction of the laws of $C$. Vampire then answers with a status: \emph{Theorem} (it found a proof), \emph{CounterSatisfiable} (the axioms do not imply the conjecture, shown by a finite model or by a saturated clause set), or a timeout.
+
+The expert proceeds through the following steps and stops at the first one that decides the question.
+\begin{enumerate}
+  \item \textbf{Pool and memory.} The pool is checked as by the Z3 expert. A question entailed by an implication proved before ($P' \subseteq P$, $C \subseteq C'$) is accepted, and an undecided answer is reused if the same question is asked again.
+  \item \textbf{Proof.} Vampire's portfolio mode (\code{-{}-mode casc}) runs on the problem (by default for 10 seconds). A proof confirms the implication. If the run instead ends with a finite model, the model is the counterexample.
+  \item \textbf{Quick model search.} Vampire's finite model builder (\code{-{}-saturation\_algorithm fmb}) looks for a counterexample of any size (by default for 1 second).
+  \item \textbf{Free magma.} The row of the free magma over $P$ is computed, as described below. If a law of $C$ is on its negative side, the free magma refutes the implication. If every law of $C$ is on its positive side, the implication is proved.
+  \item \textbf{Per-law model search.} For each law $c$ of $C$ that the free magma did not prove, the model builder looks for a model of $P$ violating $c$ (by default for 10 seconds each, in parallel). This is much faster than a search for a model violating the conjunction $C$, which has to consider all the ways of violating it at once. Optionally, the model finder Mace4\footnote{\url{https://www.cs.unm.edu/~mccune/prover9/}} searches for a model of $P$ violating $c$ at the same time (option \code{-{}-mace4-time-limit}, off by default). Mace4 searches for tables size by size with its own propagation and symmetry reduction, and it sometimes finds models that Vampire's model builder does not reach in time.
+  \item \textbf{Undecided.} Otherwise, the laws of $C$ that the free magma proved are accepted as confirmed. The free magma joins the context with its partial row. The rest of $C$ is recorded as an open question if step~2 ended with CounterSatisfiable, that is, if Vampire showed $P \to C$ false as a whole, and is accepted as unconfirmed otherwise.
+\end{enumerate}
+Every finite model is read from the output of Vampire or Mace4 and checked against the laws; a model that does not refute the question stops the program with an error. Vampire's proofs and its CounterSatisfiable verdicts obtained by saturation are trusted. The expert counts its answers by kind (\code{pool}, \code{proved}, \code{model}, \code{free magma}, \code{open}, \code{unconfirmed}), and the counts are printed at the end.
+
+Unlike the Z3 expert, the Vampire expert never accepts an implication as confirmed without a proof, and it never accepts an implication it knows to be false.
+
+\subsection{Free magmas}\label{sec:free}
+
+Let $P$ be a set of laws. Call two terms $s$ and $t$, in countably many variables, \emph{equivalent} if $P$ derives $s = t$. The \emph{free magma} $F_P$ over $P$ is the set of equivalence classes, with the operation $[s] * [t] = [s * t]$, which is well defined because $P$ derives $s * t = s' * t'$ whenever it derives $s = s'$ and $t = t'$. It satisfies $P$, and by Birkhoff's theorem it satisfies a law $L$ exactly when $P$ derives $L$. Hence:
+\begin{proposition}
+For every finite set $M$ of laws and every $P \subseteq M$, the row of $F_P$ is $\{\, L \in M : P \vdash L \,\}$, the closure of $P$ in $\mathbb{K}_{\mathrm{Mag}}$. In particular, $F_P$ refutes every false implication with premise $P$.
+\end{proposition}
+For one-variable laws, the submagma of $F_P$ generated by one variable already has the same row. $F_P$ is usually infinite, so it has no table. Its row is computed law by law. The laws that $P$ implies by the background implications and by the implications Vampire has proved so far are on the positive side without asking. For each other law $L$, Vampire runs in portfolio mode on the problem ``$P$ implies $L$'', all laws in parallel and the laws of the conclusion first. A proof puts $L$ on the positive side, CounterSatisfiable on the negative side, and a timeout leaves $L$ unknown. The laws of the conclusion get the proving time limit (by default 10 seconds); the others, which decide nothing about the question but complete the row, get a separate \emph{row time limit} (option \code{-{}-vampire-row-time-limit}, by default the proving time limit). With row time limit~$0$, only the laws of the conclusion are asked about, and the other unknown laws stay unknown unless completion fills them in.
+
+The row time limit matters when many questions end with a free magma that Vampire cannot fully decide: each of them then costs the row time limit for the laws outside the conclusion, which run in parallel on all cores. With the 149 laws of Section~\ref{sec:case3}, a premise that implies few of them leaves well over a hundred laws to ask about, so that every such question costs about the row time limit times the number of laws divided by the number of cores: about 3 minutes on 8 cores with the default 10 seconds, and under 20 seconds with a limit of 1 second.
+
+A free magma is a powerful object: when its row is complete, its intent is the closure of $P$ in $\mathbb{K}_{\mathrm{Mag}}$, so it refutes every later question whose premise it satisfies and whose conclusion is not derivable. In the results, free magmas are named \code{F}$k$, the dual of $F_P$ being the free magma over the dual laws of $P$. The negative side of a free magma rests on Vampire's CounterSatisfiable verdicts. Those obtained from a finite model could be checked; those obtained by saturation cannot be checked by the library and are trusted.
+
+\subsection{Seeding with known magmas}
+
+Magmas found in earlier explorations (the \code{magmas.json} of saved results) can be reused in two ways, and so can the finite magmas of the ETP: files with one table such as \code{[[0, 1], [1, 0]]} per line, after the word \code{Table} or an equation number, as in the ETP's \path{equational_theories/Generated/All4x4Tables/data} and \path{data/smallest_magma_examples.txt}, are read as well (repeated tables once). They can be added to the expert's pool, which is checked before any solver runs. Alternatively, they can be added to the context before the exploration starts: they are evaluated on every law, and objects whose rows the others account for are dropped (an object is redundant if, for each law it violates, another remaining object satisfies everything it satisfies and violates that law). No question that the seeded objects refute is then asked.
+
+%======================================================================
+\section{Case study: sixteen classical laws}\label{sec:case16}
+%======================================================================
+
+The file \code{equations.json} lists the sixteen laws of Table~\ref{tab:laws16}. Some of them have two or more variables, so no background implications are derived; the only prior knowledge is the duality symmetry.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Law & Name & Equation \\
+\midrule
+$\Eq{2}$ & Singleton & $x = y$ \\
+$\Eq{3}$ & Idempotence & $x = x * x$ \\
+$\Eq{4}$ & Left-zero & $x = x * y$ \\
+$\Eq{5}$ & Right-zero & $x = y * x$ \\
+$\Eq{10}$ & Left-central identity & $x = x * (y * x)$ \\
+$\Eq{16}$ & Steiner law 1 & $x * (x * y) = y$ \\
+$\Eq{25}$ & Central identity & $x = (x * y) * x$ \\
+$\Eq{26}$ & Steiner law 2 & $(y * x) * x = y$ \\
+$\Eq{43}$ & Commutativity & $x * y = y * x$ \\
+$\Eq{323}$ & Left-idempotent composition & $x * y = x * (x * y)$ \\
+$\Eq{378}$ & Right-idempotent composition & $(y * x) * x = y * x$ \\
+$\Eq{4396}$ & Left-alternative & $(x * x) * y = x * (x * y)$ \\
+$\Eq{4435}$ & Flexible & $(x * y) * x = x * (y * x)$ \\
+$\Eq{4473}$ & Right-alternative & $(y * x) * x = y * (x * x)$ \\
+$\Eq{4512}$ & Associativity & $(x * y) * z = x * (y * z)$ \\
+Medial & Medial (entropic) & $(x * y) * (z * w) = (x * z) * (y * w)$ \\
+\bottomrule
+\end{tabular}
+\caption{The laws of \code{equations.json}. The names are those of the file.}\label{tab:laws16}
+\end{table}
+
+\subsection{Two explorations}
+
+The laws were explored twice, once with each expert, with the default settings (Table~\ref{tab:runs16}).
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Z3, sizes 1--6 & Vampire, 10\,s / 1\,s / 10\,s \\
+\midrule
+Questions & 59 & 62 \\
+Implications accepted & 27 & 27 \\
+\quad of which unconfirmed & 2 & 0 \\
+Implications in the theory (with images) & 43 & 44 \\
+Counterexamples & 32 & 35 \\
+Free magmas & --- & 0 \\
+Open questions & --- & 0 \\
+Running time & 2 min 52 s & 2 min 51 s \\
+\bottomrule
+\end{tabular}
+\caption{The two explorations of the sixteen laws. Of Vampire's 35 counterexamples, 27 are models found by Vampire and 8 come from the pool. The Vampire time limits are those for a proof, the quick model search and the per-law model search.}\label{tab:runs16}
+\end{table}
+
+The Vampire exploration proved every implication it accepted and refuted every other question with a checked finite magma, so its theory is exactly the set of implications between these laws that hold in all magmas. It is listed in reduced form in Table~\ref{tab:basis16}; each rule stands also for its dual, which swaps $\Eq{4}$ and $\Eq{5}$, $\Eq{10}$ and $\Eq{25}$, $\Eq{16}$ and $\Eq{26}$, $\Eq{323}$ and $\Eq{378}$, $\Eq{4396}$ and $\Eq{4473}$, and fixes the other laws.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{@{}rl@{\quad}rl@{}}
+\toprule
+1 & $\Eq{16}, \Eq{26} \to \Eq{43}$ &
+15 & $\Eq{10} \to \Eq{378}$ \\
+2 & $\Eq{4512} \to \Eq{4435}, \Eq{4473}$ &
+16 & $\Eq{10}, \Eq{323} \to \Eq{4473}$ \\
+3 & $\Eq{26}, \Eq{378} \to \Eq{4}$ &
+17 & $\Eq{10}, \Eq{4435} \to \Eq{25}$ \\
+4 & $\Eq{16}, \Eq{378} \to \Eq{10}, \text{Medial}$ &
+18 & $\Eq{10}, \Eq{4473} \to \Eq{3}$ \\
+5 & $\Eq{323}, \Eq{378}, \text{Medial} \to \Eq{4512}$ &
+19 & $\Eq{10}, \Eq{4396} \to \Eq{323}$ \\
+6 & $\Eq{43} \to \Eq{4435}$ &
+20 & $\Eq{5} \to \Eq{4512}, \Eq{10}, \Eq{16}$ \\
+7 & $\Eq{26}, \Eq{43} \to \Eq{16}$ &
+21 & $\Eq{3}, \text{Medial} \to \Eq{4435}$ \\
+8 & $\Eq{43}, \Eq{378} \to \Eq{323}$ &
+22 & $\Eq{3}, \Eq{378} \to \Eq{4473}$ \\
+9 & $\Eq{26}, \Eq{4473}, \text{Medial} \to \Eq{4512}$ &
+23 & $\Eq{3}, \Eq{4473} \to \Eq{378}$ \\
+10 & $\Eq{16}, \Eq{4473}, \text{Medial} \to \Eq{4512}$ &
+24 & $\Eq{10}, \Eq{25} \to \Eq{4435}$ \\
+11 & $\Eq{16}, \Eq{4435}, \Eq{4473} \to \Eq{4396}$ &
+25 & $\Eq{25}, \Eq{4512} \to \text{Medial}$ \\
+12 & $\Eq{43}, \Eq{4473} \to \Eq{4396}$ &
+26 & $\Eq{25}, \Eq{43} \to \Eq{2}$ \\
+13 & $\Eq{26}, \Eq{4512} \to \text{Medial}$ &
+27 & $\Eq{2} \to$ everything \\
+14 & $\Eq{43}, \Eq{4512} \to \text{Medial}$ & & \\
+\bottomrule
+\end{tabular}
+\caption{The implications between the sixteen laws, in the reduced form printed by the program. Together with their duals, they entail every implication that holds in all magmas.}\label{tab:basis16}
+\end{table}
+
+\subsection{Where the experts differ}
+
+The Z3 exploration accepted three implications that are false: one implication together with its dual, and one self-dual implication.
+\begin{itemize}
+  \item $\Eq{16}, \Eq{4435}, \Eq{4473} \to \Eq{4396}, \Eq{4512}, \text{Medial}$ (and its dual). Only $\Eq{4396}$ follows (rule~11). Associativity and mediality fail in \tocheck{a Steiner loop of order~10: a commutative loop in which every element is its own inverse, built from the Steiner triple system on nine points (the affine plane of order~3)}{the library only checked that the magma is a commutative loop with $x * x = e$ for its identity~$e$ and which laws it satisfies; the identification relies on the correspondence between Steiner loops of order $n + 1$ and Steiner triple systems on $n$ points, and on the uniqueness of the system on nine points.}. It satisfies $\Eq{16}$, $\Eq{26}$, $\Eq{43}$, $\Eq{4396}$, $\Eq{4435}$ and $\Eq{4473}$ but none of the other laws.
+  \item $\Eq{3}, \Eq{16}, \Eq{26}, \Eq{43}, \Eq{4435} \to \text{Medial}$. It fails in \tocheck{the Steiner quasigroup of order~7, the idempotent commutative quasigroup of the Fano plane, in which $x * y$ is the third point on the line through $x$ and $y$}{the library only checked which laws the magma satisfies; the identification relies on idempotent totally symmetric quasigroups being Steiner quasigroups and on the uniqueness of the Steiner triple system on seven points.}.
+\end{itemize}
+Both counterexamples exceed the sizes the Z3 expert searches. Conversely, the two implications Z3 accepted as unconfirmed ($\Eq{323}, \Eq{378}, \text{Medial} \to \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512}$, rule~5 in reduced form, and $\Eq{43}, \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512} \to \text{Medial}$) are true, and Vampire proved them. Every implication Vampire accepted is entailed by the Z3 theory, as it should be.
+
+The first of the false implications also illustrates the per-law model search of step~5. Before that step was added, the Vampire expert left this question undecided: the free magma over the premise decided neither associativity nor mediality in time, and a model violating their conjunction was not found within the time limit. The model builder finds the size-10 Steiner loop in a few seconds when it looks for a violation of a single law, while the search for a violation of both needs more than a minute and a half.
+
+%======================================================================
+\section{Case study: one-variable laws of order at most four}\label{sec:case31}
+%======================================================================
+
+The file \code{equations\_1var\_order4.json} lists the 31 laws in one variable of order at most four, the trivial law $\Eq{1}$: $x = x$ included. Up to the order of the sides, they are all the equations $s = t$ between the 23 one-variable terms with at most four operations such that the two sides together have at most four operations: 22 laws $x = t$, seven laws $x * x = t$, the law $x * (x * x) = (x * x) * x$, and $\Eq{1}$. Since all laws have one variable, background implications can be derived.
+
+\subsection{Background}
+
+With order $N = 4$, transient order $N' = 10$ and premise size $K = 2$, the derivation closure yields 111 background implications. With premise size $0$, the canonical basis of the derivation closure has 95 implications; the two sets entail each other, so for these laws premises of size two lose nothing. The 111 implications have 108,635 closed sets.
+
+\subsection{Results}
+
+Table~\ref{tab:runs31} compares two Vampire explorations, which differ only in the order of the steps of the expert, with two explorations by the Z3 expert.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}Xrrrr@{}}
+\toprule
+ & \multicolumn{2}{c}{Vampire} & \multicolumn{2}{c}{Z3, sizes 1--6} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & full search first & quick search first & no background & background \\
+\midrule
+Background implications & 111 & 111 & --- & 103 \\
+Questions & 17,835 & 18,655 & 8,189 & 8,342 \\
+Implications accepted & 0 & 0 & 887 & 842 \\
+\quad of which false & 0 & 0 & 837 & 837 \\
+Refuted by a finite model & 15,894 & 14,688 & 7,302 & 7,500 \\
+Refuted by a free magma & 1,941 & 3,967 & --- & --- \\
+Open or unconfirmed & 0 & 0 & 0 & 2 \\
+Closed sets of the theory & 108,635 & 108,635 & 75,127 & 75,127 \\
+Running time & 8 h 05 min & 2 h 25 min & not recorded & 3 h 18 min \\
+\bottomrule
+\end{tabularx}
+\caption{Explorations of the 31 one-variable laws. ``Full search first'' runs a 10-second finite model search on the conjunction before computing the free magma; ``quick search first'' runs a 1-second search, then the free magma, then a 10-second search per law. ``Refuted by a finite model'' includes the 7 questions answered by the pool. The Z3 exploration with background used order 7 and no transient order. The Vampire running times are wall-clock times on an 8-core laptop; the second excludes a 40-minute sleep of the machine.}\label{tab:runs31}
+\end{table}
+
+\paragraph{No implication beyond the background.}
+Both Vampire explorations refuted every question: no implication was accepted, and the theory is the background itself. This is a mathematical result: \emph{every implication between one-variable laws of order at most four that holds in all magmas follows from the 111 background implications}, that is, it can be derived by equational reasoning through equations of order at most four, with single steps reaching order ten, from premises of at most two laws. Conversely, every non-implication is witnessed either by a finite magma, checked by the library, or by a free magma whose relevant negative entry rests on Vampire's saturation. The final context of the second run has 37,177 objects (originals and duals) with pairwise distinct rows, and its 108,635 intents are exactly the closed sets of the background. Every row was decided completely: no free magma has an unknown entry.
+
+\paragraph{The counterexamples.}
+The finite counterexamples found in the first Vampire run have the following sizes (originals only):
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Size & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 \\
+Magmas & 5 & 92 & 876 & 2,741 & 2,837 & 2,247 & 4,694 & 2,200 & 202 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Most counterexamples are larger than six elements, and some implications have no finite counterexample that Vampire finds in time; for those the free magma is the counterexample. A typical example is question~685 of the second run, whose premise consists of $\Eq{1}$ and seven laws including $x = (((x*x)*x)*x)*x$ and $x*x = x*(x*(x*x))$: the free magma over the premise satisfies exactly the eight premise laws and refutes all 23 others at once.
+
+\paragraph{What the Z3 explorations got wrong.}
+The Z3 expert searches only up to six elements, and its explorations accepted 887 and 842 implications. Only 50 and 5 of them, respectively, follow from the background (the second exploration already had most valid implications as background); the remaining 837 are false in both cases. The false implications made the enumeration skip about a third of the closed sets, which is why the Z3 explorations asked fewer than half as many questions. In this domain, bounded finite-model search is a poor expert: an implication without small counterexamples is more often false than true.
+
+\paragraph{Order of the steps.}
+In the first Vampire exploration, a 10-second model search on the conjunction preceded the free magma. Most questions that ended with a free magma thus first spent 10 seconds in a hopeless search. Running a 1-second search first, the free magma next, and a 10-second search per law last cut the running time by a factor of more than three. The number of questions differs between the runs because different counterexamples were found, which changes the context and therefore which closed sets need a question; the theory is the same.
+
+%======================================================================
+\section{Case study: ETP laws of order at most two and three}\label{sec:case3}
+%======================================================================
+
+The ETP has decided every implication $E \to F$ between two of its laws, but an implication with a larger premise, such as $E_1, E_2 \to F$, is not determined by those: $E_1$ and $E_2$ may together imply a law that neither implies alone. Attribute exploration with the ETP graph as background (Section~\ref{sec:etp}) asks exactly about such premises. The two explorations of this section apply it to the ETP laws of order at most two and three.
+
+\subsection{Choice of the laws}
+
+Laws that imply each other are interchangeable in an implication, so it suffices to explore one law from each class of equivalent laws. The ETP lists 46 laws of order at most two, in 23 classes, and 410 laws of order at most three, in 146 classes. One law is chosen from each class: the law with the smallest number, or, if the class contains a law equal to its own dual, the first such law. If no law of a class is self-dual, the dual of the chosen law, which lies in the dual class (possibly the same class), is chosen as well and represents that class, so that the set is closed under duality. This gives 24 laws of order at most two (\code{equations\_order2.json}) and 149 of order at most three (\code{equations\_order3.json}). Each set includes $\Eq{1}$: $x = x$ and $\Eq{2}$: $x = y$, which hold in every magma and only in the trivial magma, respectively. The two explorations took 18 and 138 background implications from the ETP graph.
+
+\subsection{Order at most two}
+
+With the Vampire expert and the ETP background, the exploration of the 24 laws asked 45 questions. It found 19 counterexamples, 6 of them two-element magmas of the pool and 13 found by Vampire, of sizes 3 to 5, and proved 26 implications; nothing was left unconfirmed or open, and no free magma was needed. The theory has 59 closed sets, and each of the 26 rules of its reduced basis has a premise of two laws. For example:
+\begin{itemize}
+  \item $\Eq{25}, \Eq{43} \to \Eq{2}$: a commutative magma satisfying $x = (x * y) * x$ is trivial;
+  \item $\Eq{26}, \Eq{29} \to \Eq{43}$: the laws $x = (x * y) * y$ and $x = (y * x) * y$ together imply commutativity;
+  \item $\Eq{25}, \Eq{8} \to \Eq{3}$: the laws $x = (x * y) * x$ and $x = x * (x * x)$ together imply idempotence.
+\end{itemize}
+Since every question was decided, this is the complete implicational theory of the ETP laws of order at most two: every implication between them that holds in all magmas follows from the 26 rules, the 18 single-premise implications of the ETP graph, duality, and the equivalence of the laws of each class.
+
+\subsection{Order at most three}
+
+The 149 laws have far more closed sets, and many premises combine laws whose consequences Vampire finds hard to decide. Two explorations were run, both with the ETP background, the context seeded with the ETP's finite magmas (Section~\ref{sec:etp}; 233 of 1374 tables were kept), a row time limit of 1 second, and otherwise the default limits. The second also used Mace4 in the per-law model search, for 30 seconds per law. Table~\ref{tab:runs3} compares them.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}Xrr@{}}
+\toprule
+ & Vampire & Vampire and Mace4 \\
+\midrule
+Questions & 1,310 & 1,326 \\
+\quad proved & 736 & 746 \\
+\quad refuted by a finite model & 437 & 440 \\
+\quad refuted by a free magma & 75 & 76 \\
+\quad unconfirmed & 57 & 59 \\
+\quad open & 5 & 5 \\
+Confirmed implications & 750 & 754 \\
+Unconfirmed implications in the theory & 57 & 48 \\
+\quad of which shown false afterwards & 6 or more & --- \\
+Rules of the reduced basis & 793 & 795 \\
+Closed sets of the theory & 3,650 & 3,663 \\
+\quad without the unconfirmed implications & 8,378 & 8,377 \\
+Rounds & 1 & 2 \\
+Running time & 2 h 48 min & 4 h 34 min \\
+\bottomrule
+\end{tabularx}
+\caption{Explorations of the 149 representatives of the ETP laws of order at most three, with the ETP graph as background and the ETP's finite magmas in the context. The counts of unconfirmed implications do not include their duals. The running times are wall-clock times on an 8-core laptop; the second excludes a sleep of the machine of about an hour.}\label{tab:runs3}
+\end{table}
+
+\paragraph{Where Vampire gets stuck.}
+Most hard questions involve $\Eq{255}$: $x = ((x * x) * x) * x$ or its dual $\Eq{47}$: $x = x * (x * (x * x))$, combined with laws in two or more variables. In the second exploration, 44 of the 48 unconfirmed implications and all five open questions have one of these two laws in their premise. Their premises are often large: the open questions have 16 to 18 laws in their premise.
+
+\paragraph{Testing the unconfirmed implications.}
+After the first exploration, each law of the conclusion of each of its 19 unconfirmed questions (109 laws in all) was tried again, separately, with longer limits:
+\begin{itemize}
+  \item Vampire, 60 seconds in portfolio mode and 60 seconds with its model builder, first on the premise alone and then with the one-variable laws that the premise derives (Section~\ref{sec:background}) added as lemmas: none of the 109 laws was decided;
+  \item Prover9, 60 seconds: no proof;
+  \item Mace4, 60 seconds: models of size 16 violating 34 of the laws, found within 0.2 to 31 seconds. These settled six of the 19 questions as false, all their unproved laws being violated, and three magmas sufficed for all six.
+\end{itemize}
+So at least six of the 57 unconfirmed implications of the first exploration are false, and the enumeration, which they steered, skipped closed sets. Its 3,650 closed sets are therefore not those of the true theory.
+
+\paragraph{The second exploration.}
+With Mace4 in the per-law search, the expert found the counterexamples of size 16 during the exploration itself, together with models of sizes 11 and 13 that Vampire had missed (17 tables in all, counting duals). One of them refuted an unconfirmed implication accepted 260 questions earlier; the exploration resumed at that question (Section~\ref{sec:rounds}), which made it run in two rounds. In the end, 48 unconfirmed implications and 5 open questions remain, and 46 of the 48 have the same premise as an unconfirmed implication of the first exploration. No counterexample to them is known, but they are not proved either.
+
+\paragraph{What the results say.}
+The 754 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, and those witnessed by free magmas rest on Vampire's saturation. The 3,663 closed sets of the theory are correct if the 48 unconfirmed implications are true. Without them, the theory has 8,377 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide.
+
+%======================================================================
+\section{User's guide}\label{sec:guide}
+%======================================================================
+
+\subsection{Installation}
+
+The library needs Python 3.11 or later. In a clone of the repository:
+\begin{Verbatim}
+pip install -e ".[examples]"     # the library, Z3 and Jupyter
+\end{Verbatim}
+The Vampire expert additionally needs the \code{vampire} executable on the path, for example via Homebrew (\code{brew install vampire}) or a release from \url{https://vprover.github.io}. The explorations described here used Vampire 5.1.0. The optional Mace4 search needs the \code{mace4} executable, which comes with Prover9 (\code{brew install prover9}).
+
+\subsection{Describing the laws}
+
+Write the laws to a JSON file as in Section~\ref{sec:et}. Every entry needs an \code{equation} string; \code{name} and \code{id} are optional, and laws without an id are identified by their name or their text in the results. Terms use variables (single letters or identifiers), \code{*} and parentheses; an unparenthesized product associates to the left, so \code{x * y * z} is read as $(x * y) * z$. The set must be closed under duality: for every law, a law equal to its dual up to renaming variables and swapping sides must be in the file, or the program stops with an error naming the missing dual. Derived background implications (Section~\ref{sec:background}) require all laws to have the same single variable; background from the ETP (Section~\ref{sec:etp}) does not. To explore ETP laws chosen by number, let \code{etp.py} write the file:
+\begin{Verbatim}
+python explorations/equational_theories/etp.py equations.txt 3 43 4512 \
+    -o my_laws.json
+\end{Verbatim}
+where \code{equations.txt} is the ETP's list of laws; the duals of the chosen laws are added.
+
+\subsection{Running an exploration}
+
+From the root of the repository:
+\begin{Verbatim}
+python explorations/equational_theories/explore.py \
+    --equations my_laws.json --expert vampire
+\end{Verbatim}
+Table~\ref{tab:options} lists the options.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}>{\ttfamily}l l X@{}}
+\toprule
+\normalfont Option & Default & Meaning \\
+\midrule
+-{}-equations PATH & \code{equations.json} & the laws to explore \\
+-{}-expert z3|vampire & \code{z3} & which expert answers the questions \\
+-{}-vampire-prove-time-limit S & 10 & seconds for a proof, and for each law of the conclusion in a free magma's row \\
+-{}-vampire-row-time-limit S & prove limit & seconds for each other law of a free magma's row; $0$ leaves them unknown \\
+-{}-vampire-quick-model-time-limit S & 1 & seconds for the first finite model search \\
+-{}-vampire-model-time-limit S & 10 & seconds for each per-law finite model search \\
+-{}-mace4-time-limit S & 0 & seconds for Mace4 in each per-law search; $0$ leaves Mace4 out \\
+-{}-min-search-size N & 1 & smallest table size Z3 tries \\
+-{}-max-search-size N & 6 & largest table size Z3 tries \\
+-{}-z3-timeout-ms MS & 30000 & Z3 time per size; $0$ means unbounded \\
+-{}-background-order N & off & derive background implications through equations of order at most $N$ (at least the largest order of a law) \\
+-{}-background-transient-order M & $N$ & let single steps reach order $M$ \\
+-{}-background-premise-size K & 2 & largest premise of a background implication; $0$ computes the canonical basis \\
+-{}-etp-graph PATH & & the ETP's implication graph, as background; needs \code{-{}-etp-equations} \\
+-{}-etp-equations PATH & & the ETP's list of laws, to match the explored laws \\
+-{}-seed-magmas PATH... & & add magmas to the expert's pool \\
+-{}-seed-context PATH... & & add magmas to the context before starting \\
+-{}-report-every N & 1 & print every $N$th question; $0$ prints none \\
+-{}-results-dir PATH & new directory & where to save the results \\
+\bottomrule
+\end{tabularx}
+\caption{Options of \code{explore.py}. The Z3 options apply to the Z3 expert only, and the Vampire options to the Vampire expert only.}\label{tab:options}
+\end{table}
+
+\subsection{Choosing the expert and the time limits}
+
+\begin{itemize}
+  \item Use the \textbf{Vampire expert} when the result should be correct. Its confirmed implications are proved, and its counterexamples are checked magmas or free magmas. If it accepts something as unconfirmed or leaves a question open, the summary says so.
+  \item Use the \textbf{Z3 expert} for a quick first impression, or when Vampire is not available. Treat its accepted implications as conjectures: as the case studies show, they may be false.
+  \item Longer \textbf{proving time limits} help when implications are true but hard to prove. The laws of the conclusion in a free magma's row get the same limit, and a law Vampire cannot decide in time stays unknown.
+  \item A short \textbf{row time limit}, such as 1 second, speeds up explorations with many laws, where most of a free magma's row is outside the conclusion. The price is more unknown entries, so a free magma refutes fewer later questions by itself.
+  \item Longer \textbf{model time limits} help when counterexamples are large. The per-law search usually finds a model faster than the search on the whole conclusion. Adding Mace4 with \code{-{}-mace4-time-limit} costs up to that many seconds for every question that reaches the per-law search, which is worth it when Vampire's model builder misses counterexamples of moderate size, such as the magmas of size~16 that refuted several unconfirmed implications between laws of order at most three.
+  \item Vampire runs in parallel on all cores when it computes a free magma's row or searches for models law by law, so other work on the machine slows the exploration down.
+\end{itemize}
+
+\subsection{Background knowledge}
+
+For one-variable laws, background implications usually pay off: they are computed in seconds and remove the questions whose answer is a derivation. Start with \code{-{}-background-order} equal to the largest order of the laws and a transient order of about twice that; the 31-law exploration used 4 and 10. A larger order finds more implications at a cost that grows quickly. A premise size of 2 is usually enough; compare with \code{-{}-background-premise-size 0} on a small set of laws if in doubt.
+
+For laws the ETP lists, pass its implication graph and its list of laws:
+\begin{Verbatim}
+python explorations/equational_theories/explore.py \
+    --equations my_laws.json --expert vampire \
+    --etp-graph graph.json --etp-equations equations.txt
+\end{Verbatim}
+This background costs nothing to compute and leaves only questions whose premise has several laws. It helps most when the implications between pairs of laws are hard to settle.
+
+\subsection{Reusing magmas}
+
+To start a new exploration with the magmas of an earlier one, pass its \code{magmas.json} to \code{-{}-seed-context} (fewer questions) or to \code{-{}-seed-magmas} (the same questions, answered faster). Free magmas are not reused. The ETP's files of tables can be passed in the same way. Seeded into the context of the exploration of Section~\ref{sec:case3}, the 1374 distinct tables of \path{All4x4Tables} and \path{smallest_magma_examples.txt} were reduced to 233 magmas.
+
+\subsection{Reading the output}
+
+The program prints every question with its answer and writes the same text to \code{exploration.log}:
+\begin{Verbatim}
+Number of implications: 111
+Number of objects: 1358
+Question 685: Eq1: x = x, Eq1629: ... -> Eq8: x = (x * (x * x)), ...
+Counterexample found: Free magma over {Eq1, Eq1629, Eq1832, ...}
+Satisfies: ...
+Does not satisfy: ...
+\end{Verbatim}
+The counts are those before the answer; the objects include the duals. An accepted question is followed by \code{Confirmed} or \code{Unconfirmed}, and an undecided one by \code{Open} or \code{Unconfirmed} together with the laws it proved. At the end, the program prints a summary (questions, accepted implications, counterexamples, open questions, rounds, and the Vampire expert's answers by kind), the reduced basis, any open questions and refuted unconfirmed implications, and a few counterexamples.
+
+The results directory contains:
+\begin{description}
+  \item[\code{exploration.log}] everything printed;
+  \item[\code{implications.txt}, \code{implications.json}] the whole theory, every implication with its source (\code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped}), followed by the refuted unconfirmed implications and the open questions;
+  \item[\code{magmas.json}] the finite magmas of the context with their tables, under the names \code{M}$k$ and \code{M}$k$\code{\^{}op};
+  \item[\code{free\_magmas.json}] the free magmas \code{F}$k$, each with its premise and its known positive and negative laws;
+  \item[\code{context.cxt}] the objects with complete rows, in Burmeister's format;
+  \item[\code{partial\_context.cxt}] all objects in the same format, with \code{?} for unknown entries.
+\end{description}
+The program saves the results only at the end. If it is interrupted, only the log remains.
+
+\subsection{Using the library from Python}
+
+The runner is a thin layer over the library, which can be used directly:
+\begin{Verbatim}
+from conceptual_exploration import explore_in_rounds, reduced_basis, report_every
+from explorations.equational_theories.magma import ETP
+from explorations.equational_theories.vampire import VampireExpert
+from explorations.equational_theories.background import background_implications
+
+laws = ETP.load_equations("my_laws.json")
+expert = VampireExpert(attributes=laws, prove_time_limit=10,
+                       quick_model_time_limit=1, model_time_limit=10)
+result = explore_in_rounds(
+    laws, expert,
+    background_implications=background_implications(laws, 4, 2, 10),
+    mappings=[ETP.get_duality_mapping(laws)],
+    evaluate_all=True,
+    on_question=report_every(100),
+)
+for rule in reduced_basis(result.base):
+    print(rule)
+print(result.base.open_questions, expert.answers)
+\end{Verbatim}
+\code{run\_magma\_exploration} in \code{explore.py} does the same with the options above and saves the results; the notebook \code{explore.ipynb} shows smaller examples. Another expert can be plugged in by subclassing \code{Expert} and implementing \code{validate}, which returns a refuting \code{PartialObject}, \code{None} to accept, or an \code{Undecided} value.
+
+\subsection{Practical remarks}
+
+\begin{itemize}
+  \item \textbf{Size.} The number of questions grows with the number of closed sets of the final theory, which may be large: 108,635 for 31 laws without a single accepted implication. Expect hours for such an exploration and minutes for one with a few dozen closed sets per law.
+  \item \textbf{Long runs.} Keep the terminal open. Putting the machine to sleep is harmless in principle, but a Vampire run in progress at that moment may time out on waking, since the time limits are wall-clock times; this can at worst turn a refutation into an undecided answer, which the summary reports.
+  \item \textbf{Reproducibility.} Equations are sorted before they are given to the solvers, so a Z3 exploration is reproducible. Vampire's time limits make a Vampire exploration depend on the machine's speed: a different run may find different counterexamples and ask a different number of questions, but the theory is the same unless a question is left undecided.
+  \item \textbf{Trust.} Finite counterexamples are checked by the library. Proofs and saturation-based CounterSatisfiable verdicts are Vampire's; independent confirmation would require checking Vampire's proofs or the free magmas' negative entries separately.
+\end{itemize}
+
+\end{document}
