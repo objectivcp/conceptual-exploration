@@ -1,0 +1,15 @@
+name = "order2"
+defaultTargets = ["Order2"]
+
+[[require]]
+name = "batteries"
+git = "https://github.com/leanprover-community/batteries"
+rev = "756e3321fd3b02a85ffda19fef789916223e578c"
+
+[[require]]
+name = "Qq"
+git = "https://github.com/leanprover-community/quote4"
+rev = "707efb56d0696634e9e965523a1bbe9ac6ce141d"
+
+[[lean_lib]]
+name = "Order2"

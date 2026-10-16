@@ -75,7 +75,7 @@ python explorations/equational_theories/etp.py equations.txt 3 43 4512 -o my_law
 python explorations/equational_theories/explore.py --equations my_laws.json --expert vampire --etp-graph graph.json --etp-equations equations.txt
 ```
 
-With `--max-order K --graph graph.json` instead of numbers, it writes one law of each class of ETP laws of at most `K` operations that imply each other, closed under duality, each with the members of its class; [`equations_order2.json`](equations_order2.json) and [`equations_order3.json`](equations_order3.json) were written so.
+With `--max-order K --graph graph.json` instead of numbers, it writes one law of each class of ETP laws of at most `K` operations that imply each other, closed under duality, each with the members of its class; [`equations_order2.json`](equations_order2.json) and [`equations_order3.json`](equations_order3.json) were written so, from the ETP data recorded in [`etp_version.json`](etp_version.json). The rules found for the laws of order at most two are proved in Lean in [`lean/`](lean/README.md).
 
 Magmas found earlier, such as the `magmas.json` of saved results, can be reused. Files of the ETP with one table per line, such as those in its `equational_theories/Generated/All4x4Tables/data`, are read as well. `--seed-magmas PATH...` adds them to the expert's pool, which is checked for a counterexample before the solver searches. `--seed-context PATH...` instead evaluates them on every equation and adds them to the context before the exploration starts, dropping those whose rows the others account for, so that no question they refute is asked:
 
