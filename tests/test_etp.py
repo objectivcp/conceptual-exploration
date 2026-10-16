@@ -14,6 +14,8 @@ from explorations.equational_theories.etp import (
     load_magmas,
     load_tables,
     main,
+    order,
+    representatives,
 )
 from explorations.equational_theories.explore import run_magma_exploration
 from explorations.equational_theories.magma import ETP, Equation
@@ -124,3 +126,46 @@ def test_an_exploration_takes_the_graph_as_background(etp, tmp_path):
     idempotent = Equation.parse("x = (x * x)", id=3)
     assert Implication([Equation.parse("x = (x * y)", id=4)], [idempotent]) in background
     assert not base.accepted_implications
+
+
+# Laws with two classes of equivalent laws: x = x * y and its dual x = y * x,
+# a class without a self-dual law, and x = x * x and x * y = y * x, both
+# self-dual; x = x * (x * y) and its dual x = (y * x) * x are classes of
+# their own.
+CLASS_LAWS = [
+    "x = x", "x = y", "x = x ◇ y", "x = y ◇ x", "x = x ◇ x",
+    "x ◇ y = y ◇ x", "x = x ◇ (x ◇ y)", "x = (y ◇ x) ◇ x",
+]
+EQUIVALENT = [{3, 4}, {5, 6}]
+
+
+def class_graph():
+    def implies(a, b):
+        return a == b or b == 1 or a == 2 or any({a, b} <= c for c in EQUIVALENT)
+    n = len(CLASS_LAWS)
+    return ImplicationGraph(bytes(7 if implies(a, b) else 6 for a in range(1, n + 1) for b in range(1, n + 1)), n)
+
+
+def test_laws_that_imply_each_other_form_a_class():
+    assert class_graph().equivalence_classes(range(1, 9)) == [[1], [2], [3, 4], [5, 6], [7], [8]]
+
+
+def test_representatives_are_closed_under_duality():
+    laws = EtpLaws([Equation.parse(law.replace("◇", "*"), id=k) for k, law in enumerate(CLASS_LAWS, start=1)])
+    classes = class_graph().equivalence_classes(range(1, 9))
+    assert representatives(laws, classes) == {
+        1: [1], 2: [2], 3: [3, 4], 4: [3, 4], 5: [5, 6], 7: [7], 8: [8],
+    }
+
+
+def test_the_command_writes_representatives_with_their_classes(tmp_path):
+    equations = tmp_path / "equations.txt"
+    equations.write_text("\n".join(CLASS_LAWS) + "\n", encoding="utf-8")
+    graph = tmp_path / "graph.json"
+    graph.write_text(json.dumps({"rle_encoded_array": rle(class_graph().outcomes)}))
+    output = tmp_path / "laws.json"
+    main([str(equations), "--max-order", "1", "--graph", str(graph), "-o", str(output)])
+    entries = json.loads(output.read_text(encoding="utf-8"))
+    assert [(e["id"], e["class"]) for e in entries] == [(1, [1]), (2, [2]), (3, [3, 4]), (4, [3, 4]), (5, [5])]
+    # x * y = y * x has two operations and is left out of the class of x = x * x.
+    assert order(ETP.load_equations(output)[2]) == 1

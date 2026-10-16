@@ -456,7 +456,12 @@ The ETP has decided every implication $E \to F$ between two of its laws, but an 
 
 \subsection{Choice of the laws}
 
-Laws that imply each other are interchangeable in an implication, so it suffices to explore one law from each class of equivalent laws. The ETP lists 46 laws of order at most two, in 23 classes, and 410 laws of order at most three, in 146 classes. One law is chosen from each class: the law with the smallest number, or, if the class contains a law equal to its own dual, the first such law. If no law of a class is self-dual, the dual of the chosen law, which lies in the dual class (possibly the same class), is chosen as well and represents that class, so that the set is closed under duality. This gives 24 laws of order at most two (\code{equations\_order2.json}) and 149 of order at most three (\code{equations\_order3.json}). Each set includes $\Eq{1}$: $x = x$ and $\Eq{2}$: $x = y$, which hold in every magma and only in the trivial magma, respectively. The two explorations took 18 and 138 background implications from the ETP graph.
+Laws that imply each other are interchangeable in an implication, so it suffices to explore one law from each class of equivalent laws. The ETP lists 46 laws of order at most two, in 23 classes, and 410 laws of order at most three, in 146 classes. One law is chosen from each class: the law with the smallest number, or, if the class contains a law equal to its own dual, the first such law. If no law of a class is self-dual, the dual of the chosen law, which lies in the dual class (possibly the same class), is chosen as well and represents that class, so that the set is closed under duality. This gives 24 laws of order at most two (\code{equations\_order2.json}) and 149 of order at most three (\code{equations\_order3.json}). Both files were written by \code{etp.py}, which computes the classes from the ETP graph and lists the members of each representative's class in the file:
+\begin{Verbatim}
+python explorations/equational_theories/etp.py equations.txt \
+    --max-order 3 --graph graph.json -o equations_order3.json
+\end{Verbatim}
+Each set includes $\Eq{1}$: $x = x$ and $\Eq{2}$: $x = y$, which hold in every magma and only in the trivial magma, respectively. The two explorations took 18 and 138 background implications from the ETP graph.
 
 \subsection{Order at most two}
 
@@ -535,7 +540,7 @@ Write the laws to a JSON file as in Section~\ref{sec:et}. Every entry needs an \
 python explorations/equational_theories/etp.py equations.txt 3 43 4512 \
     -o my_laws.json
 \end{Verbatim}
-where \code{equations.txt} is the ETP's list of laws; the duals of the chosen laws are added.
+where \code{equations.txt} is the ETP's list of laws; the duals of the chosen laws are added. With \code{-{}-max-order K -{}-graph graph.json} instead of numbers, it writes one law of each class of equivalent ETP laws of order at most $K$, closed under duality (Section~\ref{sec:case3}), each with the members of its class.
 
 \subsection{Running an exploration}
 

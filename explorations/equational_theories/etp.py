@@ -16,6 +16,10 @@ The graph gives every implication with a single premise between laws of the
 ETP, which an exploration can take as background implications and then only
 ask about implications whose premise has several laws. Its magmas can seed the
 expert's pool or the context.
+
+Laws that imply each other are interchangeable in an implication, so an
+exploration needs only one law of each class of equivalent laws:
+`representatives` chooses them, closed under duality.
 """
 
 from __future__ import annotations
@@ -164,6 +168,59 @@ class ImplicationGraph:
             return False
         raise ValueError(f"The ETP has not decided whether Eq{premise} implies Eq{conclusion}")
 
+    def equivalence_classes(self, numbers: Iterable[int]) -> list[list[int]]:
+        """The classes of the laws with the given numbers that imply each
+        other, each sorted, in the order of their smallest numbers."""
+        classes: list[list[int]] = []
+        for number in sorted(set(numbers)):
+            for members in classes:
+                if self.implies(number, members[0]) and self.implies(members[0], number):
+                    members.append(number)
+                    break
+            else:
+                classes.append([number])
+        return classes
+
+
+def order(equation: Equation) -> int:
+    """The number of operations of a law, both sides together."""
+    return equation.lhs.op_count() + equation.rhs.op_count()
+
+
+def representatives(
+        laws: EtpLaws,
+        classes: Sequence[Sequence[int]],
+) -> dict[int, list[int]]:
+    """One law of each class of equivalent laws, closed under duality, each
+    mapped to the members of its class.
+
+    A class that contains the duals of its laws is represented by its first
+    law equal to its own dual, or, if it has none, by its first law and that
+    law's dual. Any other class is represented by its first law, and the
+    class of its duals by that law's dual. The classes must contain the
+    duals of their laws.
+    """
+    class_of = {number: tuple(members) for members in classes for number in members}
+
+    def dual(number: int) -> int:
+        number_of_dual = laws.id_of(laws.law(number).dual())
+        if number_of_dual not in class_of:
+            raise ValueError(f"The dual of Eq{number} is in none of the classes")
+        return number_of_dual
+
+    chosen: dict[int, list[int]] = {}
+    for members in classes:
+        first = members[0]
+        if any(class_of[number] == tuple(members) for number in chosen):
+            continue  # represented as the dual of another class
+        self_dual = [number for number in members if dual(number) == number]
+        if class_of[dual(first)] == tuple(members) and self_dual:
+            chosen[self_dual[0]] = list(members)
+        else:
+            chosen[first] = list(members)
+            chosen[dual(first)] = list(class_of[dual(first)])
+    return dict(sorted(chosen.items()))
+
 
 def graph_background(
         equations: Sequence[Equation],
@@ -228,21 +285,41 @@ def load_magmas(path: str | Path) -> list[Magma]:
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Write ETP laws, closed under duality, as an equations file for explore.py."
+        description=(
+            "Write ETP laws, closed under duality, as an equations file for "
+            "explore.py: the laws with the given numbers, or with --max-order "
+            "one law of each class of equivalent laws of at most that order."
+        )
     )
     parser.add_argument("etp_equations", type=Path, metavar="EQUATIONS_TXT",
                         help=f"the ETP's equations.txt ({EQUATIONS_URL})")
-    parser.add_argument("numbers", type=int, nargs="+", metavar="N",
+    parser.add_argument("numbers", type=int, nargs="*", metavar="N",
                         help="ETP numbers of the laws; their duals are added")
+    parser.add_argument("--max-order", type=int, metavar="K",
+                        help="choose representatives of the laws of at most K operations; needs --graph")
+    parser.add_argument("--graph", type=Path, metavar="PATH",
+                        help=f"the ETP's graph.json ({GRAPH_URL})")
     parser.add_argument("-o", "--output", type=Path, metavar="PATH",
                         help="where to write the equations (default: standard output)")
     args = parser.parse_args(argv)
+    if (args.max_order is None) == (not args.numbers):
+        parser.error("give either law numbers or --max-order")
+    if (args.max_order is None) != (args.graph is None):
+        parser.error("--max-order and --graph go together")
     laws = EtpLaws.load(args.etp_equations)
-    chosen = laws.with_duals(args.numbers)
-    text = "[\n" + ",\n".join(
-        "  " + json.dumps({"id": eq.id, "equation": f"{eq.lhs} = {eq.rhs}"}, ensure_ascii=False)
-        for eq in chosen
-    ) + "\n]\n"
+    if args.max_order is None:
+        entries = [{"id": eq.id, "equation": f"{eq.lhs} = {eq.rhs}"} for eq in laws.with_duals(args.numbers)]
+    else:
+        graph = ImplicationGraph.load(args.graph)
+        numbers = [eq.id for eq in laws.laws if order(eq) <= args.max_order]
+        classes = graph.equivalence_classes(numbers)
+        chosen = representatives(laws, classes)
+        entries = [
+            {"id": number, "equation": f"{laws.law(number).lhs} = {laws.law(number).rhs}", "class": members}
+            for number, members in chosen.items()
+        ]
+        print(f"{len(numbers)} laws, {len(classes)} classes, {len(chosen)} representatives", file=sys.stderr)
+    text = "[\n" + ",\n".join("  " + json.dumps(entry, ensure_ascii=False) for entry in entries) + "\n]\n"
     if args.output is None:
         sys.stdout.write(text)
     else:
