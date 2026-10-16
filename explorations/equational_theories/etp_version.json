@@ -1,0 +1,17 @@
+{
+  "description": "The ETP data behind equations_order2.json, equations_order3.json and the explorations with the ETP graph as background.",
+  "repository": "https://github.com/teorth/equational_theories",
+  "commit": "1aec8a7acf223b7c56e4830977b6e90d4ef1924b",
+  "files": {
+    "equations.txt": {
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/data/equations.txt",
+      "last_changed": "2024-10-03",
+      "sha256": "e30e1a6735011ff36fdb228d37b232eb7cda9d4a836cbbefc69c07e6871c8010"
+    },
+    "graph.json": {
+      "url": "https://teorth.github.io/equational_theories/implications/graph.json",
+      "last_modified": "2026-09-12",
+      "sha256": "5e11fcb7e95c5c5446271f21e2c642ac217eedd4b8a23605b68fb0af4113d687"
+    }
+  }
+}
