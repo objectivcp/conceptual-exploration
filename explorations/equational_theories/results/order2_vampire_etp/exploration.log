@@ -1,0 +1,519 @@
+======================================================================
+EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION
+Equations File:           equations_order2.json
+Duality Symmetry Enabled: True
+Expert:                   Vampire, 10 s to prove, 1 s and 10 s for a model
+Question Reporting:       every 1
+Background Implications:  off
+ETP Implication Graph:    /private/tmp/claude-501/-Users-sergei-obj-Library-Mobile-Documents-com-apple-CloudDocs-conceptual-exploration/f7d59521-a3fa-42e1-af21-ab642da969a7/scratchpad/etp_dl/graph.json
+Results Directory:        explorations/equational_theories/results/order2_vampire_etp
+======================================================================
+
+Exploring 24 Equational Laws:
+  - Eq1: x = x
+  - Eq2: x = y
+  - Eq3: x = (x * x)
+  - Eq4: x = (x * y)
+  - Eq5: x = (y * x)
+  - Eq8: x = (x * (x * x))
+  - Eq9: x = (x * (x * y))
+  - Eq10: x = (x * (y * x))
+  - Eq11: x = (x * (y * y))
+  - Eq13: x = (y * (x * x))
+  - Eq14: x = (y * (x * y))
+  - Eq16: x = (y * (y * x))
+  - Eq23: x = ((x * x) * x)
+  - Eq24: x = ((x * x) * y)
+  - Eq25: x = ((x * y) * x)
+  - Eq26: x = ((x * y) * y)
+  - Eq28: x = ((y * x) * x)
+  - Eq29: x = ((y * x) * y)
+  - Eq31: x = ((y * y) * x)
+  - Eq38: (x * x) = (x * y)
+  - Eq39: (x * x) = (y * x)
+  - Eq40: (x * x) = (y * y)
+  - Eq41: (x * x) = (y * z)
+  - Eq43: (x * y) = (y * x)
+
+Took 18 Background Implications from the ETP graph, which lists 24 of the 24 equations.
+
+Starting Attribute Exploration...
+
+Number of implications: 18
+Number of objects: 0
+Question 1: Eq1: x = x -> Eq2: x = y, Eq3: x = (x * x), Eq4: x = (x * y), Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq23: x = ((x * x) * x), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq28: x = ((y * x) * x), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Left-Projection(2)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 1 1
+Satisfies: Eq11: x = (x * (y * y)), Eq26: x = ((x * y) * y), Eq4: x = (x * y), Eq8: x = (x * (x * x)), Eq10: x = (x * (y * x)), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq24: x = ((x * x) * y), Eq1: x = x, Eq23: x = ((x * x) * x), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+Does not satisfy: Eq14: x = (y * (x * y)), Eq2: x = y, Eq43: (x * y) = (y * x), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq40: (x * x) = (y * y), Eq31: x = ((y * y) * x)
+
+
+Number of implications: 18
+Number of objects: 2
+Question 2: Eq1: x = x -> Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq10: x = (x * (y * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x)
+Counterexample found: Magma 'Constant(2, c=0)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 0 0
+Satisfies: Eq43: (x * y) = (y * x), Eq39: (x * x) = (y * x), Eq41: (x * x) = (y * z), Eq1: x = x, Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq13: x = (y * (x * x)), Eq31: x = ((y * y) * x), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 18
+Number of objects: 3
+Question 3: Eq1: x = x, Eq43: (x * y) = (y * x) -> Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z)
+Counterexample found: Magma 'Z_2(+)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 1
+  1 | 1 0
+Satisfies: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x), Eq8: x = (x * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 18
+Number of objects: 4
+Question 4: Eq1: x = x, Eq43: (x * y) = (y * x) -> Eq40: (x * x) = (y * y)
+Counterexample found: Magma 'Z_2(*)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 0 1
+Satisfies: Eq43: (x * y) = (y * x), Eq8: x = (x * (x * x)), Eq3: x = (x * x), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq31: x = ((y * y) * x), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq24: x = ((x * x) * y), Eq40: (x * x) = (y * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq2: x = y, Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 18
+Number of objects: 5
+Question 5: Eq1: x = x, Eq40: (x * x) = (y * y) -> Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Implication (x -> y)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 1 1
+  1 | 0 1
+Satisfies: Eq25: x = ((x * y) * x), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq24: x = ((x * x) * y), Eq26: x = ((x * y) * y), Eq2: x = y, Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 18
+Number of objects: 7
+Question 6: Eq1: x = x, Eq39: (x * x) = (y * x), Eq43: (x * y) = (y * x) -> Eq38: (x * x) = (x * y), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z)
+Confirmed
+
+
+Number of implications: 20
+Number of objects: 7
+Question 7: Eq1: x = x, Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y) -> Eq38: (x * x) = (x * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 22
+Number of objects: 7
+Question 8: Eq1: x = x, Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x) -> Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 23
+Number of objects: 7
+Question 9: Eq1: x = x, Eq23: x = ((x * x) * x), Eq43: (x * y) = (y * x) -> Eq8: x = (x * (x * x))
+Confirmed
+
+
+Number of implications: 25
+Number of objects: 7
+Question 10: Eq1: x = x, Eq23: x = ((x * x) * x), Eq40: (x * x) = (y * y) -> Eq31: x = ((y * y) * x)
+Confirmed
+
+
+Number of implications: 27
+Number of objects: 7
+Question 11: Eq1: x = x, Eq23: x = ((x * x) * x), Eq39: (x * x) = (y * x) -> Eq3: x = (x * x), Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq25: x = ((x * y) * x), Eq28: x = ((y * x) * x), Eq31: x = ((y * y) * x)
+Confirmed
+
+
+Number of implications: 29
+Number of objects: 7
+Question 12: Eq1: x = x, Eq23: x = ((x * x) * x), Eq38: (x * x) = (x * y) -> Eq3: x = (x * x), Eq4: x = (x * y), Eq8: x = (x * (x * x)), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y)
+Counterexample found: Magma 'Order2-(1, 1, 0, 0)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 1 1
+  1 | 0 0
+Satisfies: Eq26: x = ((x * y) * y), Eq24: x = ((x * x) * y), Eq1: x = x, Eq23: x = ((x * x) * x), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq2: x = y, Eq43: (x * y) = (y * x), Eq4: x = (x * y), Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq39: (x * x) = (y * x), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq31: x = ((y * y) * x)
+
+
+Number of implications: 29
+Number of objects: 9
+Question 13: Eq1: x = x, Eq23: x = ((x * x) * x), Eq38: (x * x) = (x * y) -> Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y)
+Confirmed
+
+
+Number of implications: 31
+Number of objects: 9
+Question 14: Eq1: x = x, Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq31: x = ((y * y) * x) -> Eq8: x = (x * (x * x)), Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq40: (x * x) = (y * y), Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 2 0 1
+  1 | 1 2 0
+  2 | 0 1 2
+Satisfies: Eq26: x = ((x * y) * y), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq2: x = y, Eq5: x = (y * x), Eq8: x = (x * (x * x)), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 31
+Number of objects: 11
+Question 15: Eq1: x = x, Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq31: x = ((y * y) * x) -> Eq40: (x * x) = (y * y)
+Confirmed
+
+
+Number of implications: 33
+Number of objects: 11
+Question 16: Eq1: x = x, Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y) -> Eq24: x = ((x * x) * y), Eq38: (x * x) = (x * y)
+Confirmed
+
+
+Number of implications: 35
+Number of objects: 11
+Question 17: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x) -> Eq16: x = (y * (y * x))
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 2 1 0
+  1 | 1 2 1
+  2 | 0 1 2
+Satisfies: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq8: x = (x * (x * x)), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 35
+Number of objects: 12
+Question 18: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x), Eq43: (x * y) = (y * x) -> Eq11: x = (x * (y * y)), Eq40: (x * x) = (y * y)
+Confirmed
+
+
+Number of implications: 37
+Number of objects: 12
+Question 19: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y) -> Eq11: x = (x * (y * y))
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 2 1 0
+  1 | 1 0 1
+  2 | 0 2 2
+Satisfies: Eq1: x = x, Eq26: x = ((x * y) * y), Eq23: x = ((x * x) * x), Eq8: x = (x * (x * x))
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq31: x = ((y * y) * x), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq24: x = ((x * x) * y), Eq40: (x * x) = (y * y), Eq25: x = ((x * y) * x), Eq2: x = y, Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 37
+Number of objects: 14
+Question 20: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x) -> Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq40: (x * x) = (y * y)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 2 1 0
+  1 | 1 0 2
+  2 | 0 2 1
+Satisfies: Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x), Eq8: x = (x * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq31: x = ((y * y) * x), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 37
+Number of objects: 15
+Question 21: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x) -> Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y)
+Confirmed
+
+
+Number of implications: 39
+Number of objects: 15
+Question 22: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x) -> Eq3: x = (x * x), Eq10: x = (x * (y * x))
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 0 2
+  1 | 2 1 2
+  2 | 0 1 2
+Satisfies: Eq8: x = (x * (x * x)), Eq3: x = (x * x), Eq1: x = x, Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq31: x = ((y * y) * x), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq24: x = ((x * x) * y), Eq40: (x * x) = (y * y), Eq26: x = ((x * y) * y), Eq2: x = y, Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 39
+Number of objects: 17
+Question 23: Eq1: x = x, Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x) -> Eq3: x = (x * x)
+Confirmed
+
+
+Number of implications: 41
+Number of objects: 17
+Question 24: Eq1: x = x, Eq8: x = (x * (x * x)), Eq16: x = (y * (y * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y) -> Eq14: x = (y * (x * y)), Eq29: x = ((y * x) * y), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 42
+Number of objects: 17
+Question 25: Eq1: x = x, Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq29: x = ((y * x) * y) -> Eq16: x = (y * (y * x)), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size4' (size 4):
+  * | 0 1 2 3
+  --+---------
+  0 | 0 3 1 2
+  1 | 2 1 3 0
+  2 | 3 0 2 1
+  3 | 1 2 0 3
+Satisfies: Eq14: x = (y * (x * y)), Eq8: x = (x * (x * x)), Eq3: x = (x * x), Eq29: x = ((y * x) * y), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq26: x = ((x * y) * y), Eq2: x = y, Eq43: (x * y) = (y * x), Eq5: x = (y * x), Eq4: x = (x * y), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq31: x = ((y * y) * x), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 42
+Number of objects: 18
+Question 26: Eq1: x = x, Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq29: x = ((y * x) * y), Eq43: (x * y) = (y * x) -> Eq16: x = (y * (y * x)), Eq26: x = ((x * y) * y)
+Confirmed
+
+
+Number of implications: 43
+Number of objects: 18
+Question 27: Eq1: x = x, Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x) -> Eq11: x = (x * (y * y)), Eq16: x = (y * (y * x)), Eq26: x = ((x * y) * y), Eq40: (x * x) = (y * y), Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size5' (size 5):
+  * | 0 1 2 3 4
+  --+-----------
+  0 | 4 3 1 2 0
+  1 | 2 4 3 0 1
+  2 | 3 0 4 1 2
+  3 | 1 2 0 4 3
+  4 | 0 1 2 3 4
+Satisfies: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq8: x = (x * (x * x)), Eq29: x = ((y * x) * y), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq26: x = ((x * y) * y), Eq2: x = y, Eq43: (x * y) = (y * x), Eq4: x = (x * y), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 43
+Number of objects: 19
+Question 28: Eq1: x = x, Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x) -> Eq11: x = (x * (y * y)), Eq40: (x * x) = (y * y)
+Confirmed
+
+
+Number of implications: 45
+Number of objects: 19
+Question 29: Eq1: x = x, Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq29: x = ((y * x) * y) -> Eq16: x = (y * (y * x)), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 47
+Number of objects: 19
+Question 30: Eq1: x = x, Eq8: x = (x * (x * x)), Eq11: x = (x * (y * y)), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x) -> Eq40: (x * x) = (y * y)
+Confirmed
+
+
+Number of implications: 48
+Number of objects: 19
+Question 31: Eq1: x = x, Eq8: x = (x * (x * x)), Eq11: x = (x * (y * y)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq31: x = ((y * y) * x), Eq40: (x * x) = (y * y) -> Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq43: (x * y) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 2 0 0
+  1 | 1 2 1
+  2 | 0 1 2
+Satisfies: Eq11: x = (x * (y * y)), Eq26: x = ((x * y) * y), Eq8: x = (x * (x * x)), Eq1: x = x, Eq40: (x * x) = (y * y), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x)
+Does not satisfy: Eq14: x = (y * (x * y)), Eq2: x = y, Eq43: (x * y) = (y * x), Eq4: x = (x * y), Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq3: x = (x * x), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 48
+Number of objects: 21
+Question 32: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq31: x = ((y * y) * x) -> Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq25: x = ((x * y) * x), Eq28: x = ((y * x) * x), Eq39: (x * x) = (y * x)
+Confirmed
+
+
+Number of implications: 50
+Number of objects: 21
+Question 33: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x) -> Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq25: x = ((x * y) * x), Eq31: x = ((y * y) * x), Eq39: (x * x) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 2 1
+  1 | 2 1 2
+  2 | 0 1 2
+Satisfies: Eq8: x = (x * (x * x)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq31: x = ((y * y) * x), Eq14: x = (y * (x * y)), Eq24: x = ((x * x) * y), Eq40: (x * x) = (y * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq2: x = y, Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 50
+Number of objects: 23
+Question 34: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z)
+Confirmed
+
+
+Number of implications: 52
+Number of objects: 23
+Question 35: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y) -> Eq4: x = (x * y), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq38: (x * x) = (x * y)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 0 1
+  1 | 2 1 0
+  2 | 1 2 2
+Satisfies: Eq26: x = ((x * y) * y), Eq8: x = (x * (x * x)), Eq3: x = (x * x), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq43: (x * y) = (y * x), Eq13: x = (y * (x * x)), Eq29: x = ((y * x) * y), Eq10: x = (x * (y * x)), Eq31: x = ((y * y) * x), Eq14: x = (y * (x * y)), Eq28: x = ((y * x) * x), Eq24: x = ((x * x) * y), Eq40: (x * x) = (y * y), Eq25: x = ((x * y) * x), Eq2: x = y, Eq5: x = (y * x), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq38: (x * x) = (x * y), Eq4: x = (x * y), Eq16: x = (y * (y * x))
+
+
+Number of implications: 52
+Number of objects: 25
+Question 36: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq28: x = ((y * x) * x) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 54
+Number of objects: 25
+Question 37: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq26: x = ((x * y) * y), Eq28: x = ((y * x) * x), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z)
+Confirmed
+
+
+Number of implications: 56
+Number of objects: 25
+Question 38: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x), Eq28: x = ((y * x) * x) -> Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq31: x = ((y * y) * x), Eq39: (x * x) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 2 2
+  1 | 2 1 2
+  2 | 0 1 2
+Satisfies: Eq8: x = (x * (x * x)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq1: x = x, Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq2: x = y, Eq43: (x * y) = (y * x), Eq5: x = (y * x), Eq4: x = (x * y), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y), Eq31: x = ((y * y) * x)
+
+
+Number of implications: 56
+Number of objects: 27
+Question 39: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq16: x = (y * (y * x)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x) -> Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq25: x = ((x * y) * x), Eq31: x = ((y * y) * x), Eq39: (x * x) = (y * x)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 1 2
+  1 | 2 1 0
+  2 | 0 1 2
+Satisfies: Eq8: x = (x * (x * x)), Eq28: x = ((y * x) * x), Eq3: x = (x * x), Eq16: x = (y * (y * x)), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq2: x = y, Eq43: (x * y) = (y * x), Eq5: x = (y * x), Eq4: x = (x * y), Eq39: (x * x) = (y * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq31: x = ((y * y) * x), Eq29: x = ((y * x) * y), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 56
+Number of objects: 29
+Question 40: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq16: x = (y * (y * x)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x) -> Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq13: x = (y * (x * x)), Eq28: x = ((y * x) * x), Eq31: x = ((y * y) * x), Eq39: (x * x) = (y * x)
+Confirmed
+
+
+Number of implications: 58
+Number of objects: 29
+Question 41: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x), Eq29: x = ((y * x) * y) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 60
+Number of objects: 29
+Question 42: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq23: x = ((x * x) * x), Eq25: x = ((x * y) * x), Eq29: x = ((y * x) * y) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq26: x = ((x * y) * y), Eq28: x = ((y * x) * x), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+Number of implications: 62
+Number of objects: 29
+Question 43: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq23: x = ((x * x) * x), Eq26: x = ((x * y) * y), Eq29: x = ((y * x) * y), Eq43: (x * y) = (y * x) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq9: x = (x * (x * y)), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq28: x = ((y * x) * x), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z)
+Counterexample found: Magma 'Vampire-Counterexample-Size3' (size 3):
+  * | 0 1 2
+  --+-------
+  0 | 0 2 1
+  1 | 2 1 0
+  2 | 1 0 2
+Satisfies: Eq14: x = (y * (x * y)), Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x), Eq8: x = (x * (x * x)), Eq3: x = (x * x), Eq16: x = (y * (y * x)), Eq29: x = ((y * x) * y), Eq1: x = x, Eq23: x = ((x * x) * x)
+Does not satisfy: Eq11: x = (x * (y * y)), Eq2: x = y, Eq5: x = (y * x), Eq4: x = (x * y), Eq39: (x * x) = (y * x), Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)), Eq41: (x * x) = (y * z), Eq13: x = (y * (x * x)), Eq31: x = ((y * y) * x), Eq24: x = ((x * x) * y), Eq10: x = (x * (y * x)), Eq40: (x * x) = (y * y), Eq38: (x * x) = (x * y), Eq25: x = ((x * y) * x)
+
+
+Number of implications: 62
+Number of objects: 30
+Question 44: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq10: x = (x * (y * x)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x) -> Eq5: x = (y * x), Eq13: x = (y * (x * x)), Eq16: x = (y * (y * x)), Eq25: x = ((x * y) * x), Eq31: x = ((y * y) * x), Eq39: (x * x) = (y * x)
+Confirmed
+
+
+Number of implications: 64
+Number of objects: 30
+Question 45: Eq1: x = x, Eq3: x = (x * x), Eq8: x = (x * (x * x)), Eq9: x = (x * (x * y)), Eq23: x = ((x * x) * x), Eq28: x = ((y * x) * x) -> Eq2: x = y, Eq4: x = (x * y), Eq5: x = (y * x), Eq10: x = (x * (y * x)), Eq11: x = (x * (y * y)), Eq13: x = (y * (x * x)), Eq14: x = (y * (x * y)), Eq16: x = (y * (y * x)), Eq24: x = ((x * x) * y), Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y), Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x), Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y), Eq41: (x * x) = (y * z), Eq43: (x * y) = (y * x)
+Confirmed
+
+
+======================================================================
+EXPLORATION RESULTS
+======================================================================
+Total Questions Asked:        45
+Accepted Implications (Base): 26
+  of which unconfirmed:       0
+Total Implications in Theory: 65
+Counterexamples Found:        19
+Open Questions:               0
+Rounds:                       1
+Expert Answers:               proved 26, model 13, pool 6
+
+Discovered Implication Basis (Reduced, 26 rules):
+  [1] Eq39: (x * x) = (y * x), Eq43: (x * y) = (y * x) -> Eq41: (x * x) = (y * z)
+  [2] Eq39: (x * x) = (y * x), Eq40: (x * x) = (y * y) -> Eq41: (x * x) = (y * z)
+  [3] Eq38: (x * x) = (x * y), Eq39: (x * x) = (y * x) -> Eq41: (x * x) = (y * z)
+  [4] Eq23: x = ((x * x) * x), Eq43: (x * y) = (y * x) -> Eq8: x = (x * (x * x))
+  [5] Eq23: x = ((x * x) * x), Eq40: (x * x) = (y * y) -> Eq31: x = ((y * y) * x)
+  [6] Eq23: x = ((x * x) * x), Eq39: (x * x) = (y * x) -> Eq5: x = (y * x)
+  [7] Eq23: x = ((x * x) * x), Eq38: (x * x) = (x * y) -> Eq24: x = ((x * x) * y)
+  [8] Eq26: x = ((x * y) * y), Eq31: x = ((y * y) * x) -> Eq40: (x * x) = (y * y)
+  [9] Eq25: x = ((x * y) * x), Eq26: x = ((x * y) * y) -> Eq24: x = ((x * x) * y)
+  [10] Eq31: x = ((y * y) * x), Eq43: (x * y) = (y * x) -> Eq11: x = (x * (y * y))
+  [11] Eq26: x = ((x * y) * y), Eq43: (x * y) = (y * x) -> Eq29: x = ((y * x) * y)
+  [12] Eq25: x = ((x * y) * x), Eq8: x = (x * (x * x)) -> Eq3: x = (x * x)
+  [13] Eq16: x = (y * (y * x)), Eq26: x = ((x * y) * y) -> Eq29: x = ((y * x) * y)
+  [14] Eq29: x = ((y * x) * y), Eq43: (x * y) = (y * x) -> Eq26: x = ((x * y) * y)
+  [15] Eq29: x = ((y * x) * y), Eq31: x = ((y * y) * x) -> Eq11: x = (x * (y * y))
+  [16] Eq26: x = ((x * y) * y), Eq29: x = ((y * x) * y) -> Eq43: (x * y) = (y * x)
+  [17] Eq11: x = (x * (y * y)), Eq31: x = ((y * y) * x) -> Eq40: (x * x) = (y * y)
+  [18] Eq31: x = ((y * y) * x), Eq3: x = (x * x) -> Eq5: x = (y * x)
+  [19] Eq28: x = ((y * x) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y
+  [20] Eq26: x = ((x * y) * y), Eq28: x = ((y * x) * x) -> Eq2: x = y
+  [21] Eq25: x = ((x * y) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y
+  [22] Eq16: x = (y * (y * x)), Eq25: x = ((x * y) * x) -> Eq5: x = (y * x)
+  [23] Eq28: x = ((y * x) * x), Eq29: x = ((y * x) * y) -> Eq2: x = y
+  [24] Eq25: x = ((x * y) * x), Eq29: x = ((y * x) * y) -> Eq2: x = y
+  [25] Eq10: x = (x * (y * x)), Eq28: x = ((y * x) * x) -> Eq5: x = (y * x)
+  [26] Eq28: x = ((y * x) * x), Eq9: x = (x * (x * y)) -> Eq2: x = y
+
+Sample Counterexample Magmas Generated:
+
+Counterexample #1:
+Magma 'Left-Projection(2)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 1 1
+
+Counterexample #2:
+Magma 'Constant(2, c=0)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 0 0
+
+Counterexample #3:
+Magma 'Z_2(+)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 1
+  1 | 1 0
+
+Counterexample #4:
+Magma 'Z_2(*)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 0 0
+  1 | 0 1
+
+Counterexample #5:
+Magma 'Implication (x -> y)' (size 2):
+  * | 0 1
+  --+-----
+  0 | 1 1
+  1 | 0 1
+
+Results saved to explorations/equational_theories/results/order2_vampire_etp.
