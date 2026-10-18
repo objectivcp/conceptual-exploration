@@ -15,7 +15,9 @@ their line in its equations.txt. Three of its files are read here:
 The graph gives every implication with a single premise between laws of the
 ETP, which an exploration can take as background implications and then only
 ask about implications whose premise has several laws. Its magmas can seed the
-expert's pool or the context.
+expert's pool or the context. The implications it refutes can seed the context
+as well, as partial objects known only on the laws the graph decides for them,
+which covers refutations by infinite magmas.
 
 Laws that imply each other are interchangeable in an implication, so an
 exploration needs only one law of each class of equivalent laws:
@@ -29,6 +31,7 @@ import json
 import re
 import sys
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from math import isqrt
 from pathlib import Path
 
@@ -37,6 +40,7 @@ if __package__ in (None, ""):
     _ROOT = Path(__file__).resolve().parent.parent.parent
     sys.path[:0] = [str(_ROOT / "src"), str(_ROOT)]
 
+from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
 from explorations.equational_theories.magma import Equation, Magma, Op, Term, Var
 
@@ -249,6 +253,61 @@ def graph_background(
         if conclusion:
             background.append(Implication([eq], conclusion))
     return background
+
+
+@dataclass(frozen=True)
+class EtpRefutation:
+    """A magma, possibly infinite, by which the ETP refutes that law `premise`
+    implies law `conclusion`, by ETP number."""
+
+    premise: int
+    conclusion: int
+
+    @property
+    def name(self) -> str:
+        return f"ETP-Eq{self.premise}-not-Eq{self.conclusion}"
+
+
+def graph_refutations(
+        equations: Sequence[Equation],
+        graph: ImplicationGraph,
+        laws: EtpLaws,
+) -> list[PartialObject[EtpRefutation, Equation]]:
+    """The implications between two of `equations` that the ETP graph
+    refutes, as partial objects.
+
+    The magma refuting that a implies b satisfies a and every law a implies,
+    and violates b and every law that implies b; the graph tells nothing else
+    about it. Equations the ETP does not list take no part.
+    """
+    numbers = laws.identify(equations)
+    listed = [eq for eq in equations if eq in numbers]
+    objects = []
+    for a in listed:
+        for b in listed:
+            if a == b or not _refutes(graph, numbers[a], numbers[b]):
+                continue
+            objects.append(PartialObject(
+                EtpRefutation(numbers[a], numbers[b]),
+                {eq for eq in listed if _implies(graph, numbers[a], numbers[eq])},
+                {eq for eq in listed if _implies(graph, numbers[eq], numbers[b])},
+            ))
+    return objects
+
+
+def _implies(graph: ImplicationGraph, premise: int, conclusion: int) -> bool:
+    return premise == conclusion or _decision(graph, premise, conclusion) is True
+
+
+def _refutes(graph: ImplicationGraph, premise: int, conclusion: int) -> bool:
+    return _decision(graph, premise, conclusion) is False
+
+
+def _decision(graph: ImplicationGraph, premise: int, conclusion: int) -> bool | None:
+    try:
+        return graph.implies(premise, conclusion)
+    except ValueError:
+        return None
 
 
 _TABLE = re.compile(r"\[\s*\[[\d,\s\[\]]*\]\s*\]")

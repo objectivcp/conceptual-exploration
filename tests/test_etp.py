@@ -8,9 +8,11 @@ from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.exploration.base import ImplicationSource
 from explorations.equational_theories.etp import (
     EtpLaws,
+    EtpRefutation,
     ImplicationGraph,
     canonical_form,
     graph_background,
+    graph_refutations,
     load_magmas,
     load_tables,
     main,
@@ -126,6 +128,33 @@ def test_an_exploration_takes_the_graph_as_background(etp, tmp_path):
     idempotent = Equation.parse("x = (x * x)", id=3)
     assert Implication([Equation.parse("x = (x * y)", id=4)], [idempotent]) in background
     assert not base.accepted_implications
+
+
+def test_refutations_are_objects_known_on_the_laws_the_graph_decides(etp):
+    laws, graph = EtpLaws.load(etp[0]), ImplicationGraph.load(etp[1])
+    trivial, idempotent, left_zero, right_zero = (
+        Equation.parse(text) for text in ("x = x", "x = x * x", "x = x * y", "x = y * x")
+    )
+    objects = {o.object: o for o in graph_refutations([trivial, idempotent, left_zero, right_zero], graph, laws)}
+    assert set(objects) == {EtpRefutation(a, b) for a, b in [(1, 3), (1, 4), (1, 5), (3, 4), (3, 5), (4, 5), (5, 4)]}
+    refutation = objects[EtpRefutation(4, 5)]
+    assert (refutation.positive, refutation.negative) == ({trivial, idempotent, left_zero}, {right_zero})
+    assert objects[EtpRefutation(1, 3)].negative == {idempotent, left_zero, right_zero}
+
+
+def test_an_exploration_takes_the_refutations_of_the_graph_as_objects(etp, tmp_path):
+    equations = tmp_path / "laws.json"
+    main([str(etp[0]), "3", "4", "-o", str(equations)])
+    _, base = run_magma_exploration(
+        equations, report_interval=0, max_search_size=1,
+        etp_graph=etp[1], etp_equations=etp[0], etp_refutations=True, results_dir=tmp_path / "results",
+    )
+    # x = x * y and x = y * x refute each other in the graph, and no magma of
+    # size 1 accounts for either refutation.
+    seeded = {v.original for v in base.context.objects if isinstance(v.original, EtpRefutation)}
+    assert seeded == {EtpRefutation(4, 5), EtpRefutation(5, 4)}
+    saved = json.loads((tmp_path / "results" / "etp_refutations.json").read_text(encoding="utf-8"))
+    assert {tuple(r["refutes"]) for r in saved} == {(4, 5), (5, 4)}
 
 
 # Laws with two classes of equivalent laws: x = x * y and its dual x = y * x,

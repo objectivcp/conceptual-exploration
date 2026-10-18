@@ -45,7 +45,9 @@ from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
 from explorations.equational_theories.background import background_implications
-from explorations.equational_theories.etp import EtpLaws, ImplicationGraph, graph_background, load_magmas
+from explorations.equational_theories.etp import (
+    EtpLaws, EtpRefutation, ImplicationGraph, graph_background, graph_refutations, load_magmas,
+)
 from explorations.equational_theories.magma import ETP, Equation, Magma, MagmaExpert
 from explorations.equational_theories.vampire import FreeMagma, VampireExpert
 
@@ -82,7 +84,8 @@ def save_results(
     implications.txt and implications.json list every implication of the
     theory with its source, and the questions left open; magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
-    with their rows, which Vampire may have left partial; context.cxt
+    with their rows, which Vampire may have left partial; etp_refutations.json
+    holds the objects standing for refutations of the ETP graph; context.cxt
     (Burmeister format) holds every object whose row is complete, and
     partial_context.cxt every object, in the same format with ? where it is
     not known whether the object satisfies the equation. A dual image is
@@ -99,11 +102,12 @@ def save_results(
     ids = lambda eqs: [ident(eq) for eq in sorted(eqs, key=order)]
 
     names: dict[object, str] = {}
-    magmas, free, rows = [], [], []  # rows: (name, positive, negative)
+    magmas, free, etp, rows = [], [], [], []  # rows: (name, positive, negative)
+    kind = lambda o: "F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation) else "M"
     for version, obj in base.context.objects.items():
         original = version.original
-        prefix = "F" if isinstance(original, FreeMagma) else "M"
-        count = sum(1 for o in names if isinstance(o, FreeMagma) == (prefix == "F"))
+        prefix = kind(original)
+        count = sum(1 for o in names if kind(o) == prefix)
         name = names.setdefault(original, f"{prefix}{count + 1}")
         # The only mapping is duality, whose image of a table is its transpose.
         dual_of = name if version.version else None
@@ -114,6 +118,13 @@ def save_results(
             free.append({
                 "name": name, "dual_of": dual_of,
                 "premise": ids(original.premise),
+                "positive": ids(obj.positive),
+                "negative": ids(obj.negative),
+            })
+        elif isinstance(original, EtpRefutation):
+            etp.append({
+                "name": name, "dual_of": dual_of,
+                "refutes": [original.premise, original.conclusion],
                 "positive": ids(obj.positive),
                 "negative": ids(obj.negative),
             })
@@ -132,7 +143,8 @@ def save_results(
         cxt += [label(eq) for eq in ordered]
         cxt += ["".join(cell(eq, pos, neg) for eq in ordered) for _, pos, neg in objects]
         (directory / filename).write_text("\n".join(cxt) + "\n", encoding="utf-8")
-    for filename, entries in (("magmas.json", magmas), ("free_magmas.json", free)):
+    files = [("magmas.json", magmas), ("free_magmas.json", free)] + ([("etp_refutations.json", etp)] if etp else [])
+    for filename, entries in files:
         (directory / filename).write_text(
             "[\n" + ",\n".join("  " + json.dumps(e) for e in entries) + "\n]\n", encoding="utf-8"
         )
@@ -207,9 +219,12 @@ def run_magma_exploration(
     mace4_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
+    etp_refutations: bool = False,
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
+    if etp_refutations and etp_graph is None:
+        raise ValueError("The ETP's refutations need the ETP graph")
     row_setting = (
         "" if vampire_row_time_limit is None
         else f", {vampire_row_time_limit} s per other law of a free magma"
@@ -238,7 +253,7 @@ def run_magma_exploration(
             f"premise size {premise_bound}"
         )
     if etp_graph is not None:
-        print(f"ETP Implication Graph:    {etp_graph}")
+        print(f"ETP Implication Graph:    {etp_graph}{', refutations as objects' if etp_refutations else ''}")
     if results_dir is not None:
         print(f"Results Directory:        {results_dir}")
     print("=" * 70)
@@ -264,7 +279,8 @@ def run_magma_exploration(
     if etp_graph is not None:
         laws = EtpLaws.load(etp_equations)
         listed = laws.identify(equations)
-        from_graph = graph_background(equations, ImplicationGraph.load(etp_graph), laws)
+        graph = ImplicationGraph.load(etp_graph)
+        from_graph = graph_background(equations, graph, laws)
         background += from_graph
         print(
             f"\nTook {len(from_graph)} Background Implications from the ETP graph, "
@@ -292,19 +308,31 @@ def run_magma_exploration(
         added = expert.add_magmas(load_magmas(path))
         print(f"Seeded the expert with {added} magmas from {path}.")
     reduced = []
-    if seed_context:
-        # Each table once, evaluated on every equation, and reduced to the
-        # magmas whose rows the others do not already account for.
+    if seed_context or etp_refutations:
+        # Each table once, evaluated on every equation, and the refutations of
+        # the ETP graph, reduced to the objects whose rows the others do not
+        # already account for.
         tables: dict[tuple, Magma] = {}
         for path in seed_context:
             for magma in load_magmas(path):
                 tables.setdefault((magma.size, magma.table), magma)
         seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
-        reduced = reduce_objects(seeds)
-        print(
-            f"Seeded the context with {len(reduced)} of {len(seeds)} magmas, "
-            f"the others being redundant."
-        )
+        refutations = graph_refutations(equations, graph, laws) if etp_refutations else []
+        reduced = reduce_objects(seeds + refutations)
+        kept = sum(isinstance(o.object, EtpRefutation) for o in reduced)
+        if seed_context:
+            print(
+                f"Seeded the context with {len(reduced) - kept} of {len(seeds)} magmas, "
+                f"the others being redundant."
+            )
+        if etp_refutations:
+            print(
+                f"Seeded the context with {kept} of the {len(refutations)} refutations "
+                f"of the ETP graph, the others being redundant:"
+            )
+            for o in reduced:
+                if isinstance(o.object, EtpRefutation):
+                    print(f"  - Eq{o.object.premise} does not imply Eq{o.object.conclusion}")
 
     def resumed(implication, refuter):
         print(f"\nRefuted the unconfirmed implication {implication} by {getattr(refuter, 'name', refuter)}; "
@@ -402,6 +430,8 @@ def run_magma_exploration(
 
         if etp_graph is not None:
             settings += ", ETP graph as background"
+        if etp_refutations:
+            settings += " and its refutations as objects"
         if background_order is not None:
             settings += (
                 f", background order {background_order}, transient order "
@@ -616,6 +646,17 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--etp-refutations",
+        action="store_true",
+        help=(
+            "Also add the implications between two of the equations that the "
+            "ETP graph refutes to the context, each as an object known to "
+            "satisfy its premise and the laws the premise implies and to "
+            "violate its conclusion and the laws implying it, whether the "
+            "ETP's counterexample is finite or not; needs --etp-graph."
+        ),
+    )
+    parser.add_argument(
         "--etp-equations",
         type=Path,
         default=None,
@@ -641,6 +682,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if (args.etp_graph is None) != (args.etp_equations is None):
         parser.error("--etp-graph and --etp-equations go together")
+    if args.etp_refutations and args.etp_graph is None:
+        parser.error("--etp-refutations needs --etp-graph")
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
     results_dir = args.results_dir or (
@@ -676,6 +719,7 @@ if __name__ == "__main__":
                 mace4_time_limit=args.mace4_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
+                etp_refutations=args.etp_refutations,
             )
         finally:
             sys.stdout = sys.__stdout__

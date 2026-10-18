@@ -75,6 +75,8 @@ python explorations/equational_theories/etp.py equations.txt 3 43 4512 -o my_law
 python explorations/equational_theories/explore.py --equations my_laws.json --expert vampire --etp-graph graph.json --etp-equations equations.txt
 ```
 
+With `--etp-refutations` as well, each implication between two of the explored laws that the ETP refutes is added to the context as an object that satisfies its premise and the laws the premise implies and violates its conclusion and the laws implying it, which covers the ETP's infinite counterexamples; refutations accounted for by the other objects are dropped, and the rest saved in `etp_refutations.json`.
+
 With `--max-order K --graph graph.json` instead of numbers, it writes one law of each class of ETP laws of at most `K` operations that imply each other, closed under duality, each with the members of its class; [`equations_order2.json`](equations_order2.json) and [`equations_order3.json`](equations_order3.json) were written so, from the ETP data recorded in [`etp_version.json`](etp_version.json). The rules found for the laws of order at most two are proved in Lean in [`lean/`](lean/README.md).
 
 Magmas found earlier, such as the `magmas.json` of saved results, can be reused. Files of the ETP with one table per line, such as those in its `equational_theories/Generated/All4x4Tables/data`, are read as well. `--seed-magmas PATH...` adds them to the expert's pool, which is checked for a counterexample before the solver searches. `--seed-context PATH...` instead evaluates them on every equation and adds them to the context before the exploration starts, dropping those whose rows the others account for, so that no question they refute is asked:
@@ -83,7 +85,7 @@ Magmas found earlier, such as the `magmas.json` of saved results, can be reused.
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
 ```
 
-Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
+Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, `etp_refutations.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
 
 Or open the interactive Jupyter notebook:
 
