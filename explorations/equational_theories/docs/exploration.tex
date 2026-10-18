@@ -236,6 +236,8 @@ The ETP has decided every implication between two of its 4694 laws, and publishe
 \end{itemize}
 The exploration then only asks about premises of several laws, since every implication with a single premise between listed laws is entailed by the background. \tocheck{The ETP's implications are proved in its Lean formalization}{the graph's outcomes 3 and 7 (implication true) and 2 and 6 (false) are read as ``explicitly or implicitly proved''; whether every such outcome is backed by a Lean proof was not checked.}, so this background is as trustworthy as the ETP; it is reported with the source \code{background}, like derived implications, and both kinds can be used together.
 
+The graph also gives the implications that the ETP refutes, though not its counterexamples, some of which are infinite. With \code{-{}-etp-refutations}, each refuted implication $E \to F$ between listed laws is added to the context as a partial object (Section~\ref{sec:partial}): the ETP's counterexample satisfies $E$ and every law that $E$ implies, and violates $F$ and every law that implies $F$, and nothing else is known about it. These objects are reduced together with the seeded magmas (Section~\ref{sec:seeding}), so that only refutations that no other object accounts for remain; they are named \code{R}$k$ in the results. They matter when the ETP's counterexample is infinite, or finite but beyond the reach of the expert, since a question refuted only by such a magma would otherwise be accepted as unconfirmed.
+
 The script \code{etp.py} writes chosen ETP laws, together with their duals, as an equations file with the ETP's numbers as ids, so that the laws to explore can be chosen by number.
 
 \subsection{The Z3 expert}\label{sec:z3}
@@ -277,7 +279,7 @@ The row time limit matters when many questions end with a free magma that Vampir
 
 A free magma is a powerful object: when its row is complete, its intent is the closure of $P$ in $\mathbb{K}_{\mathrm{Mag}}$, so it refutes every later question whose premise it satisfies and whose conclusion is not derivable. In the results, free magmas are named \code{F}$k$, the dual of $F_P$ being the free magma over the dual laws of $P$. The negative side of a free magma rests on Vampire's CounterSatisfiable verdicts. Those obtained from a finite model could be checked; those obtained by saturation cannot be checked by the library and are trusted.
 
-\subsection{Seeding with known magmas}
+\subsection{Seeding with known magmas}\label{sec:seeding}
 
 Magmas found in earlier explorations (the \code{magmas.json} of saved results) can be reused in two ways, and so can the finite magmas of the ETP: files with one table such as \code{[[0, 1], [1, 0]]} per line, after the word \code{Table} or an equation number, as in the ETP's \path{equational_theories/Generated/All4x4Tables/data} and \path{data/smallest_magma_examples.txt}, are read as well (repeated tables once). They can be added to the expert's pool, which is checked before any solver runs. Alternatively, they can be added to the context before the exploration starts: they are evaluated on every law, and objects whose rows the others account for are dropped (an object is redundant if, for each law it violates, another remaining object satisfies everything it satisfies and violates that law). No question that the seeded objects refute is then asked.
 
@@ -475,32 +477,32 @@ Since every question was decided, this is the complete implicational theory of t
 
 \subsection{Order at most three}
 
-The 149 laws have far more closed sets, and many premises combine laws whose consequences Vampire finds hard to decide. Two explorations were run, both with the ETP background, the context seeded with the ETP's finite magmas (Section~\ref{sec:etp}; 233 of 1374 tables were kept), a row time limit of 1 second, and otherwise the default limits. The second also used Mace4 in the per-law model search, for 30 seconds per law. Table~\ref{tab:runs3} compares them.
+The 149 laws have far more closed sets, and many premises combine laws whose consequences Vampire finds hard to decide. Three explorations were run, all with the ETP background, the context seeded with the ETP's finite magmas (Section~\ref{sec:etp}; 233 of 1374 tables were kept), a row time limit of 1 second, and otherwise the default limits. The second also used Mace4 in the per-law model search, for 30 seconds per law, and the third, in addition, the ETP's refutations as objects. Table~\ref{tab:runs3} compares them.
 
 \begin{table}[ht]
 \centering
 \small
-\begin{tabularx}{\textwidth}{@{}Xrr@{}}
+\begin{tabularx}{\textwidth}{@{}Xrrr@{}}
 \toprule
- & Vampire & Vampire and Mace4 \\
+ & Vampire & and Mace4 & and refutations \\
 \midrule
-Questions & 1,310 & 1,326 \\
-\quad proved & 736 & 746 \\
-\quad refuted by a finite model & 437 & 440 \\
-\quad refuted by a free magma & 75 & 76 \\
-\quad unconfirmed & 57 & 59 \\
-\quad open & 5 & 5 \\
-Confirmed implications & 750 & 754 \\
-Unconfirmed implications in the theory & 57 & 48 \\
-\quad of which shown false afterwards & 6 or more & --- \\
-Rules of the reduced basis & 793 & 795 \\
-Closed sets of the theory & 3,650 & 3,663 \\
-\quad without the unconfirmed implications & 8,378 & 8,377 \\
-Rounds & 1 & 2 \\
-Running time & 2 h 48 min & 4 h 34 min \\
+Questions & 1,310 & 1,326 & 1,337 \\
+\quad proved & 736 & 746 & 746 \\
+\quad refuted by a finite model & 437 & 440 & 444 \\
+\quad refuted by a free magma & 75 & 76 & 72 \\
+\quad unconfirmed & 57 & 59 & 70 \\
+\quad open & 5 & 5 & 5 \\
+Confirmed implications & 750 & 754 & 765 \\
+Unconfirmed implications in the theory & 57 & 48 & 59 \\
+\quad of which shown false afterwards & 6 or more & 3 & --- \\
+Rules of the reduced basis & 793 & 795 & 806 \\
+Closed sets of the theory & 3,650 & 3,663 & 3,667 \\
+\quad without the unconfirmed implications & 29,415 & 28,927 & 11,107 \\
+Rounds & 1 & 2 & 2 \\
+Running time & 2 h 48 min & 4 h 34 min & 4 h 42 min \\
 \bottomrule
 \end{tabularx}
-\caption{Explorations of the 149 representatives of the ETP laws of order at most three, with the ETP graph as background and the ETP's finite magmas in the context. The counts of unconfirmed implications do not include their duals. The running times are wall-clock times on an 8-core laptop; the second excludes a sleep of the machine of about an hour.}\label{tab:runs3}
+\caption{Explorations of the 149 representatives of the ETP laws of order at most three, with the ETP graph as background and the ETP's finite magmas in the context: by the Vampire expert, with Mace4 in the per-law search as well, and with the ETP's refutations in the context as well. The counts of unconfirmed implications do not include their duals; the closed sets without the unconfirmed implications are counted without their duals too. The running times are wall-clock times on an 8-core laptop; the second excludes a sleep of the machine of about an hour.}\label{tab:runs3}
 \end{table}
 
 \paragraph{Where Vampire gets stuck.}
@@ -518,8 +520,20 @@ So at least six of the 57 unconfirmed implications of the first exploration are 
 \paragraph{The second exploration.}
 With Mace4 in the per-law search, the expert found the counterexamples of size 16 during the exploration itself, together with models of sizes 11 and 13 that Vampire had missed (17 tables in all, counting duals). One of them refuted an unconfirmed implication accepted 260 questions earlier; the exploration resumed at that question (Section~\ref{sec:rounds}), which made it run in two rounds. In the end, 48 unconfirmed implications and 5 open questions remain, and 46 of the 48 have the same premise as an unconfirmed implication of the first exploration. No counterexample to them is known, but they are not proved either.
 
+\paragraph{Infinite counterexamples.}
+Three of these 48 unconfirmed implications are nevertheless false:
+\begin{itemize}
+  \item $\Eq{1}, \Eq{255}, \Eq{261} \to \Eq{307}$;
+  \item $\Eq{1}, \Eq{255}, \Eq{274} \to \Eq{47}, \Eq{99}, \Eq{118}, \Eq{203}, \Eq{222}$;
+  \item $\Eq{1}, \Eq{47}, \Eq{99}, \Eq{203}, \Eq{229}, \Eq{255} \to \Eq{73}, \Eq{125}$.
+\end{itemize}
+In each, one law of the premise ($\Eq{261}$, $\Eq{274}$ and $\Eq{229}$) implies the others, and the ETP refutes that it implies some law of the conclusion: $\Eq{261} \not\to \Eq{307}$, $\Eq{274} \not\to \Eq{47}$, and $\Eq{229} \not\to \Eq{73}$. The ETP's counterexamples are infinite: for the duals $\Eq{65}$ (the Asterix law of the ETP), $\Eq{73}$ and $\Eq{118}$ of these laws, it builds them greedily on $\mathbb{N}$ or on a free group. For the first and the third implication, no finite counterexample exists, since the ETP proves in Lean that the duals of their single-premise refutations hold in finite magmas (\path{Finite.Equation65_implies_Equation359}, \path{Finite.Equation118_implies_Equation274} and \path{Finite.Equation118_implies_Equation222}); Mace4 also finds no magma of size at most 40 that satisfies $\Eq{261}$ and violates $\Eq{307}$. Whether the second holds in finite magmas was not checked. No finite search could have refuted the first and the third, and since they steered the enumeration, the theory of the second exploration is not the theory of all magmas even if its other unconfirmed implications are true.
+
+\paragraph{The third exploration.}
+The third exploration added the ETP's refutations to the context (Section~\ref{sec:etp}). Of the 20,916 implications between two of the 149 laws that the ETP refutes, 10 remained after the reduction against the 233 magmas, five and their duals: $\Eq{261} \not\to \Eq{307}$, $\Eq{274} \not\to \Eq{47}, \Eq{99}, \Eq{203}$ and $\Eq{229} \not\to \Eq{73}$, exactly those behind the three false implications. They were not accepted. Instead, the exploration asked about the larger premises that they had covered, and accepted seven implications, counting duals, that the second theory does not entail, all unconfirmed, such as $\Eq{1}, \Eq{255}, \Eq{274}, \Eq{280} \to \Eq{43}, \Eq{73}, \Eq{75}, \Eq{125}, \Eq{229}, \Eq{264}$. Apart from these and the three false implications with their duals, each theory entails every implication of the other. The number of unconfirmed implications grew from 48 to 59, since each false implication stood for several finer questions that the expert could not decide either.
+
 \paragraph{What the results say.}
-The 754 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, and those witnessed by free magmas rest on Vampire's saturation. The 3,663 closed sets of the theory are correct if the 48 unconfirmed implications are true. Without them, the theory has 8,377 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide.
+In the third exploration, the 765 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,667 closed sets of the theory are correct if the 59 unconfirmed implications are true. Without them and their duals, the theory has 11,107 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 59 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide.
 
 %======================================================================
 \section{User's guide}\label{sec:guide}
@@ -573,6 +587,7 @@ Table~\ref{tab:options} lists the options.
 -{}-background-premise-size K & 2 & largest premise of a background implication; $0$ computes the canonical basis \\
 -{}-etp-graph PATH & & the ETP's implication graph, as background; needs \code{-{}-etp-equations} \\
 -{}-etp-equations PATH & & the ETP's list of laws, to match the explored laws \\
+-{}-etp-refutations & off & add the graph's refutations to the context; needs \code{-{}-etp-graph} \\
 -{}-seed-magmas PATH... & & add magmas to the expert's pool \\
 -{}-seed-context PATH... & & add magmas to the context before starting \\
 -{}-report-every N & 1 & print every $N$th question; $0$ prints none \\
@@ -603,7 +618,7 @@ python explorations/equational_theories/explore.py \
     --equations my_laws.json --expert vampire \
     --etp-graph graph.json --etp-equations equations.txt
 \end{Verbatim}
-This background costs nothing to compute and leaves only questions whose premise has several laws. It helps most when the implications between pairs of laws are hard to settle.
+This background costs nothing to compute and leaves only questions whose premise has several laws. It helps most when the implications between pairs of laws are hard to settle. Add \code{-{}-etp-refutations} to put the graph's refutations into the context as well (Section~\ref{sec:etp}); with the ETP's finite magmas seeded, only refutations that they do not account for are kept, such as those by infinite magmas.
 
 \subsection{Reusing magmas}
 
@@ -628,6 +643,7 @@ The results directory contains:
   \item[\code{implications.txt}, \code{implications.json}] the whole theory, every implication with its source (\code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped}), followed by the refuted unconfirmed implications and the open questions;
   \item[\code{magmas.json}] the finite magmas of the context with their tables, under the names \code{M}$k$ and \code{M}$k$\code{\^{}op};
   \item[\code{free\_magmas.json}] the free magmas \code{F}$k$, each with its premise and its known positive and negative laws;
+  \item[\code{etp\_refutations.json}] with \code{-{}-etp-refutations}, the objects \code{R}$k$ standing for refutations of the ETP graph, each with the implication it refutes and its known positive and negative laws;
   \item[\code{context.cxt}] the objects with complete rows, in Burmeister's format;
   \item[\code{partial\_context.cxt}] all objects in the same format, with \code{?} for unknown entries.
 \end{description}
