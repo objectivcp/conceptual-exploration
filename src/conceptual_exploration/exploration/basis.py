@@ -49,7 +49,8 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
     background, the other rules, and the images of all of them under the
     mappings; a rule left with no conclusion is dropped. Rules are cut one at
     a time against the others as already cut, so that, read together with the
-    background and the mappings, the result entails exactly what the accepted
+    background and the mappings (except for the unconfirmed implications of a
+    base that does not map them), the result entails exactly what the accepted
     implications do. A rule's own images are not used in cutting it, since
     they would let it derive its own conclusion.
 
@@ -63,10 +64,10 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
     index = base.index
     theory = base.implications
 
-    def images(premise: int, conclusion: int) -> set[tuple[int, int]]:
+    def images(premise: int, conclusion: int, mapped: bool = True) -> set[tuple[int, int]]:
         return {
             (p, c)
-            for p, c in [(premise, conclusion), *base.mapped_images(premise, conclusion)]
+            for p, c in [(premise, conclusion), *(base.mapped_images(premise, conclusion) if mapped else [])]
             if c & ~p
         }
 
@@ -86,7 +87,12 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
         premise = index.encode(theory.simplify(implication).premise)
         closure = theory.closure_mask(premise)
         rules.append([premise, closure & ~premise])
-    rule_images = [images(premise, conclusion) for premise, conclusion in rules]
+    # Unconfirmed implications that the base does not map stand for themselves.
+    mapped = [
+        base.map_unconfirmed or base.implication_sources[implication] is not ImplicationSource.UNCONFIRMED
+        for implication in accepted
+    ]
+    rule_images = [images(premise, conclusion, m) for (premise, conclusion), m in zip(rules, mapped)]
 
     for i, rule in enumerate(rules):
         premise, conclusion = rule
@@ -98,11 +104,11 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
         )
         for position in weakest_first:
             candidate = conclusion & ~(1 << position)
-            implications = rest + list(images(premise, candidate))
+            implications = rest + list(images(premise, candidate, mapped[i]))
             if target & ~close_mask(premise, implications) == 0:
                 conclusion = candidate
         rule[1] = conclusion
-        rule_images[i] = images(premise, conclusion)
+        rule_images[i] = images(premise, conclusion, mapped[i])
 
     full = base.full_mask
     return [

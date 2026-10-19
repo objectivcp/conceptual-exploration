@@ -43,6 +43,7 @@ def explore_in_rounds(
         evaluate_all: bool = False,
         on_question: Callable[[QuestionReport[O, A]], None] | None = None,
         on_resume: Callable[[Implication[A], O], None] | None = None,
+        map_unconfirmed: bool = True,
 ) -> RoundsResult[O, A]:
     """Explore, resuming whenever an object refutes an implication accepted
     as unconfirmed.
@@ -57,6 +58,8 @@ def explore_in_rounds(
     found; and the open questions before it. It leaves out the refuted
     implication and the unconfirmed ones accepted after it, whose questions
     are asked again.
+
+    `map_unconfirmed` is passed to `ExplorationBase`.
 
     The theory is then sound and complete but need not be a canonical basis,
     the confirmed implications kept having been found under a different
@@ -76,6 +79,7 @@ def explore_in_rounds(
             attributes=attributes,
             background_implications=background,
             mappings=mappings,
+            map_unconfirmed=map_unconfirmed,
         )
         for implication, source in history:
             base.accept(implication, source)

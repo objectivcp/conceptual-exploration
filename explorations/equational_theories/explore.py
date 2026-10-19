@@ -164,8 +164,9 @@ def save_results(
         "background = derived by equational reasoning or taken from the ETP graph; confirmed =",
         "no counterexample in the searched sizes, or proved by Vampire; unconfirmed = neither",
         "refuted nor decided;",
-        "mapped = dual of another implication, added when not already entailed. Open questions",
-        "are implications shown false without a counterexample known to violate their conclusion.",
+        "mapped = dual of another implication, added when not already entailed; mapped unconfirmed",
+        "= dual of an unconfirmed implication. Open questions are implications shown false without",
+        "a counterexample known to violate their conclusion.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
@@ -220,6 +221,7 @@ def run_magma_exploration(
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
     etp_refutations: bool = False,
+    map_unconfirmed: bool = True,
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -232,7 +234,8 @@ def run_magma_exploration(
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
-    print(f"Duality Symmetry Enabled: {use_duality_symmetry}")
+    print(f"Duality Symmetry Enabled: {use_duality_symmetry}"
+          f"{'' if map_unconfirmed or not use_duality_symmetry else ', duals of unconfirmed implications asked'}")
     if expert_kind == "vampire":
         print(
             f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove, "
@@ -348,6 +351,7 @@ def run_magma_exploration(
         evaluate_all=True,
         on_question=report_every(report_interval),
         on_resume=resumed,
+        map_unconfirmed=map_unconfirmed,
     )
     base, state = result.base, result.state
     state.questions_asked = result.questions_asked
@@ -432,6 +436,8 @@ def run_magma_exploration(
             settings += ", ETP graph as background"
         if etp_refutations:
             settings += " and its refutations as objects"
+        if not map_unconfirmed:
+            settings += ", duals of unconfirmed implications asked"
         if background_order is not None:
             settings += (
                 f", background order {background_order}, transient order "
@@ -646,6 +652,16 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--ask-unconfirmed-duals",
+        action="store_true",
+        help=(
+            "Do not add the dual of an unconfirmed implication to the theory "
+            "until the implication is confirmed, so that it does not steer the "
+            "enumeration; the dual is asked about when the enumeration reaches "
+            "it, and if it is proved, the implication is confirmed as well."
+        ),
+    )
+    parser.add_argument(
         "--etp-refutations",
         action="store_true",
         help=(
@@ -720,6 +736,7 @@ if __name__ == "__main__":
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
                 etp_refutations=args.etp_refutations,
+                map_unconfirmed=not args.ask_unconfirmed_duals,
             )
         finally:
             sys.stdout = sys.__stdout__

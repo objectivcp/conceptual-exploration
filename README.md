@@ -35,7 +35,7 @@
 - **Symmetry & Substitution Invariance**: Automatic generation of variable symmetries and variable identification/substitutions to prune redundant queries and map learned implications.
 - **Partial Formal Contexts**: First-class handling of three-valued logic (positive, negative, and unknown attribute values) via `PartialContext` and `PartialObject`.
 - **Burmeister `.cxt` Format Support**: Read and parse standard Formal Concept Analysis context files.
-- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, unconfirmed, background, mapped).
+- **Implication Theory Management**: Simplification of implication premises, entailment checks, semantic closure computations, and source tracking (confirmed, unconfirmed, background, mapped, mapped unconfirmed).
 
 ---
 

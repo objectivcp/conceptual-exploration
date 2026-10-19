@@ -29,6 +29,9 @@ class ImplicationSource(Enum):
     # Accepted because the expert found no counterexample, but the expert
     # could not decide the question (e.g. its solver hit a timeout).
     UNCONFIRMED = "unconfirmed"
+    # An image of an unconfirmed implication, no more certain than it; it
+    # becomes MAPPED when that implication is confirmed.
+    MAPPED_UNCONFIRMED = "mapped unconfirmed"
 
 
 class ExplorationBase(Generic[O, A]):
@@ -49,7 +52,11 @@ class ExplorationBase(Generic[O, A]):
     confirmed and their images. An unconfirmed implication may be false, and
     completing with it could put a false value into a row; it still takes part
     in `implications` and so in choosing the questions. An object that turns
-    out to violate one is recorded in `refuted` rather than rejected.
+    out to violate one is recorded in `refuted` rather than rejected. With
+    `map_unconfirmed` false, unconfirmed implications are not mapped until
+    they are confirmed, so that their images are asked about in turn; an
+    unconfirmed implication that the trusted ones come to entail, such as the
+    image of a confirmed one, is then recorded as confirmed.
     `open_questions` collects the questions the expert left undecided.
     """
 
@@ -57,9 +64,11 @@ class ExplorationBase(Generic[O, A]):
             self,
             attributes: Iterable[A],
             background_implications: Iterable[Implication[A]] = (),
-            mappings: Iterable[Callable[[A], A]] = ()
+            mappings: Iterable[Callable[[A], A]] = (),
+            map_unconfirmed: bool = True,
     ) -> None:
         self.attributes = tuple(attributes)
+        self.map_unconfirmed = map_unconfirmed
         self.index = AttributeIndex[A](self.attributes)
         self.full_mask = (1 << len(self.attributes)) - 1
         self.context = PartialContext[VersionedObject[O], A](self.attributes)
@@ -148,14 +157,30 @@ class ExplorationBase(Generic[O, A]):
                 masks = self._untrusted.pop(implication)
                 self._trusted.add(implication)
                 self._update([masks, *self._add_mapped(*masks, trusted)])
-                for other, other_masks in list(self._untrusted.items()):
-                    if self._trusted.entails_mask(*other_masks):
-                        del self._untrusted[other]
+                for image, origin in self._origins.items():
+                    if origin == implication and self.implication_sources[image] is ImplicationSource.MAPPED_UNCONFIRMED:
+                        self.implication_sources[image] = ImplicationSource.MAPPED
+                self._settle_untrusted()
             return
         masks = self._add_implication(implication, source, trusted)
-        added = self._add_mapped(*masks, trusted, implication)
+        added = self._add_mapped(*masks, trusted, implication) if trusted or self.map_unconfirmed else []
         if trusted:
             self._update([masks, *added])
+            if not self.map_unconfirmed:
+                self._settle_untrusted()
+
+    def _settle_untrusted(self) -> None:
+        """Trust the untrusted implications that the trusted ones entail.
+
+        Without mapping unconfirmed implications, one of them is entailed
+        this way when its image is confirmed, and since the mappings are
+        symmetries it is then true itself, so it is recorded as confirmed.
+        """
+        for other, other_masks in list(self._untrusted.items()):
+            if self._trusted.entails_mask(*other_masks):
+                del self._untrusted[other]
+                if not self.map_unconfirmed and self.implication_sources[other] is ImplicationSource.UNCONFIRMED:
+                    self.implication_sources[other] = ImplicationSource.CONFIRMED
 
     def origin(self, implication: Implication[A]) -> Implication[A]:
         """The implication accepted or given as background that `implication`
@@ -176,8 +201,10 @@ class ExplorationBase(Generic[O, A]):
         Keeping the theory closed under the mappings is what lets a mapped copy
         of a completed object be completed itself, so background implications
         are mapped for the same reason confirmed ones are. The image of an
-        unconfirmed implication is no more trustworthy than the implication.
+        unconfirmed implication is no more trustworthy than the implication,
+        and is recorded as MAPPED_UNCONFIRMED.
         """
+        source = ImplicationSource.MAPPED if trusted else ImplicationSource.MAPPED_UNCONFIRMED
         added = []
         for mapped_premise, mapped_conclusion in self.mapped_images(premise, conclusion):
             mapped_implication = Implication(
@@ -185,7 +212,7 @@ class ExplorationBase(Generic[O, A]):
                 self.index.decode(mapped_conclusion),
             )
             if not self.implications.entails_mask(mapped_premise, mapped_conclusion):
-                masks = self._add_implication(mapped_implication, ImplicationSource.MAPPED, trusted)
+                masks = self._add_implication(mapped_implication, source, trusted)
                 if origin is not None:
                     self._origins[mapped_implication] = origin
                 if trusted:

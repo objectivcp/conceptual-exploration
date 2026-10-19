@@ -111,6 +111,34 @@ def test_background_implications_are_mapped():
     assert base.implication_sources[mapped] is ImplicationSource.MAPPED
 
 
+def test_images_of_unconfirmed_implications_are_marked_until_confirmed():
+    swap = {"a": "b", "b": "a", "c": "d", "d": "c"}
+    base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]])
+    implication = Implication(frozenset(["a"]), frozenset(["c"]))
+    mapped = Implication(frozenset(["b"]), frozenset(["d"]))
+
+    base.accept(implication, ImplicationSource.UNCONFIRMED)
+    assert base.implication_sources[mapped] is ImplicationSource.MAPPED_UNCONFIRMED
+
+    base.accept(implication, ImplicationSource.CONFIRMED)
+    assert base.implication_sources[mapped] is ImplicationSource.MAPPED
+
+
+def test_unconfirmed_implications_can_be_left_unmapped_until_their_images_are_confirmed():
+    swap = {"a": "b", "b": "a", "c": "d", "d": "c"}
+    base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]], map_unconfirmed=False)
+    implication = Implication(frozenset(["a"]), frozenset(["c"]))
+    mapped = Implication(frozenset(["b"]), frozenset(["d"]))
+
+    base.accept(implication, ImplicationSource.UNCONFIRMED)
+    assert not base.implications.entails(mapped)
+
+    # Its image, proved, makes it true as well.
+    base.accept(mapped, ImplicationSource.CONFIRMED)
+    assert base.implication_sources[implication] is ImplicationSource.CONFIRMED
+    assert not base.unconfirmed_implications
+
+
 def test_mapped_versions_are_already_complete():
     """Mapping a completed object yields a completed one.
 
