@@ -137,7 +137,7 @@ A \emph{symmetry} (``mapping'' in the code) is a map $\varphi$ from the attribut
 \]
 the object that has an attribute $m$ exactly when $g$ has $\varphi(m)$. Copies are named $g\#k$, where $k$ is the number of the mapping (the original is $g\#0$), and a copy whose row repeats one already added is skipped. Each implication and each object is mapped by each $\varphi$ once and never by a composition, so $\Phi$ should be closed under composition, for instance a group. (In general a map may also send an attribute to a truth value; this is used in rule exploration, not here.)
 
-Since the theory is closed under $\Phi$ at all times, the premise $\varphi(P)$ of the image of an accepted implication is not closed and never becomes a question: the expert is asked about one implication per orbit. The images of an unconfirmed implication are no more certain than it, but they steer the enumeration as it does. With \code{map\_unconfirmed=False} (\code{-{}-ask-unconfirmed-duals} in \code{explore.py}), they are added only once the implication is confirmed; until then the expert is asked about them when the enumeration reaches their premises, and if it proves an image, the implication is recorded as confirmed as well. The price is that the resulting set of implications, background, accepted and mapped together, is a basis of the theory, but in general not its canonical basis.
+Since the theory is closed under $\Phi$ at all times, the premise $\varphi(P)$ of the image of an accepted implication is not closed and never becomes a question: the expert is asked about one implication per orbit. The images of an unconfirmed implication are no more certain than it, but they steer the enumeration as it does. With \code{map\_unconfirmed=False} (\code{-{}-ask-unconfirmed-duals} in \code{explore.py}), they are added only once the implication is confirmed; until then the expert is asked about them when the enumeration reaches their premises, and if it proves an image, the implication is recorded as confirmed as well. The price is that the resulting set of implications, background, accepted and mapped together, is only a \emph{cover} of the theory: a set of implications that generates it, possibly with redundant implications, and in general not its canonical basis.
 
 \subsection{Experts that cannot always decide}\label{sec:undecided}
 
@@ -160,7 +160,7 @@ An expert reports that it has not decided a question it accepts through \code{is
 Unconfirmed implications take part in the closure that generates the premises: they steer the enumeration as accepted implications do. They are, however, not used to complete objects, since they may be false and would then write false values into rows. Every object added later is checked against them; an object violating an unconfirmed implication refutes it.
 
 \paragraph{Open questions.}
-An open question is not added to the theory, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Open questions are listed separately in the results.
+An open question is not accepted, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Open questions are listed separately in the results.
 
 \subsection{Resuming after a refuted unconfirmed implication}\label{sec:rounds}
 
@@ -170,16 +170,16 @@ When an object refutes an unconfirmed implication $P \to C$, all closed sets enu
   \item the \emph{confirmed} implications accepted after it, which are true whatever steered the enumeration to them;
   \item every object found so far, and the open questions recorded before $P$;
 \end{itemize}
-and resumes NextClosure at $P$. Since NextClosure can continue from any set, and every closed set lectically before $P$ was enumerated without the false implication, nothing before $P$ is repeated. The false implication and the unconfirmed implications accepted after it are dropped; their questions are asked again if they arise. The final theory is sound and complete (up to open questions) but, because the confirmed implications kept were found under a different theory, it need not be a canonical basis.
+and resumes NextClosure at $P$. Since NextClosure can continue from any set, and every closed set lectically before $P$ was enumerated without the false implication, nothing before $P$ is repeated. The false implication and the unconfirmed implications accepted after it are dropped; their questions are asked again if they arise. The implications found are then a cover of the theory, sound and complete up to open questions, but, because the confirmed implications kept were found under a different theory, not necessarily its canonical basis.
 
-\subsection{Further details}
+\subsection{Further details}\label{sec:details}
 
 \begin{itemize}
   \item \textbf{Several questions per premise.} After a counterexample, the context closure of the same premise is recomputed and, if it is still larger than the premise, the expert is asked again, as in the book.
   \item \textbf{Continuing after an acceptance.} After $P \to C$ is accepted, the next closed set is computed from $P$ under the extended theory. NextClosure reuses the step that produced $P$: the closure of $P$ under the new theory is the next closed set if it adds no attribute lectically smaller than the one just added.
   \item \textbf{Rows of counterexamples.} With \code{evaluate\_all}, the expert is given all attributes and returns the full row of a counterexample, not only its values on the question's attributes. The equational-theories exploration always does this.
   \item \textbf{Bit sets.} Attribute sets, rows and implications are stored as bit masks, and distinct rows are stored once with the objects sharing them; the context closure and the implication closure (a variant of Wild's algorithm) are integer operations.
-  \item \textbf{Reading the result.} For display, \code{reduced\_basis} rewrites the accepted implications: each premise is reduced to the attributes the rest of it does not entail, and each conclusion to the attributes that do not follow from the premise by way of the background, the other rules and all their images. A premise that entails every attribute is shown as concluding \emph{everything}. The rewritten rules, read together with the background and the symmetries, entail exactly what the accepted implications do.
+  \item \textbf{Reading the result.} For display, \code{simplified\_rules} simplifies the accepted implications into \emph{rules}: each premise is cut to the attributes the rest of it does not entail, and each conclusion to the attributes that do not follow from the premise by way of the background, the other rules and all their images. A rule left with no conclusion follows from the others and is dropped, so that the rules are also reduced: none of them follows from the others together with the background and the symmetries. The rules thus form a basis of the theory relative to the background and the symmetries, though not in general its canonical basis, nor one with as few implications as possible. A premise that entails every attribute is shown as concluding \emph{everything}. The rules, read together with the background and the symmetries, entail exactly what the accepted implications do.
 \end{itemize}
 
 %======================================================================
@@ -332,7 +332,7 @@ The laws were explored twice, once with each expert, with the default settings (
 Questions & 59 & 62 \\
 Implications accepted & 27 & 27 \\
 \quad of which unconfirmed & 2 & 0 \\
-Implications in the theory (with images) & 43 & 44 \\
+Implications found (with images) & 43 & 44 \\
 Counterexamples & 32 & 35 \\
 Free magmas & --- & 0 \\
 Open questions & --- & 0 \\
@@ -342,7 +342,7 @@ Running time & 2 min 52 s & 2 min 51 s \\
 \caption{The two explorations of the sixteen laws. Of Vampire's 35 counterexamples, 27 are models found by Vampire and 8 come from the pool. The Vampire time limits are those for a proof, the quick model search and the per-law model search.}\label{tab:runs16}
 \end{table}
 
-The Vampire exploration proved every implication it accepted and refuted every other question with a checked finite magma, so its theory is exactly the set of implications between these laws that hold in all magmas. It is listed in reduced form in Table~\ref{tab:basis16}; each rule stands also for its dual, which swaps $\Eq{4}$ and $\Eq{5}$, $\Eq{10}$ and $\Eq{25}$, $\Eq{16}$ and $\Eq{26}$, $\Eq{323}$ and $\Eq{378}$, $\Eq{4396}$ and $\Eq{4473}$, and fixes the other laws.
+The Vampire exploration proved every implication it accepted and refuted every other question with a checked finite magma, so its theory is exactly the set of implications between these laws that hold in all magmas. Its rules are listed in Table~\ref{tab:basis16}; each rule stands also for its dual, which swaps $\Eq{4}$ and $\Eq{5}$, $\Eq{10}$ and $\Eq{25}$, $\Eq{16}$ and $\Eq{26}$, $\Eq{323}$ and $\Eq{378}$, $\Eq{4396}$ and $\Eq{4473}$, and fixes the other laws.
 
 \begin{table}[ht]
 \centering
@@ -378,7 +378,7 @@ The Vampire exploration proved every implication it accepted and refuted every o
 14 & $\Eq{43}, \Eq{4512} \to \text{Medial}$ & & \\
 \bottomrule
 \end{tabular}
-\caption{The implications between the sixteen laws, in the reduced form printed by the program. Together with their duals, they entail every implication that holds in all magmas.}\label{tab:basis16}
+\caption{The implications between the sixteen laws, as the rules printed by the program. Together with their duals, they entail every implication that holds in all magmas.}\label{tab:basis16}
 \end{table}
 
 \subsection{Where the experts differ}
@@ -388,7 +388,7 @@ The Z3 exploration accepted three implications that are false: one implication t
   \item $\Eq{16}, \Eq{4435}, \Eq{4473} \to \Eq{4396}, \Eq{4512}, \text{Medial}$ (and its dual). Only $\Eq{4396}$ follows (rule~11). Associativity and mediality fail in \tocheck{a Steiner loop of order~10: a commutative loop in which every element is its own inverse, built from the Steiner triple system on nine points (the affine plane of order~3)}{the library only checked that the magma is a commutative loop with $x * x = e$ for its identity~$e$ and which laws it satisfies; the identification relies on the correspondence between Steiner loops of order $n + 1$ and Steiner triple systems on $n$ points, and on the uniqueness of the system on nine points.}. It satisfies $\Eq{16}$, $\Eq{26}$, $\Eq{43}$, $\Eq{4396}$, $\Eq{4435}$ and $\Eq{4473}$ but none of the other laws.
   \item $\Eq{3}, \Eq{16}, \Eq{26}, \Eq{43}, \Eq{4435} \to \text{Medial}$. It fails in \tocheck{the Steiner quasigroup of order~7, the idempotent commutative quasigroup of the Fano plane, in which $x * y$ is the third point on the line through $x$ and $y$}{the library only checked which laws the magma satisfies; the identification relies on idempotent totally symmetric quasigroups being Steiner quasigroups and on the uniqueness of the Steiner triple system on seven points.}.
 \end{itemize}
-Both counterexamples exceed the sizes the Z3 expert searches. Conversely, the two implications Z3 accepted as unconfirmed ($\Eq{323}, \Eq{378}, \text{Medial} \to \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512}$, rule~5 in reduced form, and $\Eq{43}, \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512} \to \text{Medial}$) are true, and Vampire proved them. Every implication Vampire accepted is entailed by the Z3 theory, as it should be.
+Both counterexamples exceed the sizes the Z3 expert searches. Conversely, the two implications Z3 accepted as unconfirmed ($\Eq{323}, \Eq{378}, \text{Medial} \to \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512}$, rule~5 before simplification, and $\Eq{43}, \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512} \to \text{Medial}$) are true, and Vampire proved them. Every implication Vampire accepted is entailed by the Z3 theory, as it should be.
 
 The first of the false implications also illustrates the per-law model search of step~5. Before that step was added, the Vampire expert left this question undecided: the free magma over the premise decided neither associativity nor mediality in time, and a model violating their conjunction was not found within the time limit. The model builder finds the size-10 Steiner loop in a few seconds when it looks for a violation of a single law, while the search for a violation of both needs more than a minute and a half.
 
@@ -430,7 +430,7 @@ Running time & 8 h 05 min & 2 h 25 min & not recorded & 3 h 18 min \\
 \end{table}
 
 \paragraph{No implication beyond the background.}
-Both Vampire explorations refuted every question: no implication was accepted, and the theory is the background itself. This is a mathematical result: \emph{every implication between one-variable laws of order at most four that holds in all magmas follows from the 111 background implications}, that is, it can be derived by equational reasoning through equations of order at most four, with single steps reaching order ten, from premises of at most two laws. Conversely, every non-implication is witnessed either by a finite magma, checked by the library, or by a free magma whose relevant negative entry rests on Vampire's saturation. The final context of the second run has 37,177 objects (originals and duals) with pairwise distinct rows, and its 108,635 intents are exactly the closed sets of the background. Every row was decided completely: no free magma has an unknown entry.
+Both Vampire explorations refuted every question: no implication was accepted, and the background alone generates the theory. This is a mathematical result: \emph{every implication between one-variable laws of order at most four that holds in all magmas follows from the 111 background implications}, that is, it can be derived by equational reasoning through equations of order at most four, with single steps reaching order ten, from premises of at most two laws. Conversely, every non-implication is witnessed either by a finite magma, checked by the library, or by a free magma whose relevant negative entry rests on Vampire's saturation. The final context of the second run has 37,177 objects (originals and duals) with pairwise distinct rows, and its 108,635 intents are exactly the closed sets of the background. Every row was decided completely: no free magma has an unknown entry.
 
 \paragraph{The counterexamples.}
 The finite counterexamples found in the first Vampire run have the following sizes (originals only):
@@ -468,7 +468,7 @@ Each set includes $\Eq{1}$: $x = x$ and $\Eq{2}$: $x = y$, which hold in every m
 
 \subsection{Order at most two}
 
-With the Vampire expert and the ETP background, the exploration of the 24 laws asked 45 questions. It found 19 counterexamples, 6 of them two-element magmas of the pool and 13 found by Vampire, of sizes 3 to 5, and proved 26 implications; nothing was left unconfirmed or open, and no free magma was needed. The theory has 59 closed sets, and each of the 26 rules of its reduced basis has a premise of two laws. For example:
+With the Vampire expert and the ETP background, the exploration of the 24 laws asked 45 questions. It found 19 counterexamples, 6 of them two-element magmas of the pool and 13 found by Vampire, of sizes 3 to 5, and proved 26 implications; nothing was left unconfirmed or open, and no free magma was needed. The theory has 59 closed sets, and each of its 26 rules has a premise of two laws. For example:
 \begin{itemize}
   \item $\Eq{25}, \Eq{43} \to \Eq{2}$: a commutative magma satisfying $x = (x * y) * x$ is trivial;
   \item $\Eq{26}, \Eq{29} \to \Eq{43}$: the laws $x = (x * y) * y$ and $x = (y * x) * y$ together imply commutativity;
@@ -493,17 +493,19 @@ Questions & 1,310 & 1,326 & 1,337 & 1,376 \\
 \quad refuted by a free magma & 75 & 76 & 72 & 74 \\
 \quad unconfirmed & 57 & 59 & 70 & 105 \\
 \quad open & 5 & 5 & 5 & 5 \\
-Confirmed implications & 750 & 754 & 765 & 767 \\
-Unconfirmed implications in the theory & 57 & 48 & 59 & 60 \\
-\quad of which shown false afterwards & 6 or more & 3 & 1 & --- \\
-Rules of the reduced basis & 793 & 795 & 806 & 842 \\
+Accepted implications & 807 & 802 & 824 & 860 \\
+\quad confirmed & 750 & 754 & 765 & 767 \\
+\quad unconfirmed & 57 & 48 & 59 & 93 \\
+\qquad of which known to be false & 6 or more & 3 & 1 & --- \\
+Basis (relative to the background and duality) & 793 & 795 & 806 & 842 \\
+\quad of which unconfirmed & 57 & 48 & 59 & 93 \\
 Closed sets of the theory & 3,650 & 3,663 & 3,667 & 3,671 \\
 \quad without the unconfirmed implications & 29,415 & 28,927 & 11,107 & 11,100 \\
 Rounds & 1 & 2 & 2 & 2 \\
 Running time & 2 h 48 min & 4 h 34 min & 4 h 42 min & 6 h 19 min \\
 \bottomrule
 \end{tabularx}
-\caption{Explorations of the 149 representatives of the ETP laws of order at most three, with the ETP graph as background and the ETP's finite magmas in the context: by the Vampire expert, with Mace4 in the per-law search as well, with the ETP's refutations in the context as well, and asking about the duals of unconfirmed implications as well. The counts of unconfirmed implications do not include their duals (in the fourth exploration, where the duals are asked about, 93 unconfirmed implications are 60 up to duality); the closed sets without the unconfirmed implications are counted without their duals too. The running times are wall-clock times on an 8-core laptop; the second excludes a sleep of the machine of about an hour.}\label{tab:runs3}
+\caption{Explorations of the 149 representatives of the ETP laws of order at most three, with the ETP graph as background and the ETP's finite magmas in the context: by the Vampire expert, with Mace4 in the per-law search as well, with the ETP's refutations in the context as well, and asking about the duals of unconfirmed implications as well. The questions are counted by answer, so that a question asked again in a later round counts twice. The accepted implications are those the expert accepted, without the background and without the duals that the symmetry adds; in the fourth exploration, the duals of unconfirmed implications are asked about and accepted in their own right, so that its 93 unconfirmed implications are 60 up to duality. Those known to be false were shown false by later explorations or tests, and they remain in their exploration's result. The basis consists of the rules printed by the program, the accepted implications after simplification and reduction (Section~\ref{sec:details}); the reduction dropped only confirmed implications. It is not canonical; in the fourth exploration, which does not map unconfirmed implications by duality, it contains them together with their duals. The closed sets without the unconfirmed implications are counted without their duals as well. The running times are wall-clock times on an 8-core laptop; the second excludes a sleep of the machine of about an hour.}\label{tab:runs3}
 \end{table}
 
 \paragraph{Where Vampire gets stuck.}
@@ -534,7 +536,7 @@ In each, one law of the premise ($\Eq{261}$, $\Eq{274}$ and $\Eq{229}$) implies 
 The third exploration added the ETP's refutations to the context (Section~\ref{sec:etp}). Of the 20,916 implications between two of the 149 laws that the ETP refutes, 10 remained after the reduction against the 233 magmas, five and their duals: $\Eq{261} \not\to \Eq{307}$, $\Eq{274} \not\to \Eq{47}, \Eq{99}, \Eq{203}$ and $\Eq{229} \not\to \Eq{73}$, exactly those behind the three false implications. They were not accepted. Instead, the exploration asked about the larger premises that they had covered, and accepted seven implications, counting duals, that the second theory does not entail, all unconfirmed, such as $\Eq{1}, \Eq{255}, \Eq{274}, \Eq{280} \to \Eq{43}, \Eq{73}, \Eq{75}, \Eq{125}, \Eq{229}, \Eq{264}$. Apart from these and the three false implications with their duals, each theory entails every implication of the other. The number of unconfirmed implications grew from 48 to 59, since each false implication stood for several finer questions that the expert could not decide either.
 
 \paragraph{The fourth exploration.}
-In the first three explorations, the dual of each unconfirmed implication was added to the theory with it and steered the enumeration as well. The fourth asked about these duals instead (Section~\ref{sec:symmetry}). It asked every question of the third exploration and 38 more, of which 35 were left unconfirmed, mostly the duals themselves, so that it took 1 h 37 min longer. Its answers to the common questions were the same but for one: question 262, $\Eq{1}, \Eq{255}, \Eq{257}, \Eq{263}, \Eq{307}, \Eq{310} \to \Eq{260}, \Eq{266}, \Eq{323}$, unconfirmed in the third exploration, was refuted by a magma of size 13 that Vampire found within its 10 seconds this time. The third theory therefore contains a false implication and its dual; the fourth proves the rest of that question, $\Eq{323}$ added to the premise, and confirms one large implication more. Apart from these, the two theories entail the same implications, and the fourth entails no unproved implication that the third does not. Asking about the duals thus made the result slightly more complete in this case, but mainly by the difference at question 262 rather than by easier questions.
+In the first three explorations, the dual of each unconfirmed implication was added with it and steered the enumeration as well. The fourth asked about these duals instead (Section~\ref{sec:symmetry}). It asked every question of the third exploration and 38 more, of which 35 were left unconfirmed, mostly the duals themselves, so that it took 1 h 37 min longer. Its answers to the common questions were the same but for one: question 262, $\Eq{1}, \Eq{255}, \Eq{257}, \Eq{263}, \Eq{307}, \Eq{310} \to \Eq{260}, \Eq{266}, \Eq{323}$, unconfirmed in the third exploration, was refuted by a magma of size 13 that Vampire found within its 10 seconds this time. The third theory therefore contains a false implication and its dual; the fourth proves the rest of that question, $\Eq{323}$ added to the premise, and confirms one large implication more. Apart from these, the two theories are the same, and the fourth found no unproved implication that the third theory lacks. Asking about the duals thus made the result slightly more complete in this case, but mainly by the difference at question 262 rather than by easier questions.
 
 \paragraph{Posing the questions differently.}
 The unconfirmed questions of the fourth exploration were also put to the provers in other forms, with the expert's time limits, to see whether the form of a question matters:
@@ -546,7 +548,7 @@ The unconfirmed questions of the fourth exploration were also put to the provers
 Longer runs on single questions did not help either: the conjecture that, given $\Eq{3}$ and $\Eq{263}$, $\Eq{385}$ is equivalent to $\Eq{117} \wedge \Eq{159}$, of which one half is proved, resisted Vampire for 10 minutes, Twee for 30 minutes and Mace4 up to sizes 15 and 16.
 
 \paragraph{What the results say.}
-In the fourth exploration, the 767 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,671 closed sets of the theory are correct if the 93 unconfirmed implications are true. Without them, the theory has 11,100 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 93 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide.
+In the fourth exploration, the 767 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,671 closed sets of the theory are correct if the 93 unconfirmed implications are true. The other implications found generate a theory with 11,100 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 93 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide.
 
 %======================================================================
 \section{User's guide}\label{sec:guide}
@@ -649,12 +651,12 @@ Counterexample found: Free magma over {Eq1, Eq1629, Eq1832, ...}
 Satisfies: ...
 Does not satisfy: ...
 \end{Verbatim}
-The counts are those before the answer; the objects include the duals. An accepted question is followed by \code{Confirmed} or \code{Unconfirmed}, and an undecided one by \code{Open} or \code{Unconfirmed} together with the laws it proved. At the end, the program prints a summary (questions, accepted implications, counterexamples, open questions, rounds, and the Vampire expert's answers by kind), the reduced basis, any open questions and refuted unconfirmed implications, and a few counterexamples.
+The counts are those before the answer; the objects include the duals. An accepted question is followed by \code{Confirmed} or \code{Unconfirmed}, and an undecided one by \code{Open} or \code{Unconfirmed} together with the laws it proved. At the end, the program prints a summary (questions, accepted implications, counterexamples, open questions, rounds, and the Vampire expert's answers by kind), the rules, any open questions and refuted unconfirmed implications, and a few counterexamples.
 
 The results directory contains:
 \begin{description}
   \item[\code{exploration.log}] everything printed;
-  \item[\code{implications.txt}, \code{implications.json}] the whole theory, every implication with its source (\code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped}, \code{mapped unconfirmed}), followed by the refuted unconfirmed implications and the open questions;
+  \item[\code{implications.txt}, \code{implications.json}] every implication found, together with its source, which is one of \code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped} and \code{mapped unconfirmed}; then the refuted unconfirmed implications and the open questions;
   \item[\code{magmas.json}] the finite magmas of the context with their tables, under the names \code{M}$k$ and \code{M}$k$\code{\^{}op};
   \item[\code{free\_magmas.json}] the free magmas \code{F}$k$, each with its premise and its known positive and negative laws;
   \item[\code{etp\_refutations.json}] with \code{-{}-etp-refutations}, the objects \code{R}$k$ standing for refutations of the ETP graph, each with the implication it refutes and its known positive and negative laws;
@@ -667,7 +669,7 @@ The program saves the results only at the end. If it is interrupted, only the lo
 
 The runner is a thin layer over the library, which can be used directly:
 \begin{Verbatim}
-from conceptual_exploration import explore_in_rounds, reduced_basis, report_every
+from conceptual_exploration import explore_in_rounds, report_every, simplified_rules
 from explorations.equational_theories.magma import ETP
 from explorations.equational_theories.vampire import VampireExpert
 from explorations.equational_theories.background import background_implications
@@ -682,7 +684,7 @@ result = explore_in_rounds(
     evaluate_all=True,
     on_question=report_every(100),
 )
-for rule in reduced_basis(result.base):
+for rule in simplified_rules(result.base):
     print(rule)
 print(result.base.open_questions, expert.answers)
 \end{Verbatim}
