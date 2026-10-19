@@ -1,7 +1,7 @@
 """Conceptual Exploration of Magmas in the Equational Theories Project (ETP).
 
 This script demonstrates how Formal Concept Analysis and Attribute Exploration
-can discover the canonical implication basis between equational laws over magmas
+can discover the implications between equational laws over magmas
 (sets equipped with a single binary operation `*`).
 
 Background:
@@ -20,7 +20,7 @@ Using conceptual exploration:
    false without a counterexample on a particular law is left open.
 6. Optionally, implications derivable by equational reasoning within a bounded
    order are given to the exploration as background knowledge beforehand.
-7. The log, the implication theory and the context are saved to a results
+7. The log, the implications found and the context are saved to a results
    directory.
 """
 
@@ -40,7 +40,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import Implication, reduced_basis, report_every
+from conceptual_exploration import Implication, report_every, simplified_rules
 from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
@@ -79,10 +79,10 @@ def save_results(
     settings: str,
     refuted: Sequence[Implication[Equation]] = (),
 ) -> None:
-    """Write the implication theory and the context of an exploration.
+    """Write the implications found and the context of an exploration.
 
-    implications.txt and implications.json list every implication of the
-    theory with its source, and the questions left open; magmas.json holds
+    implications.txt and implications.json list every implication found
+    with its source, and the questions left open; magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
     with their rows, which Vampire may have left partial; etp_refutations.json
     holds the objects standing for refutations of the ETP graph; context.cxt
@@ -160,7 +160,7 @@ def save_results(
             f"{', '.join(map(label, conclusion))}   ({source})"
         )
     header = [
-        f"Implication theory of an exploration ({settings}).",
+        f"Implications found by an exploration ({settings}).",
         "background = derived by equational reasoning or taken from the ETP graph; confirmed =",
         "no counterexample in the searched sizes, or proved by Vampire; unconfirmed = neither",
         "refuted nor decided;",
@@ -363,9 +363,9 @@ def run_magma_exploration(
     print("EXPLORATION RESULTS")
     print("=" * 70)
     print(f"Total Questions Asked:        {state.questions_asked}")
-    print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
+    print(f"Accepted Implications:        {len(base.accepted_implications)}")
     print(f"  of which unconfirmed:       {len(base.unconfirmed_implications)}")
-    print(f"Total Implications in Theory: {len(base.implications.implications)}")
+    print(f"Implications Found:           {len(base.implications.implications)}")
     print(f"Counterexamples Found:        {len(state.counterexamples)}")
     print(f"Open Questions:               {len(base.open_questions)}")
     print(f"Rounds:                       {rounds}")
@@ -373,9 +373,9 @@ def run_magma_exploration(
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
         print(f"Expert Answers:               {answers}")
 
-    # Display the implication basis, reduced for reading
-    rules = reduced_basis(base)
-    print(f"\nDiscovered Implication Basis (Reduced, {len(rules)} rules):")
+    # Display the implications found, simplified into rules for reading
+    rules = simplified_rules(base)
+    print(f"\nRules Found (Simplified, {len(rules)} rules):")
     for idx, rule in enumerate(rules, start=1):
         unconfirmed = rule.source is ImplicationSource.UNCONFIRMED
         marker = "   [UNCONFIRMED]" if unconfirmed else ""
@@ -689,7 +689,7 @@ if __name__ == "__main__":
         default=None,
         metavar="PATH",
         help=(
-            "Directory to save the log, the implication theory and the context "
+            "Directory to save the log, the implications found and the context "
             "in (default: a new directory under results/ named after the "
             "equations file and the starting time). It must not hold results "
             "already."

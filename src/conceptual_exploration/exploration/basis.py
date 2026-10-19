@@ -40,14 +40,15 @@ class Rule(Generic[A]):
         return self.format()
 
 
-def reduced_basis(base: ExplorationBase) -> list[Rule]:
-    """The accepted implications of `base`, rewritten for reading.
+def simplified_rules(base: ExplorationBase) -> list[Rule]:
+    """The accepted implications of `base`, simplified into rules for reading,
+    without those that are then redundant.
 
     Each premise is cut to the attributes the rest of it does not entail.
     Each conclusion then starts as everything the premise entails and is cut
     to the attributes that do not follow from the premise by way of the
     background, the other rules, and the images of all of them under the
-    mappings; a rule left with no conclusion is dropped. Rules are cut one at
+    mappings; a rule left with no conclusion is redundant and is dropped. Rules are cut one at
     a time against the others as already cut, so that, read together with the
     background and the mappings (except for the unconfirmed implications of a
     base that does not map them), the result entails exactly what the accepted
@@ -125,3 +126,7 @@ def reduced_basis(base: ExplorationBase) -> list[Rule]:
         for implication, (premise, conclusion) in zip(accepted, rules)
         if conclusion
     ]
+
+
+# The former name.
+reduced_basis = simplified_rules

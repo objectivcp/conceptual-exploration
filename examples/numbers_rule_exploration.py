@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from itertools import product
 
-from conceptual_exploration import reduced_basis, report_every
+from conceptual_exploration import report_every, simplified_rules
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.logic.predicate import EvaluatablePredicate, Notation
 from conceptual_exploration.logic.variable import Variable
@@ -94,7 +94,7 @@ exploration = RuleExploration(predicates,
 exploration.run()
 
 base = exploration.base
-rules = reduced_basis(base)
+rules = simplified_rules(base)
 print()
 print(f'Accepted {len(base.accepted_implications)} implications, reduced to {len(rules)} rules:\n')
 for rule in rules:

@@ -20,7 +20,7 @@ Given a signature with binary operation $*$ and variables $x, y, z, \dots$, an e
 - **Automated Counterexample Oracle (`MagmaExpert`)**: Checks candidate implications against a catalog of standard finite magmas (cyclic groups, projections, tournaments, boolean magmas), then searches for a counterexample Cayley table with the **Z3 SMT solver**, representing the operation as an uninterpreted function over the finite domain of each candidate size $n$.
 - **Theorem-Proving Oracle (`VampireExpert`)**: Proves implications in equational logic with the Vampire theorem prover and refutes them with finite counterexamples of any size or with free magmas over the premise, which are usually infinite.
 - **Unconfirmed Results**: An implication the expert could neither refute nor prove, because Z3's per-size solver budget ran out or Vampire found neither a proof nor a counterexample in its time limits, is accepted but reported `[UNCONFIRMED]` instead of being presented as verified; Vampire leaves it open instead when it shows the implication false without a counterexample.
-- **Canonical Implication Basis**: Computes the minimal Duquenne–Guigues implication basis for equational theories.
+- **Rules**: Simplifies the implications found into rules for reading, with premises and conclusions cut to what the background, duality and the other rules do not give, and drops the rules that are then redundant.
 
 ## Quick Start
 
@@ -85,7 +85,7 @@ Magmas found earlier, such as the `magmas.json` of saved results, can be reused.
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
 ```
 
-Each run saves its log (`exploration.log`), its implication theory with the source of every implication (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, `etp_refutations.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
+Each run saves its log (`exploration.log`), the implications found, each with its source (`implications.txt`, `implications.json`) together with the open questions, and its context (`magmas.json`, `free_magmas.json`, `etp_refutations.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
 
 Or open the interactive Jupyter notebook:
 

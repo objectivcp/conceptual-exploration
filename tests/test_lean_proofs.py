@@ -32,13 +32,20 @@ PROOF = """% SZS output start Proof for t
 """
 
 
+RULES = (
+    "  [1] Eq25: x = ((x * y) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y\n"
+    "  [2] Eq8: x = (x * (x * x)), Eq25: x = ((x * y) * x) -> Eq3: x = (x * x)\n"
+    "\nOpen Questions:\n"
+)
+
+
 def test_rules_are_read_from_the_log():
-    log = (
-        "Discovered Implication Basis (Reduced, 2 rules):\n"
-        "  [1] Eq25: x = ((x * y) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y\n"
-        "  [2] Eq8: x = (x * (x * x)), Eq25: x = ((x * y) * x) -> Eq3: x = (x * x)\n"
-        "\nOpen Questions:\n"
-    )
+    log = "Rules Found (Simplified, 2 rules):\n" + RULES
+    assert rules_from_log(log) == [Rule(1, (25, 43), (2,)), Rule(2, (8, 25), (3,))]
+
+
+def test_rules_are_read_from_a_log_of_the_former_version():
+    log = "Discovered Implication Basis (Reduced, 2 rules):\n" + RULES
     assert rules_from_log(log) == [Rule(1, (25, 43), (2,)), Rule(2, (8, 25), (3,))]
 
 

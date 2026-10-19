@@ -1,6 +1,6 @@
 """Lean proofs of the rules an exploration of ETP laws found.
 
-Each rule of the reduced basis in an exploration's log is proved by Vampire,
+Each rule printed in an exploration's log is proved by Vampire,
 and its proof is translated into Lean as the ETP translated the proofs of its
 single-premise implications (equational_theories/Generated/VampireProven in
 https://github.com/teorth/equational_theories): every clause of the proof
@@ -36,7 +36,7 @@ from explorations.equational_theories.magma import Equation, Term, Var
 
 @dataclass(frozen=True)
 class Rule:
-    """A rule of a reduced basis, by the ETP numbers of its laws."""
+    """A rule printed in an exploration's log, by the ETP numbers of its laws."""
 
     number: int
     premise: tuple[int, ...]
@@ -49,8 +49,12 @@ class Rule:
 
 
 def rules_from_log(text: str) -> list[Rule]:
-    """The rules of the reduced basis printed in an exploration's log."""
-    basis = text[text.index("Discovered Implication Basis"):]
+    """The rules printed in an exploration's log, under the heading of either
+    version of explore.py."""
+    heading = re.search(r"^(Rules Found|Discovered Implication Basis) \(", text, re.M)
+    if heading is None:
+        raise ValueError("No rules in the log")
+    basis = text[heading.start():]
     rules = []
     for line in basis.splitlines()[1:]:
         match = re.match(r"  \[(\d+)\] (.*) -> (.*)$", line)
@@ -226,13 +230,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     theorems = []
     for rule in rules:
-        theorems.append(f"/-- Rule {rule.number} of the reduced basis. -/\n"
+        theorems.append(f"/-- Rule {rule.number} of the log. -/\n"
                         + lean_theorem(laws, rule, vampire_proof(laws, rule)))
         if args.prover9 and not prover9_proves(laws, rule):
             print(f"Prover9 did not prove rule {rule.number}", file=sys.stderr)
     (module / "Proofs.lean").write_text(
         f"import {args.module}.Basic\n\n"
-        f"/-! The rules of the reduced basis in {args.log.parent.name}/{args.log.name}, from Vampire's proofs. -/\n\n"
+        f"/-! The rules printed in {args.log.parent.name}/{args.log.name}, from Vampire's proofs. -/\n\n"
         + "\n".join(theorems),
         encoding="utf-8",
     )

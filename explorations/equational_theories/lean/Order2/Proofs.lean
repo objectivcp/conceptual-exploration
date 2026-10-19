@@ -1,8 +1,8 @@
 import Order2.Basic
 
-/-! The rules of the reduced basis in order2_vampire_etp/exploration.log, from Vampire's proofs. -/
+/-! The rules printed in order2_vampire_etp/exploration.log, from Vampire's proofs. -/
 
-/-- Rule 1 of the reduced basis. -/
+/-- Rule 1 of the log. -/
 theorem Equation39_43_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation39 G) (h2 : Equation43 G) : Equation41 G := by
   apply Classical.byContradiction
   intro nh
@@ -19,7 +19,7 @@ theorem Equation39_43_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation39
   have eq77 (X0 X1 : G) : (X0 ◇ X0) ≠ (X1 ◇ sK0) := superpose eq14 eq39 -- superposition 39,14
   subsumption eq77 eq62
 
-/-- Rule 2 of the reduced basis. -/
+/-- Rule 2 of the log. -/
 theorem Equation39_40_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation39 G) (h2 : Equation40 G) : Equation41 G := by
   apply Classical.byContradiction
   intro nh
@@ -33,7 +33,7 @@ theorem Equation39_40_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation39
   have eq36 (X0 : G) : (sK0 ◇ sK0) ≠ (X0 ◇ sK2) := superpose eq10 eq9 -- superposition 9,10
   subsumption eq36 eq18
 
-/-- Rule 3 of the reduced basis. -/
+/-- Rule 3 of the log. -/
 theorem Equation38_39_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation38 G) (h2 : Equation39 G) : Equation41 G := by
   apply Classical.byContradiction
   intro nh
@@ -48,7 +48,7 @@ theorem Equation38_39_implies_Equation41 (G : Type _) [Magma G] (h1 : Equation38
   have eq21 (X0 : G) : (X0 ◇ X0) ≠ (sK0 ◇ sK0) := superpose eq8 eq12 -- superposition 12,8
   subsumption eq21 eq18
 
-/-- Rule 4 of the reduced basis. -/
+/-- Rule 4 of the log. -/
 theorem Equation23_43_implies_Equation8 (G : Type _) [Magma G] (h1 : Equation23 G) (h2 : Equation43 G) : Equation8 G := by
   apply Classical.byContradiction
   intro nh
@@ -61,7 +61,7 @@ theorem Equation23_43_implies_Equation8 (G : Type _) [Magma G] (h1 : Equation23 
   have eq11 : sK0 ≠ sK0 := superpose eq10 eq9 -- superposition 9,10
   subsumption eq11 rfl
 
-/-- Rule 5 of the reduced basis. -/
+/-- Rule 5 of the log. -/
 theorem Equation23_40_implies_Equation31 (G : Type _) [Magma G] (h1 : Equation23 G) (h2 : Equation40 G) : Equation31 G := by
   apply Classical.byContradiction
   intro nh
@@ -74,7 +74,7 @@ theorem Equation23_40_implies_Equation31 (G : Type _) [Magma G] (h1 : Equation23
   have eq17 (X0 X1 : G) : ((X0 ◇ X0) ◇ X1) = X1 := superpose eq8 eq7 -- superposition 7,8
   subsumption eq16 eq17
 
-/-- Rule 6 of the reduced basis. -/
+/-- Rule 6 of the log. -/
 theorem Equation23_39_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation23 G) (h2 : Equation39 G) : Equation5 G := by
   apply Classical.byContradiction
   intro nh
@@ -87,7 +87,7 @@ theorem Equation23_39_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation23 
   have eq14 : sK0 ≠ (sK0 ◇ sK0) := superpose eq8 eq9 -- superposition 9,8
   subsumption eq14 eq10
 
-/-- Rule 7 of the reduced basis. -/
+/-- Rule 7 of the log. -/
 theorem Equation23_38_implies_Equation24 (G : Type _) [Magma G] (h1 : Equation23 G) (h2 : Equation38 G) : Equation24 G := by
   apply Classical.byContradiction
   intro nh
@@ -103,7 +103,7 @@ theorem Equation23_38_implies_Equation24 (G : Type _) [Magma G] (h1 : Equation23
   have eq56 : sK0 ≠ sK0 := superpose eq12 eq36 -- superposition 36,12
   subsumption eq56 rfl
 
-/-- Rule 8 of the reduced basis. -/
+/-- Rule 8 of the log. -/
 theorem Equation26_31_implies_Equation40 (G : Type _) [Magma G] (h1 : Equation26 G) (h2 : Equation31 G) : Equation40 G := by
   apply Classical.byContradiction
   intro nh
@@ -116,7 +116,7 @@ theorem Equation26_31_implies_Equation40 (G : Type _) [Magma G] (h1 : Equation26
   have eq22 (X0 : G) : (X0 ◇ X0) ≠ (sK0 ◇ sK0) := superpose eq11 eq9 -- superposition 9,11
   subsumption eq22 eq11
 
-/-- Rule 9 of the reduced basis. -/
+/-- Rule 9 of the log. -/
 theorem Equation25_26_implies_Equation24 (G : Type _) [Magma G] (h1 : Equation25 G) (h2 : Equation26 G) : Equation24 G := by
   apply Classical.byContradiction
   intro nh
@@ -130,7 +130,7 @@ theorem Equation25_26_implies_Equation24 (G : Type _) [Magma G] (h1 : Equation25
   have eq21 : sK0 ≠ sK0 := superpose eq8 eq16 -- superposition 16,8
   subsumption eq21 rfl
 
-/-- Rule 10 of the reduced basis. -/
+/-- Rule 10 of the log. -/
 theorem Equation31_43_implies_Equation11 (G : Type _) [Magma G] (h1 : Equation31 G) (h2 : Equation43 G) : Equation11 G := by
   apply Classical.byContradiction
   intro nh
@@ -143,7 +143,7 @@ theorem Equation31_43_implies_Equation11 (G : Type _) [Magma G] (h1 : Equation31
   have eq24 : sK0 ≠ sK0 := superpose eq14 eq9 -- superposition 9,14
   subsumption eq24 rfl
 
-/-- Rule 11 of the reduced basis. -/
+/-- Rule 11 of the log. -/
 theorem Equation26_43_implies_Equation29 (G : Type _) [Magma G] (h1 : Equation26 G) (h2 : Equation43 G) : Equation29 G := by
   apply Classical.byContradiction
   intro nh
@@ -157,7 +157,7 @@ theorem Equation26_43_implies_Equation29 (G : Type _) [Magma G] (h1 : Equation26
   have eq15 : sK0 ≠ (sK1 ◇ (sK0 ◇ sK1)) := superpose eq8 eq14 -- forward demodulation 14,8
   subsumption eq15 eq10
 
-/-- Rule 12 of the reduced basis. -/
+/-- Rule 12 of the log. -/
 theorem Equation25_8_implies_Equation3 (G : Type _) [Magma G] (h1 : Equation25 G) (h2 : Equation8 G) : Equation3 G := by
   apply Classical.byContradiction
   intro nh
@@ -170,7 +170,7 @@ theorem Equation25_8_implies_Equation3 (G : Type _) [Magma G] (h1 : Equation25 G
   have eq12 : sK0 ≠ sK0 := superpose eq11 eq9 -- superposition 9,11
   subsumption eq12 rfl
 
-/-- Rule 13 of the reduced basis. -/
+/-- Rule 13 of the log. -/
 theorem Equation16_26_implies_Equation29 (G : Type _) [Magma G] (h1 : Equation16 G) (h2 : Equation26 G) : Equation29 G := by
   apply Classical.byContradiction
   intro nh
@@ -183,7 +183,7 @@ theorem Equation16_26_implies_Equation29 (G : Type _) [Magma G] (h1 : Equation16
   have eq20 : sK0 ≠ sK0 := superpose eq11 eq9 -- superposition 9,11
   subsumption eq20 rfl
 
-/-- Rule 14 of the reduced basis. -/
+/-- Rule 14 of the log. -/
 theorem Equation29_43_implies_Equation26 (G : Type _) [Magma G] (h1 : Equation29 G) (h2 : Equation43 G) : Equation26 G := by
   apply Classical.byContradiction
   intro nh
@@ -198,7 +198,7 @@ theorem Equation29_43_implies_Equation26 (G : Type _) [Magma G] (h1 : Equation29
   have eq19 : sK0 ≠ sK0 := superpose eq14 eq12 -- superposition 12,14
   subsumption eq19 rfl
 
-/-- Rule 15 of the reduced basis. -/
+/-- Rule 15 of the log. -/
 theorem Equation29_31_implies_Equation11 (G : Type _) [Magma G] (h1 : Equation29 G) (h2 : Equation31 G) : Equation11 G := by
   apply Classical.byContradiction
   intro nh
@@ -211,7 +211,7 @@ theorem Equation29_31_implies_Equation11 (G : Type _) [Magma G] (h1 : Equation29
   have eq26 : sK0 ≠ sK0 := superpose eq12 eq9 -- superposition 9,12
   subsumption eq26 rfl
 
-/-- Rule 16 of the reduced basis. -/
+/-- Rule 16 of the log. -/
 theorem Equation26_29_implies_Equation43 (G : Type _) [Magma G] (h1 : Equation26 G) (h2 : Equation29 G) : Equation43 G := by
   apply Classical.byContradiction
   intro nh
@@ -224,7 +224,7 @@ theorem Equation26_29_implies_Equation43 (G : Type _) [Magma G] (h1 : Equation26
   have eq33 : (sK0 ◇ sK1) ≠ (sK0 ◇ sK1) := superpose eq12 eq9 -- superposition 9,12
   subsumption eq33 rfl
 
-/-- Rule 17 of the reduced basis. -/
+/-- Rule 17 of the log. -/
 theorem Equation11_31_implies_Equation40 (G : Type _) [Magma G] (h1 : Equation11 G) (h2 : Equation31 G) : Equation40 G := by
   apply Classical.byContradiction
   intro nh
@@ -237,7 +237,7 @@ theorem Equation11_31_implies_Equation40 (G : Type _) [Magma G] (h1 : Equation11
   have eq29 (X0 : G) : (X0 ◇ X0) ≠ (sK0 ◇ sK0) := superpose eq15 eq9 -- superposition 9,15
   subsumption eq29 eq15
 
-/-- Rule 18 of the reduced basis. -/
+/-- Rule 18 of the log. -/
 theorem Equation31_3_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation31 G) (h2 : Equation3 G) : Equation5 G := by
   apply Classical.byContradiction
   intro nh
@@ -250,7 +250,7 @@ theorem Equation31_3_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation31 G
   have eq11 : sK0 ≠ sK0 := superpose eq10 eq9 -- superposition 9,10
   subsumption eq11 rfl
 
-/-- Rule 19 of the reduced basis. -/
+/-- Rule 19 of the log. -/
 theorem Equation28_43_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation28 G) (h2 : Equation43 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh
@@ -268,7 +268,7 @@ theorem Equation28_43_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation28 
   have eq48 (X0 : G) : sK0 ≠ X0 := superpose eq26 eq9 -- superposition 9,26
   subsumption eq48 eq26
 
-/-- Rule 20 of the reduced basis. -/
+/-- Rule 20 of the log. -/
 theorem Equation26_28_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation26 G) (h2 : Equation28 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh
@@ -281,7 +281,7 @@ theorem Equation26_28_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation26 
   have eq20 (X0 : G) : sK0 ≠ X0 := superpose eq13 eq9 -- superposition 9,13
   subsumption eq20 eq13
 
-/-- Rule 21 of the reduced basis. -/
+/-- Rule 21 of the log. -/
 theorem Equation25_43_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation25 G) (h2 : Equation43 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh
@@ -302,7 +302,7 @@ theorem Equation25_43_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation25 
   have eq53 (X0 : G) : sK0 ≠ X0 := superpose eq38 eq9 -- superposition 9,38
   subsumption eq53 eq38
 
-/-- Rule 22 of the reduced basis. -/
+/-- Rule 22 of the log. -/
 theorem Equation16_25_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation16 G) (h2 : Equation25 G) : Equation5 G := by
   apply Classical.byContradiction
   intro nh
@@ -315,7 +315,7 @@ theorem Equation16_25_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation16 
   have eq15 : sK0 ≠ sK0 := superpose eq10 eq9 -- superposition 9,10
   subsumption eq15 rfl
 
-/-- Rule 23 of the reduced basis. -/
+/-- Rule 23 of the log. -/
 theorem Equation28_29_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation28 G) (h2 : Equation29 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh
@@ -329,7 +329,7 @@ theorem Equation28_29_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation28 
   have eq38 (X0 : G) : sK0 ≠ X0 := superpose eq21 eq9 -- superposition 9,21
   subsumption eq38 eq21
 
-/-- Rule 24 of the reduced basis. -/
+/-- Rule 24 of the log. -/
 theorem Equation25_29_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation25 G) (h2 : Equation29 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh
@@ -342,7 +342,7 @@ theorem Equation25_29_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation25 
   have eq21 (X0 : G) : sK0 ≠ X0 := superpose eq14 eq9 -- superposition 9,14
   subsumption eq21 eq14
 
-/-- Rule 25 of the reduced basis. -/
+/-- Rule 25 of the log. -/
 theorem Equation10_28_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation10 G) (h2 : Equation28 G) : Equation5 G := by
   apply Classical.byContradiction
   intro nh
@@ -356,7 +356,7 @@ theorem Equation10_28_implies_Equation5 (G : Type _) [Magma G] (h1 : Equation10 
   have eq13 : sK0 ≠ sK0 := superpose eq11 eq9 -- superposition 9,11
   subsumption eq13 rfl
 
-/-- Rule 26 of the reduced basis. -/
+/-- Rule 26 of the log. -/
 theorem Equation28_9_implies_Equation2 (G : Type _) [Magma G] (h1 : Equation28 G) (h2 : Equation9 G) : Equation2 G := by
   apply Classical.byContradiction
   intro nh

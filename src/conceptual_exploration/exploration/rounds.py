@@ -61,9 +61,9 @@ def explore_in_rounds(
 
     `map_unconfirmed` is passed to `ExplorationBase`.
 
-    The theory is then sound and complete but need not be a canonical basis,
-    the confirmed implications kept having been found under a different
-    theory.
+    The implications are then a sound and complete cover of the theory but
+    need not be its canonical basis, the confirmed implications kept having
+    been found under a different theory.
     """
     attributes = tuple(attributes)
     background = tuple(background_implications)

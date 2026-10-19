@@ -107,7 +107,7 @@ conceptual-exploration/
 │   │   └── base.py                   # Abstract Expert interface (validate method)
 │   ├── exploration/
 │   │   ├── base.py                   # ExplorationBase with context, mappings & implications
-│   │   ├── basis.py                  # Rule and reduced_basis: accepted implications reduced for reading
+│   │   ├── basis.py                  # Rule and simplified_rules: accepted implications simplified for reading
 │   │   ├── attribute.py              # AttributeExploration coordinator
 │   │   ├── rule.py                   # RuleExploration first-order coordinator
 │   │   └── state.py                  # ExplorationState tracking queries and statistics
@@ -144,7 +144,7 @@ conceptual-exploration/
 | `QuestionReport` / `report_every` | `conceptual_exploration` | Per-question progress event emitted by an exploration, and a ready-made callback printing every nth one. |
 | `Implication` | `conceptual_exploration` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
 | `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
-| `Rule` / `reduced_basis` | `conceptual_exploration` | The accepted implications with premises and conclusions cut to what the background, the other rules and the mappings do not already give. |
+| `Rule` / `simplified_rules` | `conceptual_exploration` | The accepted implications as non-redundant rules, with premises and conclusions cut to what the background, the other rules and the mappings do not already give. |
 | `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
 | `PartialContext` | `conceptual_exploration` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
 | `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, declared properties, and optional evaluation function. |
@@ -162,7 +162,7 @@ conceptual-exploration/
 Here is a minimal example discovering arithmetic relationships over small integers:
 
 ```python
-from conceptual_exploration import reduced_basis
+from conceptual_exploration import simplified_rules
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.attribute import AttributeExploration
@@ -216,7 +216,7 @@ exploration = AttributeExploration(base, expert)
 exploration.run()
 
 print("Discovered Implications:")
-for rule in reduced_basis(base):
+for rule in simplified_rules(base):
     print(f"  {rule}")
 ```
 
@@ -236,7 +236,7 @@ Explore relational rules over variables $x, y, z$ and binary order/equality pred
 
 ```python
 from itertools import product
-from conceptual_exploration import reduced_basis
+from conceptual_exploration import simplified_rules
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.rule import RuleExploration
@@ -271,7 +271,7 @@ expert = NumberRelationalExpert(domain=range(-5, 6), variables=variables)
 exploration = RuleExploration(predicates, variables, expert, substitutions=True)
 exploration.run()
 
-rules = reduced_basis(exploration.base)
+rules = simplified_rules(exploration.base)
 print(f"Discovered {len(rules)} first-order rules:")
 for rule in rules:
     print(f"  {rule}")
