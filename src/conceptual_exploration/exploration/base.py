@@ -202,7 +202,10 @@ class ExplorationBase(Generic[O, A]):
         of a completed object be completed itself, so background implications
         are mapped for the same reason confirmed ones are. The image of an
         unconfirmed implication is no more trustworthy than the implication,
-        and is recorded as MAPPED_UNCONFIRMED.
+        and is recorded as MAPPED_UNCONFIRMED. The image of a trusted one that
+        the theory entails only with the help of unconfirmed implications is
+        recorded as well, so that the trusted implications recorded stay
+        closed under the mappings.
         """
         source = ImplicationSource.MAPPED if trusted else ImplicationSource.MAPPED_UNCONFIRMED
         added = []
@@ -218,7 +221,12 @@ class ExplorationBase(Generic[O, A]):
                 if trusted:
                     added.append(masks)
             elif trusted and not self._trusted.entails_mask(mapped_premise, mapped_conclusion):
-                added.append(self._trusted.add(mapped_implication))
+                if mapped_implication in self.implication_sources:
+                    added.append(self._trusted.add(mapped_implication))
+                else:
+                    added.append(self._add_implication(mapped_implication, source, trusted))
+                    if origin is not None:
+                        self._origins[mapped_implication] = origin
         return added
 
     def mapped_images(self, premise: int, conclusion: int) -> list[tuple[int, int]]:

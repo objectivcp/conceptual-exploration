@@ -139,6 +139,18 @@ def test_unconfirmed_implications_can_be_left_unmapped_until_their_images_are_co
     assert not base.unconfirmed_implications
 
 
+def test_images_entailed_only_with_unconfirmed_implications_are_recorded():
+    swap = {"a": "b", "b": "a", "c": "d", "d": "c", "e": "e"}
+    base = ExplorationBase(attributes=["a", "b", "c", "d", "e"], mappings=[lambda x: swap[x]])
+    base.accept(Implication(frozenset(["b"]), frozenset(["d"])), ImplicationSource.UNCONFIRMED)
+    base.accept(Implication(frozenset(["a", "e"]), frozenset(["c"])), ImplicationSource.CONFIRMED)
+
+    # The image of the confirmed implication follows from the unconfirmed b -> d
+    # alone, but is true, so it is recorded with the trusted implications.
+    image = Implication(frozenset(["b", "e"]), frozenset(["d"]))
+    assert base.implication_sources[image] is ImplicationSource.MAPPED
+
+
 def test_mapped_versions_are_already_complete():
     """Mapping a completed object yields a completed one.
 
