@@ -239,6 +239,8 @@ The exploration then only asks about premises of several laws, since every impli
 
 The graph also gives the implications that the ETP refutes, though not its counterexamples, some of which are infinite. With \code{-{}-etp-refutations}, each refuted implication $E \to F$ between listed laws is added to the context as a partial object (Section~\ref{sec:partial}): the ETP's counterexample satisfies $E$ and every law that $E$ implies, and violates $F$ and every law that implies $F$, and nothing else is known about it. These objects are reduced together with the seeded magmas (Section~\ref{sec:seeding}), so that only refutations that no other object accounts for remain; they are named \code{R}$k$ in the results. They matter when the ETP's counterexample is infinite, or finite but beyond the reach of the expert, since a question refuted only by such a magma would otherwise be accepted as unconfirmed.
 
+The ETP data used in this document are those of the ETP repository at commit \code{1aec8a7}, whose \code{equations.txt} and \code{graph.json} are recorded with their checksums in \code{etp\_version.json}.
+
 The script \code{etp.py} writes chosen ETP laws, together with their duals, as an equations file with the ETP's numbers as ids, so that the laws to explore can be chosen by number.
 
 \subsection{The Z3 expert}\label{sec:z3}
@@ -342,7 +344,7 @@ Running time & 2 min 52 s & 2 min 51 s \\
 \caption{The two explorations of the sixteen laws. Of Vampire's 35 counterexamples, 27 are models found by Vampire and 8 come from the pool. The Vampire time limits are those for a proof, the quick model search and the per-law model search.}\label{tab:runs16}
 \end{table}
 
-The Vampire exploration proved every implication it accepted and refuted every other question with a checked finite magma, so its theory is exactly the set of implications between these laws that hold in all magmas. Its rules are listed in Table~\ref{tab:basis16}; each rule stands also for its dual, which swaps $\Eq{4}$ and $\Eq{5}$, $\Eq{10}$ and $\Eq{25}$, $\Eq{16}$ and $\Eq{26}$, $\Eq{323}$ and $\Eq{378}$, $\Eq{4396}$ and $\Eq{4473}$, and fixes the other laws.
+The Vampire exploration proved every implication it accepted and refuted every other question with a checked finite magma, so its theory is exactly the set of implications between these laws that hold in all magmas. Its implications with a single premise agree with the ETP (Section~\ref{sec:etp}): fifteen of the sixteen laws, all but mediality, are ETP laws, and for each of the 210 ordered pairs of distinct ones, the theory contains the implication from the first to the second exactly when the ETP graph does. Its rules are listed in Table~\ref{tab:basis16}; each rule stands also for its dual, which swaps $\Eq{4}$ and $\Eq{5}$, $\Eq{10}$ and $\Eq{25}$, $\Eq{16}$ and $\Eq{26}$, $\Eq{323}$ and $\Eq{378}$, $\Eq{4396}$ and $\Eq{4473}$, and fixes the other laws.
 
 \begin{table}[ht]
 \centering
@@ -430,7 +432,7 @@ Running time & 8 h 05 min & 2 h 25 min & not recorded & 3 h 18 min \\
 \end{table}
 
 \paragraph{No implication beyond the background.}
-Both Vampire explorations refuted every question: no implication was accepted, and the background alone generates the theory. This is a mathematical result: \emph{every implication between one-variable laws of order at most four that holds in all magmas follows from the 111 background implications}, that is, it can be derived by equational reasoning through equations of order at most four, with single steps reaching order ten, from premises of at most two laws. Conversely, every non-implication is witnessed either by a finite magma, checked by the library, or by a free magma whose relevant negative entry rests on Vampire's saturation. The final context of the second run has 37,177 objects (originals and duals) with pairwise distinct rows, and its 108,635 intents are exactly the closed sets of the background. Every row was decided completely: no free magma has an unknown entry.
+Both Vampire explorations refuted every question: no implication was accepted, and the background alone generates the theory. This is a mathematical result: \emph{every implication between one-variable laws of order at most four that holds in all magmas follows from the 111 background implications}, that is, it can be derived by equational reasoning through equations of order at most four, with single steps reaching order ten, from premises of at most two laws. Conversely, every non-implication is witnessed either by a finite magma, checked by the library, or by a free magma whose relevant negative entry rests on Vampire's saturation. The implications with a single premise agree with the ETP (Section~\ref{sec:etp}): all 31 laws are ETP laws, and for each of the 930 ordered pairs of distinct laws, the background implies the second from the first exactly when the ETP graph does. The final context of the second run has 37,177 objects (originals and duals) with pairwise distinct rows, and its 108,635 intents are exactly the closed sets of the background. Every row was decided completely: no free magma has an unknown entry.
 
 \paragraph{The counterexamples.}
 The finite counterexamples found in the first Vampire run have the following sizes (originals only):
