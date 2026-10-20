@@ -101,6 +101,16 @@ def save_results(
     label = lambda eq: f"Eq{eq.id}" if eq.id is not None else ident(eq)
     ids = lambda eqs: [ident(eq) for eq in sorted(eqs, key=order)]
 
+    numbered = {eq.id: eq for eq in equations if eq.id is not None}
+
+    def preimage(version, laws):
+        # The laws a version satisfies where its original satisfies `laws`:
+        # those the mapping sends into them.
+        if not version.version:
+            return set(laws)
+        mapping = base.mappings[version.version - 1]
+        return {eq for eq in equations if mapping(eq) in laws}
+
     names: dict[object, str] = {}
     magmas, free, etp, rows = [], [], [], []  # rows: (name, positive, negative)
     kind = lambda o: "F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation) else "M"
@@ -117,14 +127,17 @@ def save_results(
         if isinstance(original, FreeMagma):
             free.append({
                 "name": name, "dual_of": dual_of,
-                "premise": ids(original.premise),
+                "premise": ids(preimage(version, original.premise)),
                 "positive": ids(obj.positive),
                 "negative": ids(obj.negative),
             })
         elif isinstance(original, EtpRefutation):
             etp.append({
                 "name": name, "dual_of": dual_of,
-                "refutes": [original.premise, original.conclusion],
+                "refutes": [
+                    next(iter(ids(preimage(version, {numbered[n]})))) if n in numbered else n
+                    for n in (original.premise, original.conclusion)
+                ],
                 "positive": ids(obj.positive),
                 "negative": ids(obj.negative),
             })
