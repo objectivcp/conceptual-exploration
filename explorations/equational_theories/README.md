@@ -62,6 +62,12 @@ With `--expert vampire`, questions the pool does not refute go to the [Vampire](
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --expert vampire
 ```
 
+With `--expert completion`, meant for one-variable laws, each question's premise is completed into a convergent rewrite system by Knuth–Bendix completion: the implication is proved if the sides of every law of its conclusion have the same normal form, and refuted otherwise by the free magma over the premise, whose row the normal forms decide completely and certify. Questions whose premise cannot be completed go to Vampire if it is installed. For the 31 one-variable laws of order at most four, completion decides every question, in minutes:
+
+```bash
+python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --expert completion
+```
+
 With `--background-order N`, implications derivable by equational reasoning are given to the exploration as background knowledge (one-variable equations only). The rules are multiplying both sides by the same term from the same side, substituting a term for the variable, and replacing a subterm by an equivalent one, applied through equations of at most `N` operations. `--background-premise-size K` (default `2`) bounds their premises; `0` computes the canonical basis of everything derivable instead, which is slower. `--background-transient-order M` lets a single multiplication or substitution reach equations of up to `M` operations, as long as rewriting with derived equations brings the result back within `N`:
 
 ```bash

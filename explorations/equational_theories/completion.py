@@ -11,6 +11,12 @@ Then P does not imply s = t either. The conditions are checked on R itself,
 however it was found; `complete` finds R by Huet's completion of P, which
 may fail on an equation that the order cannot orient or run out of time.
 
+`CompletionExpert` answers the questions of an exploration this way: it
+completes the premise and decides every law by normal forms, which gives the
+whole row of the free magma over the premise. For one-variable laws,
+completion has so far always succeeded; where it fails, the expert passes the
+question to a fallback expert, such as the Vampire expert.
+
 usage: completion.py RESULTS_DIR --equations FILE [-o CERTIFICATES]
 
 certifies the negative entries of the free magmas in RESULTS_DIR/free_magmas.json,
@@ -23,6 +29,7 @@ import argparse
 import json
 import sys
 import time
+from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -32,7 +39,11 @@ if __package__ in (None, ""):
     _ROOT = Path(__file__).resolve().parent.parent.parent
     sys.path[:0] = [str(_ROOT / "src"), str(_ROOT)]
 
+from conceptual_exploration.core.context import PartialObject
+from conceptual_exploration.core.implication import Implication
+from conceptual_exploration.experts.base import Expert, Undecided
 from explorations.equational_theories.magma import ETP, Equation, Term, Var
+from explorations.equational_theories.vampire import FreeMagma
 
 # A term is a variable name or a pair of terms, and a rule a pair of terms.
 Tree = str | tuple
@@ -248,6 +259,75 @@ def certified(rules: Sequence[Rule], premise: Iterable[Rule], laws: Sequence[Rul
         if normal_form(a, rules) != normal_form(b, rules):
             raise ValueError(f"premise law {show(a)} = {show(b)} is not joinable")
     return [normal_form(a, rules) != normal_form(b, rules) for a, b in laws]
+
+
+class CompletionExpert(Expert[FreeMagma, Equation]):
+    """Decides each question by completing its premise: the implication is
+    proved if its conclusion is joinable, and refuted otherwise by the free
+    magma over the premise, whose row the normal forms decide completely.
+
+    The rewrite system of each premise is checked once (see `certified`), so
+    that every negative entry is certified; positive entries rest on the
+    soundness of completion. Questions whose premise cannot be completed go to
+    `fallback`, or are left unconfirmed without one.
+    """
+
+    def __init__(
+        self,
+        attributes: Iterable[Equation],
+        max_rules: int = 400,
+        time_limit: float = 10.0,
+        fallback: Expert | None = None,
+    ) -> None:
+        self.attributes = tuple(attributes)
+        self.max_rules = max_rules
+        self.time_limit = time_limit
+        self.fallback = fallback
+        self.answers: Counter[str] = Counter()
+        self._systems: dict[frozenset[Equation], list[Rule] | None] = {}
+        self._by_fallback = False
+
+    def rules(self, premise: Iterable[Equation]) -> list[Rule] | None:
+        """The checked rewrite system of the premise, or None if completion fails."""
+        premise = frozenset(premise)
+        if premise not in self._systems:
+            laws = [law(eq) for eq in premise]
+            try:
+                rules = complete(laws, self.max_rules, self.time_limit)
+            except CompletionFailed:
+                rules = None
+            else:
+                certified(rules, laws, [])
+            self._systems[premise] = rules
+        return self._systems[premise]
+
+    def validate(
+        self,
+        implication: Implication[Equation],
+        attributes: frozenset[Equation] | None = None,
+    ) -> PartialObject | Undecided | None:
+        self._by_fallback = False
+        rules = self.rules(implication.premise)
+        if rules is None:
+            self.answers["completion failed"] += 1
+            if self.fallback is None:
+                return Undecided(unconfirmed=True)
+            self._by_fallback = True
+            return self.fallback.validate(implication, attributes)
+        laws = set(attributes or self.attributes) | set(implication.conclusion)
+        positive = set(implication.premise)
+        for eq in laws:
+            a, b = law(eq)
+            if normal_form(a, rules) == normal_form(b, rules):
+                positive.add(eq)
+        if set(implication.conclusion) <= positive:
+            self.answers["proved"] += 1
+            return None
+        self.answers["free magma"] += 1
+        return PartialObject(FreeMagma(frozenset(implication.premise)), positive, laws - positive)
+
+    def is_conclusive(self) -> bool:
+        return self.fallback.is_conclusive() if self._by_fallback else True
 
 
 def _certify(job: tuple[list[Rule], list[Rule]]) -> tuple[list[Rule] | None, list[bool] | str]:

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from collections.abc import Sequence
 from datetime import datetime
@@ -45,6 +46,7 @@ from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
 from explorations.equational_theories.background import background_implications
+from explorations.equational_theories.completion import CompletionExpert
 from explorations.equational_theories.etp import (
     EtpLaws, EtpRefutation, ImplicationGraph, graph_background, graph_refutations, load_magmas,
 )
@@ -255,6 +257,9 @@ def run_magma_exploration(
             f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
             f"{row_setting}"
         )
+    elif expert_kind == "completion":
+        fallback_note = ", Vampire where it fails" if shutil.which("vampire") else ", no fallback"
+        print(f"Expert:                   Knuth-Bendix completion{fallback_note}")
     else:
         print(f"Expert:                   Z3, sizes {min_search_size}..{max_search_size}, "
               f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size")
@@ -303,8 +308,8 @@ def run_magma_exploration(
             f"which lists {len(listed)} of the {len(equations)} equations."
         )
 
-    if expert_kind == "vampire":
-        expert = VampireExpert(
+    def vampire_expert() -> VampireExpert:
+        return VampireExpert(
             attributes=equations,
             prove_time_limit=vampire_prove_time_limit,
             model_time_limit=vampire_model_time_limit,
@@ -312,6 +317,15 @@ def run_magma_exploration(
             background=background,
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
+        )
+
+    if expert_kind == "vampire":
+        expert = vampire_expert()
+    elif expert_kind == "completion":
+        if seed_magmas:
+            raise ValueError("The completion expert has no pool of magmas to seed")
+        expert = CompletionExpert(
+            attributes=equations, fallback=vampire_expert() if shutil.which("vampire") else None
         )
     else:
         expert = MagmaExpert(
@@ -382,7 +396,7 @@ def run_magma_exploration(
     print(f"Counterexamples Found:        {len(state.counterexamples)}")
     print(f"Open Questions:               {len(base.open_questions)}")
     print(f"Rounds:                       {rounds}")
-    if isinstance(expert, VampireExpert):
+    if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
         print(f"Expert Answers:               {answers}")
 
@@ -394,10 +408,13 @@ def run_magma_exploration(
         marker = "   [UNCONFIRMED]" if unconfirmed else ""
         print(f"  [{idx}] {rule.format(lambda eq: eq.name or str(eq))}{marker}")
 
-    if base.unconfirmed_implications and expert_kind == "vampire":
+    if base.unconfirmed_implications and expert_kind in ("vampire", "completion"):
         print(
             "\n  [UNCONFIRMED] = Vampire decided nothing about the implication in time,"
             "\n  so it remains open."
+            if expert_kind == "vampire" else
+            "\n  [UNCONFIRMED] = completion failed and no fallback decided the"
+            "\n  implication, so it remains open."
         )
     if refuted:
         print("\nUnconfirmed Implications Refuted by a Later Object (and dropped):")
@@ -407,7 +424,7 @@ def run_magma_exploration(
         print("\nOpen Questions (shown false, but no known object violates the conclusion):")
         for implication in base.open_questions:
             print(f"  {implication}")
-    if base.unconfirmed_implications and expert_kind != "vampire":
+    if base.unconfirmed_implications and expert_kind == "z3":
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
             "\n  of time at some magma size, so these implications remain open rather"
@@ -432,7 +449,9 @@ def run_magma_exploration(
         print(m)
 
     if results_dir is not None:
-        if expert_kind == "vampire":
+        if expert_kind == "completion":
+            expert_settings = "Knuth-Bendix completion expert"
+        elif expert_kind == "vampire":
             expert_settings = (
                 f"Vampire expert, {vampire_prove_time_limit} s to prove, "
                 f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
@@ -479,14 +498,18 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--expert",
-        choices=("z3", "vampire"),
+        choices=("z3", "vampire", "completion"),
         default="z3",
         help=(
             "How questions are answered (default: z3). z3 searches for "
             "counterexamples of the sizes given below and accepts an implication "
             "when it finds none; vampire tries to prove the implication with the "
             "Vampire theorem prover and searches for a counterexample of any "
-            "size, accepting the implication as confirmed only when proved."
+            "size, accepting the implication as confirmed only when proved; "
+            "completion decides each question by Knuth-Bendix completion of its "
+            "premise, refuting it with the free magma over the premise, and "
+            "passes the questions whose premise it cannot complete to Vampire "
+            "if installed (meant for one-variable laws, where completion succeeds)."
         ),
     )
     parser.add_argument(

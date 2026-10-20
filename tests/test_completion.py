@@ -4,7 +4,10 @@ import json
 
 import pytest
 
+from conceptual_exploration.core.implication import Implication
+from conceptual_exploration.experts.base import Undecided
 from explorations.equational_theories.completion import (
+    CompletionExpert,
     certified,
     complete,
     kbo_greater,
@@ -12,7 +15,9 @@ from explorations.equational_theories.completion import (
     main,
     normal_form,
 )
+from explorations.equational_theories.explore import run_magma_exploration
 from explorations.equational_theories.magma import Equation
+from explorations.equational_theories.vampire import FreeMagma
 
 X = "x"
 XX = (X, X)
@@ -68,3 +73,32 @@ def test_the_command_certifies_free_magmas_including_duals_recorded_under_their_
         (3,): ([4, 5, 43], []), (4,): ([5, 43], []), (5,): ([4, 43], []),
     }
     assert law(Equation.parse("x = x * y")) == ("x", ("x", "y"))
+
+
+def test_the_expert_proves_refutes_with_a_free_magma_or_falls_back():
+    idempotent = Equation.parse("x = x * x", id=3)
+    eq8 = Equation.parse("x = x * (x * x)", id=8)
+    eq23 = Equation.parse("x = (x * x) * x", id=23)
+    commutative = Equation.parse("x * y = y * x", id=43)
+    expert = CompletionExpert([idempotent, eq8, eq23, commutative])
+
+    assert expert.validate(Implication([idempotent], [eq8, eq23])) is None
+    refutation = expert.validate(Implication([eq8], [idempotent]))
+    assert refutation.object == FreeMagma(frozenset({eq8}))
+    assert (refutation.positive, refutation.negative) == ({eq8}, {idempotent, eq23, commutative})
+    # Commutativity cannot be oriented, and there is no fallback.
+    assert expert.validate(Implication([commutative], [idempotent])) == Undecided(unconfirmed=True)
+    assert expert.answers == {"proved": 1, "free magma": 1, "completion failed": 1}
+
+
+def test_an_exploration_of_one_variable_laws_by_completion(tmp_path):
+    laws = [("x = x", 1), ("x = x * x", 3), ("x = x * (x * x)", 8), ("x = (x * x) * x", 23),
+            ("x * x = x * (x * x)", 307), ("x * x = (x * x) * x", 359)]
+    equations = tmp_path / "laws.json"
+    equations.write_text(json.dumps([{"equation": e, "id": n} for e, n in laws]))
+    state, base = run_magma_exploration(equations, report_interval=0, expert_kind="completion")
+    assert not base.unconfirmed_implications and not base.open_questions
+    assert all(isinstance(version.original, FreeMagma) for version in base.context.objects)
+    by_id = {eq.id: eq for eq in base.attributes}
+    assert by_id[8] in base.implications.closure({by_id[3]})
+    assert by_id[3] not in base.implications.closure({by_id[8]})
