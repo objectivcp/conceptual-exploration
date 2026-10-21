@@ -57,7 +57,10 @@ class ExplorationBase(Generic[O, A]):
     they are confirmed, so that their images are asked about in turn; an
     unconfirmed implication that the trusted ones come to entail, such as the
     image of a confirmed one, is then recorded as confirmed.
-    `open_questions` collects the questions the expert left undecided.
+    `rejected_implications` collects the implications the expert showed false
+    without a counterexample. They are facts, and an unconfirmed implication
+    that would make the theory entail one of them is not accepted but
+    recorded in `conflicts`, together with the rejected implication.
     """
 
     def __init__(
@@ -91,7 +94,8 @@ class ExplorationBase(Generic[O, A]):
         self.refuted: dict[Implication[A], VersionedObject[O]] = {}
         # The implication each mapped image was mapped from.
         self._origins: dict[Implication[A], Implication[A]] = {}
-        self.open_questions: list[Implication[A]] = []
+        self.rejected_implications: list[Implication[A]] = []
+        self.conflicts: list[tuple[Implication[A], Implication[A]]] = []
         self._rows: dict[VersionedObject[O], tuple[int, int]] = {}
         # The objects sharing each distinct row. Many versions of an object
         # repeat a row under another name, and the context closure and the
@@ -181,6 +185,43 @@ class ExplorationBase(Generic[O, A]):
                 del self._untrusted[other]
                 if not self.map_unconfirmed and self.implication_sources[other] is ImplicationSource.UNCONFIRMED:
                     self.implication_sources[other] = ImplicationSource.CONFIRMED
+
+    @property
+    def open_questions(self) -> list[Implication[A]]:
+        """The former name of `rejected_implications`."""
+        return self.rejected_implications
+
+    def reject(self, implication: Implication[A]) -> None:
+        """Record an implication shown false without a counterexample."""
+        if implication not in self.rejected_implications:
+            self.rejected_implications.append(implication)
+
+    def contradicted(self, implication: Implication[A]) -> Implication[A] | None:
+        """A rejected implication that the theory would entail if it
+        accepted `implication` (with its images, if unconfirmed
+        implications are mapped), or None."""
+        premise = self.index.encode(implication.premise)
+        conclusion = self.index.encode(implication.conclusion)
+        extra = [(premise, conclusion)]
+        if self.map_unconfirmed:
+            extra += self.mapped_images(premise, conclusion)
+
+        def closure(mask: int) -> int:
+            while True:
+                mask = self.implications.closure_mask(mask)
+                grown = mask
+                for p, c in extra:
+                    if p & grown == p:
+                        grown |= c
+                if grown == mask:
+                    return mask
+                mask = grown
+
+        for rejected in self.rejected_implications:
+            target = self.index.encode(rejected.conclusion)
+            if closure(self.index.encode(rejected.premise)) & target == target:
+                return rejected
+        return None
 
     def origin(self, implication: Implication[A]) -> Implication[A]:
         """The implication accepted or given as background that `implication`

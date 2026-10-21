@@ -13,13 +13,6 @@ A = TypeVar("A")
 O = TypeVar("O")
 
 
-def lectically_before(x: int, y: int) -> bool:
-    """Whether attribute mask x comes before y in the lectic order of
-    NextClosure, where the attribute of the lowest bit weighs most."""
-    difference = x ^ y
-    return bool(difference & -difference & y)
-
-
 @dataclass
 class RoundsResult(Generic[O, A]):
     """The outcome of `explore_in_rounds`: the base and state of the last
@@ -55,9 +48,9 @@ def explore_in_rounds(
     The next round starts with the implications accepted before that
     question, whatever their source; the confirmed ones accepted after it,
     which are sound whatever steered the enumeration to them; every object
-    found; and the open questions before it. It leaves out the refuted
-    implication and the unconfirmed ones accepted after it, whose questions
-    are asked again.
+    found; and every rejected implication, which is false whatever steered
+    the enumeration to it. It leaves out the refuted implication and the
+    unconfirmed ones accepted after it, whose questions are asked again.
 
     `map_unconfirmed` is passed to `ExplorationBase`.
 
@@ -71,7 +64,7 @@ def explore_in_rounds(
     history: list[tuple[Implication[A], ImplicationSource]] = []
     kept: list[Implication[A]] = []
     objects = list(objects)
-    open_before: list[Implication[A]] = []
+    rejected: list[Implication[A]] = []
     start = None
     result = None
     while True:
@@ -87,7 +80,8 @@ def explore_in_rounds(
             base.accept(implication, ImplicationSource.CONFIRMED)
         for obj in objects:
             base.add_counterexample(obj)
-        base.open_questions.extend(open_before)
+        for implication in rejected:
+            base.reject(implication)
         exploration = AttributeExploration(base, expert, evaluate_all, on_question)
         if base.refuted:
             # An object of the last round refutes an earlier implication too.
@@ -123,8 +117,4 @@ def explore_in_rounds(
             if version.version == 0
         ]
         start = culprit.premise
-        start_mask = base.index.encode(start)
-        open_before = [
-            question for question in base.open_questions
-            if lectically_before(base.index.encode(question.premise), start_mask)
-        ]
+        rejected = list(base.rejected_implications)

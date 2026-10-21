@@ -13,6 +13,20 @@ A = TypeVar("A")
 O = TypeVar("O")
 
 
+@dataclass(frozen=True)
+class Witness(Generic[A]):
+    """An object known to exist because the expert showed `implication`
+    false, its conclusion a single attribute, without giving a
+    counterexample: it has the attributes of the premise and lacks the one of
+    the conclusion, and nothing else is known about it."""
+
+    implication: Implication[A]
+
+    @property
+    def name(self) -> str:
+        return f"Witness against {self.implication}"
+
+
 @dataclass(frozen=True, slots=True)
 class QuestionReport(Generic[O, A]):
     """One question put to the expert, together with the answer it gave.
@@ -49,7 +63,7 @@ def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
         if question.counterexample is not None:
             print(f'Counterexample found: {question.counterexample}\n')
         elif question.undecided is not None:
-            outcome = "Unconfirmed" if question.undecided.unconfirmed else "Open"
+            outcome = "Unconfirmed" if question.undecided.unconfirmed else "Rejected"
             proved = ", ".join(map(str, question.undecided.proved))
             print(f'{outcome}{f"; proved {proved}" if proved else ""}\n')
         else:
@@ -131,6 +145,9 @@ class AttributeExploration:
                             else ImplicationSource.UNCONFIRMED
                         )
                         self._report(implication, None, source)
+                        if source is ImplicationSource.UNCONFIRMED and self._conflicts(implication):
+                            premise = next(premises)
+                            break
                         self.base.accept(implication, source)
                         self.state.accepted_implications.append(implication)
                         if self._stopped():
@@ -145,6 +162,18 @@ class AttributeExploration:
 
         return self.state
 
+    def _conflicts(self, implication: Implication[A], proved: frozenset[A] = frozenset()) -> bool:
+        """Whether accepting the unconfirmed `implication`, after the
+        confirmed one with the conclusion `proved`, would make the theory
+        entail a rejected implication; such an implication is recorded in
+        `conflicts` instead."""
+        premise = frozenset(implication.premise) | proved
+        rejected = self.base.contradicted(Implication(premise, implication.conclusion))
+        if rejected is None:
+            return False
+        self.base.conflicts.append((implication, rejected))
+        return True
+
     def _stopped(self) -> bool:
         if not self.base.refuted:
             return False
@@ -153,8 +182,8 @@ class AttributeExploration:
 
     def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int:
         """Take an answer the expert could not decide: accept the part of the
-        conclusion it did confirm, record the rest as an open question or
-        accept it as unconfirmed, and return the next premise.
+        conclusion it did confirm, reject the rest or accept it as
+        unconfirmed, and return the next premise.
 
         If nothing is accepted, the premise stays closed under the
         implications, and the enumeration goes on to the next closed set as
@@ -169,12 +198,18 @@ class AttributeExploration:
             self.base.add_counterexample(answer.object)
         proved = answer.proved & implication.conclusion
         rest = Implication(implication.premise, implication.conclusion - proved)
-        if not answer.unconfirmed:
-            self.base.open_questions.append(rest)
+        if not answer.unconfirmed and len(rest.conclusion) == 1:
+            # Some object has the premise and what it implies, and lacks the
+            # one attribute: a counterexample, if a partial one.
+            witness = PartialObject(Witness(rest), set(implication.premise) | proved, set(rest.conclusion))
+            self.base.add_counterexample(witness)
+            self.state.counterexamples.append(witness)
+        elif not answer.unconfirmed:
+            self.base.reject(rest)
         accepted = []
         if proved:
             accepted.append((Implication(implication.premise, proved), ImplicationSource.CONFIRMED))
-        if answer.unconfirmed and rest.conclusion:
+        if answer.unconfirmed and rest.conclusion and not self._conflicts(rest, proved):
             # After the confirmed part, which a resumed round then keeps.
             accepted.append((rest, ImplicationSource.UNCONFIRMED))
         if not accepted:

@@ -392,31 +392,52 @@ def test_unconfirmed_implications_do_not_complete_objects():
     assert all("c" in obj.positive for obj in base.context.objects.values())
 
 
-def test_undecided_questions_are_left_open():
+def test_undecided_questions_are_rejected():
     from conceptual_exploration import AttributeExploration, Undecided
     from conceptual_exploration.experts.base import Expert
 
     class Partial(Expert):
-        """Proves b from a, leaves the rest of every question undecided,
-        and refutes nothing."""
+        """Proves b from a, knows the rest of every question to be false
+        without knowing which attribute fails, and refutes nothing."""
 
         def validate(self, implication, attributes=None):
             if implication.premise == {"a"} and "b" in implication.conclusion:
                 return Undecided(frozenset(["b"]), PartialObject("F(a)", {"a"}, set()))
             return Undecided()
 
-    base = ExplorationBase(attributes=["a", "b", "c"])
+    base = ExplorationBase(attributes=["a", "b", "c", "d"])
     AttributeExploration(base, Partial()).run()
 
-    assert Implication(frozenset(["a"]), frozenset(["b"])) in base.implications
     assert base.implication_sources[Implication(frozenset(["a"]), frozenset(["b"]))] is (
         ImplicationSource.CONFIRMED
     )
-    assert Implication(frozenset(["a"]), frozenset(["c"])) in base.open_questions
-    # Nothing is accepted for the questions left wholly open, and the partial
-    # object is completed by the confirmed part.
+    assert Implication(frozenset(["a"]), frozenset(["c", "d"])) in base.rejected_implications
+    # Nothing is accepted for the questions rejected as a whole, and the
+    # partial object is completed by the confirmed part.
     assert len(base.implications.implications) == 1
-    assert base.context.objects[next(iter(base.context.objects))].positive == {"a", "b"}
+    partial = next(o for v, o in base.context.objects.items() if v.original == "F(a)")
+    assert partial.positive == {"a", "b"}
+
+
+def test_a_rejected_single_attribute_gives_a_witness():
+    from conceptual_exploration import AttributeExploration, Undecided, Witness
+    from conceptual_exploration.experts.base import Expert
+
+    class Doubting(Expert):
+        """Knows every question to be false without a counterexample."""
+
+        def validate(self, implication, attributes=None):
+            return Undecided()
+
+    base = ExplorationBase(attributes=["a", "b"])
+    AttributeExploration(base, Doubting()).run()
+
+    # Which of a and b fails without premise is not known; from a, b fails.
+    assert base.rejected_implications == [Implication(frozenset(), frozenset(["a", "b"]))]
+    rows = {v.original.implication: (o.positive, o.negative) for v, o in base.context.objects.items()
+            if isinstance(v.original, Witness)}
+    assert rows[Implication(frozenset(["a"]), frozenset(["b"]))] == ({"a"}, {"b"})
+    assert rows[Implication(frozenset(["b"]), frozenset(["a"]))] == ({"b"}, {"a"})
 
 
 def test_undecided_answers_may_accept_the_rest_as_unconfirmed():
@@ -450,3 +471,41 @@ def test_undecided_answers_may_accept_the_rest_as_unconfirmed():
         Implication(frozenset(["a"]), frozenset(["c"]))
     )
     assert not base.open_questions
+
+
+def test_an_unconfirmed_implication_contradicting_a_rejected_one_is_not_accepted():
+    from conceptual_exploration import AttributeExploration, Undecided
+    from conceptual_exploration.experts.base import Expert
+
+    class Unsure(Expert):
+        """Refutes questions without premise and knows nothing against the rest."""
+
+        def validate(self, implication, attributes=None):
+            if not implication.premise:
+                return PartialObject("none", set(), {"a", "b", "c"})
+            return Undecided(unconfirmed=True)
+
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    # Known false, as a later round would know from an earlier one.
+    rejected = Implication(frozenset(["a"]), frozenset(["c"]))
+    base.reject(rejected)
+    AttributeExploration(base, Unsure()).run()
+
+    unconfirmed = Implication(frozenset(["a"]), frozenset(["b", "c"]))
+    assert (unconfirmed, rejected) in base.conflicts
+    assert unconfirmed not in base.implications
+    assert not base.implications.entails(rejected)
+
+
+def test_a_rejected_implication_is_contradicted_through_images():
+    swap = {"a": "b", "b": "a", "c": "d", "d": "c"}
+    base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]])
+    rejected = Implication(frozenset(["b"]), frozenset(["d"]))
+    base.reject(rejected)
+    # a -> c entails b -> d only through its image.
+    assert base.contradicted(Implication(frozenset(["a"]), frozenset(["c"]))) == rejected
+    base_asking = ExplorationBase(
+        attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]], map_unconfirmed=False
+    )
+    base_asking.reject(rejected)
+    assert base_asking.contradicted(Implication(frozenset(["a"]), frozenset(["c"]))) is None
