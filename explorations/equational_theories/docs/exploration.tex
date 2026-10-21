@@ -76,7 +76,7 @@ The exploration loop is the one of the book: the premises are the sets closed un
 \begin{enumerate}
   \item objects are \emph{partial}: for some attributes it may be unknown whether an object has them (Section~\ref{sec:partial});
   \item a group of \emph{symmetries} acts on the attributes, and implications and objects are added together with their images (Section~\ref{sec:symmetry});
-  \item the expert may \emph{fail to decide} a question, in which case parts of the conclusion may be accepted without proof or left open (Section~\ref{sec:undecided});
+  \item the expert may \emph{fail to decide} a question, in which case parts of the conclusion may be accepted without proof or rejected (Section~\ref{sec:undecided});
   \item when an implication accepted without proof is later refuted, the exploration is \emph{resumed} at the point where it went wrong (Section~\ref{sec:rounds}).
 \end{enumerate}
 Algorithm~\ref{alg:exploration} summarizes the loop; the notation is explained in the following subsections.
@@ -97,7 +97,7 @@ Algorithm~\ref{alg:exploration} summarizes the loop; the notation is explained i
     \State add $P \to C$ and its images to $\cl$ (and to $\mathcal{T}$ if the expert decided it)
   \Else \Comment{undecided: proved part $D \subseteq C$, partial object, flag}
     \State add the partial object; add $P \to D$ to $\cl$ and $\mathcal{T}$
-    \State add $P \to C \setminus D$ to $\cl$ only (unconfirmed), or record it as an open question
+    \State add $P \to C \setminus D$ to $\cl$ only (unconfirmed), or reject it
   \EndIf
   \If{an object violates an implication of $\cl \setminus \mathcal{T}$} \State \textbf{stop} and resume (Section~\ref{sec:rounds}) \EndIf
   \State $P \gets$ next $\cl$-closed set after $P$ (or stop if there is none)
@@ -153,14 +153,16 @@ An expert reports that it has not decided a question it accepts through \code{is
 \begin{itemize}
   \item a set $D \subseteq C$ of conclusion attributes it did prove: $P \to D$ is accepted as confirmed;
   \item optionally a partial object, which must not refute $P \to C$ and is added to the context (its unknown entries may be filled later by completion);
-  \item a flag telling what to do with the rest $P \to C \setminus D$: it is accepted as \emph{unconfirmed} if the expert knows nothing against it, or recorded as an \emph{open question} if the expert knows it to be false without knowing which attribute fails.
+  \item a flag telling what to do with the rest $P \to C \setminus D$: it is accepted as \emph{unconfirmed} if the expert knows nothing against it, or \emph{rejected} if the expert knows it to be false without knowing which attribute fails.
 \end{itemize}
 
 \paragraph{Trusted and untrusted implications.}
 Unconfirmed implications take part in the closure that generates the premises: they steer the enumeration as accepted implications do. They are, however, not used to complete objects, since they may be false and would then write false values into rows. Every object added later is checked against them; an object violating an unconfirmed implication refutes it.
 
-\paragraph{Open questions.}
-An open question is not accepted, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Open questions are listed separately in the results.
+\paragraph{Rejected implications.}
+A rejected implication is not accepted, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Rejected implications are listed separately in the results. If the rest has a single attribute $c$, though, it is not rejected: some object has the attributes of $P$, and those of $D$, which $P$ implies, and lacks $c$, and nothing else is known about it. Such a \emph{witness} is a counterexample, if a partial one, and it joins the context with the row $(P \cup D, \{c\})$; in the results, witnesses are named \code{W}$k$.
+
+A rejected implication is a fact, which no row can express: it says that some attribute of $C \setminus D$ fails, but not which. It is used as a constraint instead. An unconfirmed implication that, together with the theory and with its images under the symmetries if they are added, would entail a rejected implication is not accepted; it is reported as \emph{conflicting}, together with the rejected implication. A rejected implication is never entailed when it is recorded, since its premise is closed under the theory; it can become entailed only by a later unconfirmed implication, through its images or in a later round (Section~\ref{sec:rounds}), so that this check suffices.
 
 \subsection{Resuming after a refuted unconfirmed implication}\label{sec:rounds}
 
@@ -168,9 +170,9 @@ When an object refutes an unconfirmed implication $P \to C$, all closed sets enu
 \begin{itemize}
   \item the implications accepted before $P \to C$, whatever their source;
   \item the \emph{confirmed} implications accepted after it, which are true whatever steered the enumeration to them;
-  \item every object found so far, and the open questions recorded before $P$;
+  \item every object found so far, and every rejected implication, which is false whatever steered the enumeration to it;
 \end{itemize}
-and resumes NextClosure at $P$. Since NextClosure can continue from any set, and every closed set lectically before $P$ was enumerated without the false implication, nothing before $P$ is repeated. The false implication and the unconfirmed implications accepted after it are dropped; their questions are asked again if they arise. The implications found are then a cover of the theory, sound and complete up to open questions, but, because the confirmed implications kept were found under a different theory, not necessarily its canonical basis.
+and resumes NextClosure at $P$. Since NextClosure can continue from any set, and every closed set lectically before $P$ was enumerated without the false implication, nothing before $P$ is repeated. The false implication and the unconfirmed implications accepted after it are dropped; their questions are asked again if they arise. The implications found are then a cover of the theory, sound and complete up to rejected implications, but, because the confirmed implications kept were found under a different theory, not necessarily its canonical basis.
 
 \subsection{Further details}\label{sec:details}
 
@@ -262,11 +264,12 @@ The expert proceeds through the following steps and stops at the first one that 
   \item \textbf{Pool and memory.} The pool is checked as by the Z3 expert. A question entailed by an implication proved before ($P' \subseteq P$, $C \subseteq C'$) is accepted, and an undecided answer is reused if the same question is asked again.
   \item \textbf{Proof.} Vampire's portfolio mode (\code{-{}-mode casc}) runs on the problem (by default for 10 seconds). A proof confirms the implication. If the run instead ends with a finite model, the model is the counterexample.
   \item \textbf{Quick model search.} Vampire's finite model builder (\code{-{}-saturation\_algorithm fmb}) looks for a counterexample of any size (by default for 1 second).
-  \item \textbf{Free magma.} The row of the free magma over $P$ is computed, as described below. If a law of $C$ is on its negative side, the free magma refutes the implication. If every law of $C$ is on its positive side, the implication is proved.
+  \item \textbf{One law shown false.} If $C$ has a single law and step~2 ended with CounterSatisfiable, the free magma over $P$ violates that law and refutes the implication. No further call is made: the rest of its row is decided by the context already, the laws outside $P \cup C$ being denied for $P$ by its objects.
+  \item \textbf{Free magma.} The row of the free magma over $P$ is computed, as described in Section~\ref{sec:free}. If a law of $C$ is on its negative side, the free magma refutes the implication. If every law of $C$ is on its positive side, the implication is proved. If step~2 ended with CounterSatisfiable and a single law $c$ of $C$ is not on the positive side, the free magma violates $c$: a brief search (1~second) looks for a finite model violating $c$, and the free magma refutes the implication if it finds none.
   \item \textbf{Per-law model search.} For each law $c$ of $C$ that the free magma did not prove, the model builder looks for a model of $P$ violating $c$ (by default for 10 seconds each, in parallel). This is much faster than a search for a model violating the conjunction $C$, which has to consider all the ways of violating it at once. Optionally, the model finder Mace4\footnote{\url{https://www.cs.unm.edu/~mccune/prover9/}} searches for a model of $P$ violating $c$ at the same time (option \code{-{}-mace4-time-limit}, off by default). Mace4 searches for tables size by size with its own propagation and symmetry reduction, and it sometimes finds models that Vampire's model builder does not reach in time.
-  \item \textbf{Undecided.} Otherwise, the laws of $C$ that the free magma proved are accepted as confirmed. The free magma joins the context with its partial row. The rest of $C$ is recorded as an open question if step~2 ended with CounterSatisfiable, that is, if Vampire showed $P \to C$ false as a whole, and is accepted as unconfirmed otherwise.
+  \item \textbf{Undecided.} Otherwise, the laws of $C$ that the free magma proved are accepted as confirmed. The rest of $C$, which has at least two laws if step~2 ended with CounterSatisfiable, is rejected if it did, that is, if Vampire showed $P \to C$ false as a whole, and is accepted as unconfirmed otherwise. The partial row of the free magma is not added to the context. Its positive side holds in every object of the context that satisfies $P$, since objects are completed with the trusted implications, and every law on its negative side lies outside $C$ and is therefore denied by some object satisfying $P$; so the row could refute nothing that the context does not already refute.
 \end{enumerate}
-Every finite model is read from the output of Vampire or Mace4 and checked against the laws; a model that does not refute the question stops the program with an error. Vampire's proofs and its CounterSatisfiable verdicts obtained by saturation are trusted. The expert counts its answers by kind (\code{pool}, \code{proved}, \code{model}, \code{free magma}, \code{open}, \code{unconfirmed}), and the counts are printed at the end.
+Every finite model is read from the output of Vampire or Mace4 and checked against the laws; a model that does not refute the question stops the program with an error. Vampire's proofs and its CounterSatisfiable verdicts obtained by saturation are trusted. The expert counts its answers by kind (\code{pool}, \code{proved}, \code{model}, \code{free magma}, \code{rejected}, \code{unconfirmed}), and the counts are printed at the end.
 
 Unlike the Z3 expert, the Vampire expert never accepts an implication as confirmed without a proof, and it never accepts an implication it knows to be false.
 
@@ -276,7 +279,7 @@ Let $P$ be a set of laws. Call two terms $s$ and $t$, in countably many variable
 \begin{proposition}
 For every finite set $M$ of laws and every $P \subseteq M$, the row of $F_P$ is $\{\, L \in M : P \vdash L \,\}$, the closure of $P$ in $\mathbb{K}_{\mathrm{Mag}}$. In particular, $F_P$ refutes every false implication with premise $P$.
 \end{proposition}
-For one-variable laws, the submagma of $F_P$ generated by one variable already has the same row. $F_P$ is usually infinite, so it has no table. Its row is computed law by law. The laws that $P$ implies by the background implications and by the implications Vampire has proved so far are on the positive side without asking. For each other law $L$, Vampire runs in portfolio mode on the problem ``$P$ implies $L$'', all laws in parallel and the laws of the conclusion first. A proof puts $L$ on the positive side, CounterSatisfiable on the negative side, and a timeout leaves $L$ unknown. The laws of the conclusion get the proving time limit (by default 10 seconds); the others, which decide nothing about the question but complete the row, get a separate \emph{row time limit} (option \code{-{}-vampire-row-time-limit}, by default the proving time limit). With row time limit~$0$, only the laws of the conclusion are asked about, and the other unknown laws stay unknown unless completion fills them in.
+For one-variable laws, the submagma of $F_P$ generated by one variable already has the same row. $F_P$ is usually infinite, so it has no table. Its row is computed law by law. The laws that $P$ implies by the background implications and by the implications Vampire has proved so far are on the positive side without asking. For each other law $L$, Vampire runs in portfolio mode on the problem ``$P$ implies $L$'', all laws in parallel and the laws of the conclusion first. A proof puts $L$ on the positive side, CounterSatisfiable on the negative side, and a timeout leaves $L$ unknown. With \code{-{}-eprover-time-limit}, the E prover\footnote{\url{https://eprover.org}} decides each law of the conclusion as well, with its automatic strategy, and either prover's verdict counts; contradictory verdicts stop the program. E's saturation sometimes succeeds where Vampire's does not: in the fourth exploration of Section~\ref{sec:case3}, it showed within a second that none of the 60 laws of the conclusion of an unconfirmed implication follows from its premise, which Vampire failed to show in 30 seconds per law even with its schedule for satisfiable problems. The row is then completed with the known implications, as the context completes its objects: the laws that the positive side implies are positive, and a law that would imply a law on the negative side is negative. The laws of the conclusion get the proving time limit (by default 10 seconds); the others, which decide nothing about the question but complete the row, get a separate \emph{row time limit} (option \code{-{}-vampire-row-time-limit}, by default the proving time limit). With row time limit~$0$, only the laws of the conclusion are asked about, and the other unknown laws stay unknown unless completion fills them in.
 
 The row time limit matters when many questions end with a free magma that Vampire cannot fully decide: each of them then costs the row time limit for the laws outside the conclusion, which run in parallel on all cores. With the 149 laws of Section~\ref{sec:case3}, a premise that implies few of them leaves well over a hundred laws to ask about, so that every such question costs about the row time limit times the number of laws divided by the number of cores: about 3 minutes on 8 cores with the default 10 seconds, and under 20 seconds with a limit of 1 second.
 
@@ -341,7 +344,7 @@ Implications accepted & 27 & 27 \\
 Implications found (with images) & 43 & 44 \\
 Counterexamples & 32 & 35 \\
 Free magmas & --- & 0 \\
-Open questions & --- & 0 \\
+Rejected implications & --- & 0 \\
 Running time & 2 min 52 s & 2 min 51 s \\
 \bottomrule
 \end{tabular}
@@ -396,7 +399,7 @@ The Z3 exploration accepted three implications that are false: one implication t
 \end{itemize}
 Both counterexamples exceed the sizes the Z3 expert searches. Conversely, the two implications Z3 accepted as unconfirmed ($\Eq{323}, \Eq{378}, \text{Medial} \to \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512}$, rule~5 before simplification, and $\Eq{43}, \Eq{4396}, \Eq{4435}, \Eq{4473}, \Eq{4512} \to \text{Medial}$) are true, and Vampire proved them. Every implication Vampire accepted is entailed by the Z3 theory, as it should be.
 
-The first of the false implications also illustrates the per-law model search of step~5. Before that step was added, the Vampire expert left this question undecided: the free magma over the premise decided neither associativity nor mediality in time, and a model violating their conjunction was not found within the time limit. The model builder finds the size-10 Steiner loop in a few seconds when it looks for a violation of a single law, while the search for a violation of both needs more than a minute and a half.
+The first of the false implications also illustrates the per-law model search of step~6. Before that step was added, the Vampire expert left this question undecided: the free magma over the premise decided neither associativity nor mediality in time, and a model violating their conjunction was not found within the time limit. The model builder finds the size-10 Steiner loop in a few seconds when it looks for a violation of a single law, while the search for a violation of both needs more than a minute and a half.
 
 %======================================================================
 \section{Case study: one-variable laws of order at most four}\label{sec:case31}
@@ -427,7 +430,7 @@ Implications accepted & 0 & 0 & 887 & 842 \\
 \quad of which false & 0 & 0 & 837 & 837 \\
 Refuted by a finite model & 15,894 & 14,688 & 7,302 & 7,500 \\
 Refuted by a free magma & 1,941 & 3,967 & --- & --- \\
-Open or unconfirmed & 0 & 0 & 0 & 2 \\
+Rejected or unconfirmed & 0 & 0 & 0 & 2 \\
 Closed sets of the theory & 108,635 & 108,635 & 75,127 & 75,127 \\
 Running time & 8 h 05 min & 2 h 25 min & not recorded & 3 h 18 min \\
 \bottomrule
@@ -482,7 +485,7 @@ Each set includes $\Eq{1}$: $x = x$ and $\Eq{2}$: $x = y$, which hold in every m
 
 \subsection{Order at most two}
 
-With the Vampire expert and the ETP background, the exploration of the 24 laws asked 45 questions. It found 19 counterexamples, 6 of them two-element magmas of the pool and 13 found by Vampire, of sizes 3 to 5, and proved 26 implications; nothing was left unconfirmed or open, and no free magma was needed. The theory has 59 closed sets, and each of its 26 rules has a premise of two laws. For example:
+With the Vampire expert and the ETP background, the exploration of the 24 laws asked 45 questions. It found 19 counterexamples, 6 of them two-element magmas of the pool and 13 found by Vampire, of sizes 3 to 5, and proved 26 implications; nothing was left unconfirmed or rejected, and no free magma was needed. The theory has 59 closed sets, and each of its 26 rules has a premise of two laws. For example:
 \begin{itemize}
   \item $\Eq{25}, \Eq{43} \to \Eq{2}$: a commutative magma satisfying $x = (x * y) * x$ is trivial;
   \item $\Eq{26}, \Eq{29} \to \Eq{43}$: the laws $x = (x * y) * y$ and $x = (y * x) * y$ together imply commutativity;
@@ -506,11 +509,11 @@ Questions & 1,310 & 1,326 & 1,337 & 1,376 \\
 \quad refuted by a finite model & 437 & 440 & 444 & 444 \\
 \quad refuted by a free magma & 75 & 76 & 72 & 74 \\
 \quad unconfirmed & 57 & 59 & 70 & 105 \\
-\quad open & 5 & 5 & 5 & 5 \\
+\quad rejected & 5 & 5 & 5 & 5 \\
 Accepted implications & 807 & 802 & 824 & 860 \\
 \quad confirmed & 750 & 754 & 765 & 767 \\
 \quad unconfirmed & 57 & 48 & 59 & 93 \\
-\qquad of which known to be false & 6 or more & 3 & 1 & --- \\
+\qquad of which known to be false & 6 or more & 3 & 1 & 1 \\
 Canonical basis relative to the background, up to duality & 793 & 795 & 806 & 806 \\
 \quad of the confirmed implications alone & 750 & 754 & 765 & 767 \\
 Closed sets of the theory & 3,650 & 3,663 & 3,667 & 3,671 \\
@@ -523,7 +526,7 @@ Running time & 2 h 48 min & 4 h 34 min & 4 h 42 min & 6 h 19 min \\
 \end{table}
 
 \paragraph{Where Vampire gets stuck.}
-Most hard questions involve $\Eq{255}$: $x = ((x * x) * x) * x$ or its dual $\Eq{47}$: $x = x * (x * (x * x))$, combined with laws in two or more variables. In the second exploration, 44 of the 48 unconfirmed implications and all five open questions have one of these two laws in their premise. Their premises are often large: the open questions have 16 to 18 laws in their premise.
+Most hard questions involve $\Eq{255}$: $x = ((x * x) * x) * x$ or its dual $\Eq{47}$: $x = x * (x * (x * x))$, combined with laws in two or more variables. In the second exploration, 44 of the 48 unconfirmed implications and all five rejected implications have one of these two laws in their premise. Their premises are often large: the rejected implications have 16 to 18 laws in their premise.
 
 \paragraph{Testing the unconfirmed implications.}
 After the first exploration, each law of the conclusion of each of its 19 unconfirmed questions (109 laws in all) was tried again, separately, with longer limits:
@@ -535,7 +538,7 @@ After the first exploration, each law of the conclusion of each of its 19 unconf
 So at least six of the 57 unconfirmed implications of the first exploration are false, and the enumeration, which they steered, skipped closed sets. Its 3,650 closed sets are therefore not those of the true theory.
 
 \paragraph{The second exploration.}
-With Mace4 in the per-law search, the expert found the counterexamples of size 16 during the exploration itself, together with models of sizes 11 and 13 that Vampire had missed (17 tables in all, counting duals). One of them refuted an unconfirmed implication accepted 260 questions earlier; the exploration resumed at that question (Section~\ref{sec:rounds}), which made it run in two rounds. In the end, 48 unconfirmed implications and 5 open questions remain, and 46 of the 48 have the same premise as an unconfirmed implication of the first exploration. No counterexample to them is known, but they are not proved either.
+With Mace4 in the per-law search, the expert found the counterexamples of size 16 during the exploration itself, together with models of sizes 11 and 13 that Vampire had missed (17 tables in all, counting duals). One of them refuted an unconfirmed implication accepted 260 questions earlier; the exploration resumed at that question (Section~\ref{sec:rounds}), which made it run in two rounds. In the end, 48 unconfirmed implications and 5 rejected implications remain, and 46 of the 48 have the same premise as an unconfirmed implication of the first exploration. No counterexample to them is known, but they are not proved either.
 
 \paragraph{Infinite counterexamples.}
 Three of these 48 unconfirmed implications are nevertheless false:
@@ -562,7 +565,7 @@ The unconfirmed questions of the fourth exploration were also put to the provers
 Longer runs on single questions did not help either: the conjecture that, given $\Eq{3}$ and $\Eq{263}$, $\Eq{385}$ is equivalent to $\Eq{117} \wedge \Eq{159}$, of which one half is proved, resisted Vampire for 10 minutes, Twee for 30 minutes and Mace4 up to sizes 15 and 16.
 
 \paragraph{What the results say.}
-In the fourth exploration, the 767 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,671 closed sets of the theory are correct if the 93 unconfirmed implications are true. The confirmed implications, the background and their duals generate a theory with 11,097 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 93 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and the open questions needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide. A comparison with the semilattice of the work in progress mentioned in~\cite{LF26b} would settle many of them, or reveal errors on either side.
+In the fourth exploration, the 767 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,671 closed sets of the theory would be correct if the 93 unconfirmed implications were true, but two of them, an implication and its dual, are false: the E prover showed that none of the 60 laws of their conclusions follows from their premises (Section~\ref{sec:free}). E decided none of the laws of the other 91 within 10 seconds each, and showed for each of the 5 rejected implications that none of their conclusion laws follows, so that free magmas refute them. The confirmed implications, the background and their duals generate a theory with 11,097 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 93 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and finding counterexamples to the rejected ones needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide. A comparison with the semilattice of the work in progress mentioned in~\cite{LF26b} would settle many of them, or reveal errors on either side.
 
 %======================================================================
 \section{User's guide}\label{sec:guide}
@@ -608,6 +611,7 @@ Table~\ref{tab:options} lists the options.
 -{}-vampire-quick-model-time-limit S & 1 & seconds for the first finite model search \\
 -{}-vampire-model-time-limit S & 10 & seconds for each per-law finite model search \\
 -{}-mace4-time-limit S & 0 & seconds for Mace4 in each per-law search; $0$ leaves Mace4 out \\
+-{}-eprover-time-limit S & 0 & seconds for E on each law of the conclusion in a free magma's row; $0$ leaves E out \\
 -{}-min-search-size N & 1 & smallest table size Z3 tries \\
 -{}-max-search-size N & 6 & largest table size Z3 tries \\
 -{}-z3-timeout-ms MS & 30000 & Z3 time per size; $0$ means unbounded \\
@@ -630,7 +634,7 @@ Table~\ref{tab:options} lists the options.
 \subsection{Choosing the expert and the time limits}
 
 \begin{itemize}
-  \item Use the \textbf{Vampire expert} when the result should be correct. Its confirmed implications are proved, and its counterexamples are checked magmas or free magmas. If it accepts something as unconfirmed or leaves a question open, the summary says so.
+  \item Use the \textbf{Vampire expert} when the result should be correct. Its confirmed implications are proved, and its counterexamples are checked magmas or free magmas. If it accepts something as unconfirmed or rejects an implication without a counterexample, the summary says so.
   \item Use the \textbf{completion expert} for one-variable laws: it decides every question it can complete, in minutes rather than hours, and certifies its counterexamples.
   \item Use the \textbf{Z3 expert} for a quick first impression, or when Vampire is not available. Treat its accepted implications as conjectures: as the case studies show, they may be false.
   \item Longer \textbf{proving time limits} help when implications are true but hard to prove. The laws of the conclusion in a free magma's row get the same limit, and a law Vampire cannot decide in time stays unknown.
@@ -666,14 +670,15 @@ Counterexample found: Free magma over {Eq1, Eq1629, Eq1832, ...}
 Satisfies: ...
 Does not satisfy: ...
 \end{Verbatim}
-The counts are those before the answer; the objects include the duals. An accepted question is followed by \code{Confirmed} or \code{Unconfirmed}, and an undecided one by \code{Open} or \code{Unconfirmed} together with the laws it proved. At the end, the program prints a summary (questions, accepted implications, counterexamples, open questions, rounds, and the Vampire expert's answers by kind), the rules, any open questions and refuted unconfirmed implications, and a few counterexamples.
+The counts are those before the answer; the objects include the duals. An accepted question is followed by \code{Confirmed} or \code{Unconfirmed}, and an undecided one by \code{Rejected} or \code{Unconfirmed} together with the laws it proved. At the end, the program prints a summary (questions, accepted implications, counterexamples, rejected and conflicting implications, rounds, and the Vampire expert's answers by kind), the rules, any rejected, conflicting and refuted unconfirmed implications, and a few counterexamples.
 
 The results directory contains:
 \begin{description}
   \item[\code{exploration.log}] everything printed;
-  \item[\code{implications.txt}, \code{implications.json}] every implication found, together with its source, which is one of \code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped} and \code{mapped unconfirmed}; then the refuted unconfirmed implications and the open questions;
+  \item[\code{implications.txt}, \code{implications.json}] every implication found, together with its source, which is one of \code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped} and \code{mapped unconfirmed}; then the refuted unconfirmed implications, the rejected implications, and the conflicting ones with the rejected implication each contradicts;
   \item[\code{magmas.json}] the finite magmas of the context with their tables, under the names \code{M}$k$ and \code{M}$k$\code{\^{}op};
   \item[\code{free\_magmas.json}] the free magmas \code{F}$k$, each with its premise and its known positive and negative laws;
+  \item[\code{witnesses.json}] the witnesses \code{W}$k$ of implications with one attribute in their conclusion that the expert showed false without a counterexample, each with the implication it refutes and its row;
   \item[\code{etp\_refutations.json}] with \code{-{}-etp-refutations}, the objects \code{R}$k$ standing for refutations of the ETP graph, each with the implication it refutes and its known positive and negative laws;
   \item[\code{context.cxt}] the objects with complete rows, in Burmeister's format;
   \item[\code{partial\_context.cxt}] all objects in the same format, with \code{?} for unknown entries.
