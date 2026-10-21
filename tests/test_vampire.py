@@ -155,7 +155,7 @@ def test_the_full_model_search_runs_when_the_free_magma_does_not_refute():
         if "fmb" in options:
             found = next(model)
             return ("CounterSatisfiable", found) if found else ("Timeout", "")
-        return laws("CounterSatisfiable", "Timeout")(conjecture, options)
+        return laws("Timeout", "Timeout")(conjecture, options)
     searches = scripted(expert, answer)
     counterexample = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
     assert counterexample.refutes(QUESTION)
@@ -163,17 +163,74 @@ def test_the_full_model_search_runs_when_the_free_magma_does_not_refute():
     assert searches == [expert.quick_model_time_limit, expert.model_time_limit]
 
 
-def test_shown_false_but_undecided_leaves_the_question_open():
+def test_shown_false_but_undecided_rejects_the_rest_without_a_row():
     from conceptual_exploration import Undecided
 
     expert = VampireExpert(initial_magmas=[], workers=2)
-    # False as a whole; x = x * (x * x) proved, x = x * x undecided.
-    scripted(expert, laws("CounterSatisfiable", "Timeout"))
+    # False as a whole; both laws undecided, so which one fails is not known.
+    scripted(expert, laws("CounterSatisfiable", "Timeout", other="Timeout"))
     answer = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
     assert isinstance(answer, Undecided) and not answer.unconfirmed
-    assert answer.proved == {Equation.parse("x = x * (x * x)")}
-    assert not answer.object.refutes(QUESTION)
-    assert expert.last_status == "open"
+    assert not answer.proved
+    assert answer.object is None
+    assert expert.last_status == "rejected"
+
+
+def test_shown_false_with_one_law_left_is_refuted_by_the_free_magma():
+    expert = VampireExpert(initial_magmas=[], workers=2)
+    # False as a whole; x = x * (x * x) proved, so x = x * x fails.
+    searches = scripted(expert, laws("CounterSatisfiable", "Timeout"))
+    counterexample = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
+    assert counterexample.negative >= {Equation.parse("x = x * x")}
+    assert expert.last_status == "free magma"
+    # The brief searches, on the whole conclusion and on the one law, but no long one.
+    assert searches == [expert.quick_model_time_limit, expert.quick_model_time_limit]
+
+
+def test_one_law_shown_false_needs_no_free_magma_row():
+    expert = VampireExpert(initial_magmas=[], workers=2)
+    calls = []
+
+    def answer(conjecture, options):
+        calls.append(options)
+        return ("Timeout", "") if "fmb" in options else ("CounterSatisfiable", "")
+    scripted(expert, answer)
+    question = implication(["x * x = x * (x * x)"], ["x = x * x"])
+    counterexample = expert.validate(question)
+    assert counterexample.negative == question.conclusion
+    assert expert.last_status == "free magma"
+    # The proof attempt and the brief model search, nothing more.
+    assert len(calls) == 2
+
+
+IDEMPOTENCE = Implication(frozenset({Equation.parse("x = x * x")}), frozenset({Equation.parse("x = x * (x * x)")}))
+
+
+def test_proved_laws_complete_the_row_with_the_known_implications():
+    expert = VampireExpert(initial_magmas=[], workers=2, background=[IDEMPOTENCE])
+    # x = x * x proved, x = x * (x * x) not: it follows from x = x * x.
+    scripted(expert, laws("Timeout", "Theorem", other="Timeout"))
+    assert expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion) is None
+    assert expert.last_status == "proved"
+
+
+def test_a_refuted_law_refutes_the_laws_that_imply_it():
+    expert = VampireExpert(initial_magmas=[], workers=2, background=[IDEMPOTENCE])
+    # x = x * (x * x) shown not to follow, x = x * x undecided: it implies the former.
+    scripted(expert, laws("Timeout", "Timeout", other="CounterSatisfiable"))
+    counterexample = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
+    assert counterexample.negative >= QUESTION.conclusion
+    assert expert.last_status == "free magma"
+
+
+@pytest.mark.skipif(shutil.which("eprover") is None, reason="E not installed")
+def test_the_e_prover_decides_laws_vampire_does_not():
+    expert = VampireExpert(initial_magmas=[], workers=2, eprover_time_limit=5)
+    scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    question = implication(["x = x * x"], ["x * y = y * x"])
+    counterexample = expert.validate(question)
+    assert counterexample.negative == question.conclusion
+    assert expert.last_status == "free magma"
 
 
 def test_undecided_rest_is_unconfirmed_when_nothing_speaks_against_it():

@@ -17,7 +17,7 @@ Using conceptual exploration:
    flagged [UNCONFIRMED], since they were neither refuted nor decided. With
    the Vampire expert, an implication is instead confirmed only when proved,
    counterexamples are searched for at any size, and an implication shown
-   false without a counterexample on a particular law is left open.
+   false without a counterexample on a particular law is rejected.
 6. Optionally, implications derivable by equational reasoning within a bounded
    order are given to the exploration as background knowledge beforehand.
 7. The log, the implications found and the context are saved to a results
@@ -41,7 +41,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import Implication, report_every, simplified_rules
+from conceptual_exploration import Implication, Witness, report_every, simplified_rules
 from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
@@ -84,10 +84,13 @@ def save_results(
     """Write the implications found and the context of an exploration.
 
     implications.txt and implications.json list every implication found
-    with its source, and the questions left open; magmas.json holds
+    with its source, the rejected implications, and the unconfirmed ones not
+    accepted because they would contradict a rejected one; magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
     with their rows, which Vampire may have left partial; etp_refutations.json
-    holds the objects standing for refutations of the ETP graph; context.cxt
+    holds the objects standing for refutations of the ETP graph, and
+    witnesses.json those standing for implications with one law in their
+    conclusion that the expert showed false without a counterexample; context.cxt
     (Burmeister format) holds every object whose row is complete, and
     partial_context.cxt every object, in the same format with ? where it is
     not known whether the object satisfies the equation. A dual image is
@@ -114,8 +117,9 @@ def save_results(
         return {eq for eq in equations if mapping(eq) in laws}
 
     names: dict[object, str] = {}
-    magmas, free, etp, rows = [], [], [], []  # rows: (name, positive, negative)
-    kind = lambda o: "F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation) else "M"
+    magmas, free, etp, witnesses, rows = [], [], [], [], []  # rows: (name, positive, negative)
+    kind = lambda o: ("F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation)
+                      else "W" if isinstance(o, Witness) else "M")
     for version, obj in base.context.objects.items():
         original = version.original
         prefix = kind(original)
@@ -130,6 +134,14 @@ def save_results(
             free.append({
                 "name": name, "dual_of": dual_of,
                 "premise": ids(preimage(version, original.premise)),
+                "positive": ids(obj.positive),
+                "negative": ids(obj.negative),
+            })
+        elif isinstance(original, Witness):
+            witnesses.append({
+                "name": name, "dual_of": dual_of,
+                "refutes": {"premise": ids(preimage(version, original.implication.premise)),
+                            "conclusion": ids(preimage(version, original.implication.conclusion))},
                 "positive": ids(obj.positive),
                 "negative": ids(obj.negative),
             })
@@ -158,7 +170,8 @@ def save_results(
         cxt += [label(eq) for eq in ordered]
         cxt += ["".join(cell(eq, pos, neg) for eq in ordered) for _, pos, neg in objects]
         (directory / filename).write_text("\n".join(cxt) + "\n", encoding="utf-8")
-    files = [("magmas.json", magmas), ("free_magmas.json", free)] + ([("etp_refutations.json", etp)] if etp else [])
+    files = ([("magmas.json", magmas), ("free_magmas.json", free)] + ([("etp_refutations.json", etp)] if etp else [])
+             + ([("witnesses.json", witnesses)] if witnesses else []))
     for filename, entries in files:
         (directory / filename).write_text(
             "[\n" + ",\n".join("  " + json.dumps(e) for e in entries) + "\n]\n", encoding="utf-8"
@@ -180,8 +193,9 @@ def save_results(
         "no counterexample in the searched sizes, or proved by Vampire; unconfirmed = neither",
         "refuted nor decided;",
         "mapped = dual of another implication, added when not already entailed; mapped unconfirmed",
-        "= dual of an unconfirmed implication. Open questions are implications shown false without",
-        "a counterexample known to violate their conclusion.",
+        "= dual of an unconfirmed implication. Rejected implications are shown false without a",
+        "counterexample known to violate their conclusion; conflicting ones are unconfirmed",
+        "implications not accepted because the theory would then entail a rejected one.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
@@ -191,21 +205,28 @@ def save_results(
         records.append({"premise": ids(implication.premise),
                         "conclusion": ids(implication.conclusion),
                         "source": "refuted"})
-    for implication in base.open_questions:
+    for implication in base.rejected_implications:
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
-        records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "open"})
+        records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
+    for implication, rejected in base.conflicts:
+        records.append({"premise": ids(implication.premise), "conclusion": ids(implication.conclusion),
+                        "source": "conflicting",
+                        "contradicts": {"premise": ids(rejected.premise), "conclusion": ids(rejected.conclusion)}})
     extra = []
     if refuted:
         extra += ["", "Unconfirmed implications refuted by a later object, and dropped:"]
         extra += [f"  {', '.join(map(label, sorted(i.premise, key=order)))} ==> "
                   f"{', '.join(map(label, sorted(i.conclusion, key=order)))}"
                   for i in refuted]
-    if base.open_questions:
-        extra += ["", "Open questions:"]
-        extra += [f"  {', '.join(map(label, sorted(i.premise, key=order)))} ==> "
-                  f"{', '.join(map(label, sorted(i.conclusion, key=order)))}"
-                  for i in base.open_questions]
+    show = lambda i: (f"{', '.join(map(label, sorted(i.premise, key=order)))} ==> "
+                      f"{', '.join(map(label, sorted(i.conclusion, key=order)))}")
+    if base.rejected_implications:
+        extra += ["", "Rejected implications:"]
+        extra += [f"  {show(i)}" for i in base.rejected_implications]
+    if base.conflicts:
+        extra += ["", "Unconfirmed implications not accepted, contradicting a rejected one:"]
+        extra += [f"  {show(i)}   (contradicts {show(r)})" for i, r in base.conflicts]
     (directory / "implications.txt").write_text(
         "\n".join(header + lines + extra) + "\n", encoding="utf-8"
     )
@@ -233,6 +254,7 @@ def run_magma_exploration(
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
     mace4_time_limit: int = 0,
+    eprover_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
     etp_refutations: bool = False,
@@ -245,7 +267,8 @@ def run_magma_exploration(
     row_setting = (
         "" if vampire_row_time_limit is None
         else f", {vampire_row_time_limit} s per other law of a free magma"
-    ) + (f", Mace4 {mace4_time_limit} s for a model" if mace4_time_limit > 0 else "")
+    ) + (f", Mace4 {mace4_time_limit} s for a model" if mace4_time_limit > 0 else ""
+    ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else "")
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -317,6 +340,7 @@ def run_magma_exploration(
             background=background,
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
+            eprover_time_limit=eprover_time_limit,
         )
 
     if expert_kind == "vampire":
@@ -394,7 +418,8 @@ def run_magma_exploration(
     print(f"  of which unconfirmed:       {len(base.unconfirmed_implications)}")
     print(f"Implications Found:           {len(base.implications.implications)}")
     print(f"Counterexamples Found:        {len(state.counterexamples)}")
-    print(f"Open Questions:               {len(base.open_questions)}")
+    print(f"Rejected Implications:        {len(base.rejected_implications)}")
+    print(f"  Conflicting, Not Accepted:  {len(base.conflicts)}")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -411,23 +436,27 @@ def run_magma_exploration(
     if base.unconfirmed_implications and expert_kind in ("vampire", "completion"):
         print(
             "\n  [UNCONFIRMED] = Vampire decided nothing about the implication in time,"
-            "\n  so it remains open."
+            "\n  so it remains unproved."
             if expert_kind == "vampire" else
             "\n  [UNCONFIRMED] = completion failed and no fallback decided the"
-            "\n  implication, so it remains open."
+            "\n  implication, so it remains unproved."
         )
     if refuted:
         print("\nUnconfirmed Implications Refuted by a Later Object (and dropped):")
         for implication, name in refuted:
             print(f"  {implication}   (by {name})")
-    if base.open_questions:
-        print("\nOpen Questions (shown false, but no known object violates the conclusion):")
-        for implication in base.open_questions:
+    if base.rejected_implications:
+        print("\nRejected Implications (shown false, but no known object violates the conclusion):")
+        for implication in base.rejected_implications:
             print(f"  {implication}")
+    if base.conflicts:
+        print("\nUnconfirmed Implications Not Accepted (they would contradict a rejected one):")
+        for implication, rejected in base.conflicts:
+            print(f"  {implication}   (contradicts {rejected})")
     if base.unconfirmed_implications and expert_kind == "z3":
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
-            "\n  of time at some magma size, so these implications remain open rather"
+            "\n  of time at some magma size, so these implications remain unproved rather"
             f"\n  than verified for sizes {expert.min_search_size}..{expert.max_search_size}."
         )
 
@@ -564,6 +593,16 @@ if __name__ == "__main__":
             "Seconds the Mace4 model finder gets, alongside Vampire's second "
             "search, for a finite counterexample to each law of the "
             "conclusion not proved (default: 0, Mace4 not used)."
+        ),
+    )
+    parser.add_argument(
+        "--eprover-time-limit",
+        type=int,
+        default=0,
+        metavar="S",
+        help=(
+            "Seconds the E prover gets, alongside Vampire, to decide each law "
+            "of the conclusion in a free magma's row (default: 0, E not used)."
         ),
     )
     parser.add_argument(
@@ -769,6 +808,7 @@ if __name__ == "__main__":
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,
                 mace4_time_limit=args.mace4_time_limit,
+                eprover_time_limit=args.eprover_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
                 etp_refutations=args.etp_refutations,

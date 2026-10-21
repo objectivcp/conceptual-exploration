@@ -150,25 +150,38 @@ class VampireExpert(MagmaExpert):
        at all if that is 0, which leaves the law unknown): a proof puts
        the law on the positive side of the free magma over the premise, a
        counter-satisfiable verdict on the negative side, and a timeout leaves
-       it unknown. If a law of the conclusion is on the negative side, the
-       free magma refutes the implication; if every law of the conclusion is
+       it unknown. If `eprover_time_limit` is positive, the E prover is asked
+       about each law of the conclusion as well, for that many seconds, and
+       either prover's verdict counts. The row is then completed with the
+       known implications: what the laws proved imply is proved too, and a
+       law that would imply a law on the negative side is on the negative
+       side. If a law of the conclusion is on the negative side, the free
+       magma refutes the implication; if every law of the conclusion is
        proved, so is the implication.
     4. Otherwise the model builder searches again, for each law of the
        conclusion not proved separately (`model_time_limit` seconds each, in
        parallel), and so does Mace4 if `mace4_time_limit` is positive
        (`mace4_time_limit` seconds each).
     5. Failing that, the answer is Undecided: the laws of the conclusion that
-       were proved are accepted, and the partial row goes into the context.
-       If Vampire has shown the implication false as a whole, the rest is left
-       open; if it has decided nothing against it, the rest is accepted as
-       unconfirmed.
+       were proved are accepted. If Vampire has shown the implication false as
+       a whole and only one law of the conclusion is left, that law fails in
+       the free magma, which refutes the implication: after the brief model
+       search of step 2 if the conclusion had only that law, without
+       computing the rest of the row, which the context decides already, and
+       after another brief search for a model violating that law otherwise.
+       If more laws are left, the rest is rejected; if it has decided nothing against it,
+       the rest is accepted as unconfirmed. The partial row of the free magma
+       is not added to the context: its positive side holds in every object
+       satisfying the premise, and each law on its negative side is denied by
+       an object of the context satisfying the premise, so it could refute
+       nothing that the context does not.
 
     So the expert never accepts an implication it knows to be false. The verdicts
     behind a free magma's negative side rest on Vampire's saturation, which,
     unlike a finite model, cannot be checked here. `last_status` names the
     kind of the latest answer, and `answers` counts them.
 
-    Proofs, open and unconfirmed answers are remembered, so that a resumed
+    Proofs, rejections and unconfirmed answers are remembered, so that a resumed
     exploration asking the same questions again does not run Vampire again;
     refutations are remembered by the pool and the context.
     """
@@ -186,6 +199,8 @@ class VampireExpert(MagmaExpert):
         row_time_limit: int | None = None,
         mace4_time_limit: int = 0,
         mace4: str = "mace4",
+        eprover_time_limit: int = 0,
+        eprover: str = "eprover",
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -202,6 +217,12 @@ class VampireExpert(MagmaExpert):
             self.mace4 = shutil.which(mace4)
             if self.mace4 is None:
                 raise FileNotFoundError(f"Mace4 executable {mace4!r} not found")
+        self.eprover_time_limit = eprover_time_limit
+        self.eprover = None
+        if eprover_time_limit > 0:
+            self.eprover = shutil.which(eprover)
+            if self.eprover is None:
+                raise FileNotFoundError(f"E prover executable {eprover!r} not found")
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
@@ -245,7 +266,7 @@ class VampireExpert(MagmaExpert):
             return None
         if implication in self._undecided:
             answer = self._undecided[implication]
-            self.last_status = "unconfirmed" if answer.unconfirmed else "open"
+            self.last_status = "unconfirmed" if answer.unconfirmed else "rejected"
             return answer
 
         problem = tptp_problem(implication.premise, implication.conclusion)
@@ -257,8 +278,16 @@ class VampireExpert(MagmaExpert):
             magma = self._search_model(implication, problem, self.quick_model_time_limit)
         if magma is not None:
             return self._refute(magma, eval_attrs, implication)
+        premise = frozenset(implication.premise)
+        attributes = eval_attrs or implication.conclusion
+        if status == "CounterSatisfiable" and len(implication.conclusion) == 1:
+            # The free magma over the premise violates the one law, which no
+            # other law of its row decides more about.
+            self.last_status = "free magma"
+            known = self._known.closure(premise) | premise
+            return self._completed(premise, known, set(implication.conclusion), attributes)
 
-        free = self._free_magma(implication, eval_attrs or implication.conclusion)
+        free = self._free_magma(implication, attributes)
         if free.negative & implication.conclusion:
             self.last_status = "free magma"
             return free
@@ -268,15 +297,24 @@ class VampireExpert(MagmaExpert):
                     f"Vampire refutes {implication} as a whole but proves each law of its conclusion"
                 )
             return self._prove(implication)
-        magma = self._search_models(implication, implication.conclusion - free.positive)
+        rest = implication.conclusion - free.positive
+        if status == "CounterSatisfiable" and len(rest) == 1:
+            # Only one law can fail: a brief search for a finite model
+            # violating it, and the free magma otherwise.
+            magma = self._search_model(implication, tptp_problem(premise, rest), self.quick_model_time_limit)
+            if magma is not None:
+                return self._refute(magma, eval_attrs, implication)
+            self.last_status = "free magma"
+            return self._completed(premise, set(free.positive), set(free.negative) | set(rest), attributes)
+        magma = self._search_models(implication, rest)
         if magma is not None:
             return self._refute(magma, eval_attrs, implication)
 
         # Known to be false if Vampire says so, but on which law is not known;
         # otherwise nothing speaks against the rest.
         unconfirmed = status != "CounterSatisfiable"
-        self.last_status = "unconfirmed" if unconfirmed else "open"
-        answer = Undecided(frozenset(implication.conclusion & free.positive), free, unconfirmed)
+        self.last_status = "unconfirmed" if unconfirmed else "rejected"
+        answer = Undecided(frozenset(implication.conclusion & free.positive), None, unconfirmed)
         self._undecided[implication] = answer
         return answer
 
@@ -357,21 +395,71 @@ class VampireExpert(MagmaExpert):
         premise = frozenset(implication.premise)
         implied = self._known.closure(premise) | premise
         unknown = set(attributes) - implied
-        # The conclusion first, so that its laws start first.
-        laws = sorted(unknown & implication.conclusion)
+        # The conclusion first, so that its laws start first, with E.
+        conclusion = sorted(unknown & implication.conclusion)
+        jobs = [(False, law) for law in conclusion]
+        if self.eprover is not None:
+            jobs += [(True, law) for law in conclusion]
         if self.row_time_limit > 0:
-            laws += sorted(unknown - implication.conclusion)
+            jobs += [(False, law) for law in sorted(unknown - implication.conclusion)]
 
-        def decide(law: Equation) -> str:
+        def decide(job: tuple[bool, Equation]) -> str:
+            eprover, law = job
+            if eprover:
+                return self._run_eprover(tptp_problem(premise, [law]))
             limit = self.prove_time_limit if law in implication.conclusion else self.row_time_limit
             return self._run(tptp_problem(premise, [law]), ["--mode", "casc"], limit)[0]
 
         with ThreadPoolExecutor(self.workers) as pool:
-            verdicts = dict(zip(laws, pool.map(decide, laws)))
-        proved = {law for law, v in verdicts.items() if v == "Theorem"}
-        positive = (implied & set(attributes)) | premise | proved
-        negative = {law for law, v in verdicts.items() if v == "CounterSatisfiable"}
+            verdicts = list(zip(jobs, pool.map(decide, jobs)))
+        proved = {law for (_, law), v in verdicts if v == "Theorem"}
+        negative = {law for (_, law), v in verdicts if v == "CounterSatisfiable"}
+        if proved & negative:
+            raise ValueError(f"The provers disagree on {sorted(proved & negative)} for {implication}")
+        return self._completed(premise, implied | proved, negative, attributes)
+
+    def _completed(
+        self,
+        premise: frozenset[Equation],
+        positive: set[Equation],
+        negative: set[Equation],
+        attributes: Iterable[Equation],
+    ) -> PartialObject[FreeMagma, Equation]:
+        """The free magma's row completed with the known implications: what
+        its positive side implies is positive, and a law that would imply a
+        law on its negative side is negative."""
+        attributes = set(attributes) | premise
+        positive = (self._known.closure(positive | premise) | positive | premise) & attributes
+        if positive & negative:
+            raise ValueError(f"The known implications contradict the free magma over {sorted(premise)}")
+        changed = True
+        while changed:
+            changed = False
+            for law in attributes - positive - negative:
+                if self._known.closure(positive | {law}) & negative:
+                    negative.add(law)
+                    changed = True
         return PartialObject(FreeMagma(premise), positive, negative)
+
+    def _run_eprover(self, problem: str) -> str:
+        """The SZS status of the E prover on the problem, within
+        `eprover_time_limit` seconds."""
+        with tempfile.NamedTemporaryFile("w", suffix=".p", delete=False) as file:
+            file.write(problem)
+            path = Path(file.name)
+        try:
+            run = subprocess.run(
+                [self.eprover, "--auto", f"--cpu-limit={self.eprover_time_limit}", "-s", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=self.eprover_time_limit + 30,
+            )
+        except subprocess.TimeoutExpired:
+            return "Unknown"
+        finally:
+            path.unlink(missing_ok=True)
+        status = re.search(r"SZS status (\w+)", run.stdout)
+        return status.group(1) if status else "Unknown"
 
     def _run(self, problem: str, options: list[str], time_limit: int) -> tuple[str, str]:
         with tempfile.NamedTemporaryFile("w", suffix=".p", delete=False) as file:
