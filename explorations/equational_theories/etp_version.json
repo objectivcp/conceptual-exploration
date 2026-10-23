@@ -1,17 +1,79 @@
 {
-  "description": "The ETP data behind equations_order2.json, equations_order3.json and the explorations with the ETP graph as background.",
+  "description": "The ETP data behind equations_order2.json, equations_order3.json and the explorations with the ETP graph as background and the ETP's finite magmas in the context; fetch_etp.py downloads and checks it.",
   "repository": "https://github.com/teorth/equational_theories",
   "commit": "1aec8a7acf223b7c56e4830977b6e90d4ef1924b",
   "files": {
     "equations.txt": {
+      "path": "equations.txt",
       "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/data/equations.txt",
       "last_changed": "2024-10-03",
       "sha256": "e30e1a6735011ff36fdb228d37b232eb7cda9d4a836cbbefc69c07e6871c8010"
     },
     "graph.json": {
+      "path": "graph.json",
       "url": "https://teorth.github.io/equational_theories/implications/graph.json",
       "last_modified": "2026-09-12",
       "sha256": "5e11fcb7e95c5c5446271f21e2c642ac217eedd4b8a23605b68fb0af4113d687"
+    },
+    "cancellative-manual.txt": {
+      "path": "magmas/cancellative-manual.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/cancellative-manual.txt",
+      "sha256": "1a113ab46a0dff49fdba05194c4d25a9570f6223beebe03d56c5f43ed1a89acb"
+    },
+    "extra.txt": {
+      "path": "magmas/extra.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/extra.txt",
+      "sha256": "6fe68c80c6b1c3fd3235b77f7fc9318ebd538dd84c10ccc89718ca014976c2de"
+    },
+    "manual-11x11.txt": {
+      "path": "magmas/manual-11x11.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/manual-11x11.txt",
+      "sha256": "4549ed19cfef2dd1c6dba0248d37fbea58e6edbb58795a95b17be080f452f537"
+    },
+    "manual-13x13.txt": {
+      "path": "magmas/manual-13x13.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/manual-13x13.txt",
+      "sha256": "b648bf29eecd249e942229c141e61d67c547632306bd059dd185f68e3f442d49"
+    },
+    "manual-5x5.txt": {
+      "path": "magmas/manual-5x5.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/manual-5x5.txt",
+      "sha256": "ad9176fc69522325fee7463c21747341ab17dc4f5b6083b7c91bf00858ad0013"
+    },
+    "plan.txt": {
+      "path": "magmas/plan.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/plan.txt",
+      "sha256": "8e0c00ea7b0ff4b46ba9973c8f012b62a47bf49a37249bc7f15f9e95aecd5c00"
+    },
+    "refutations2x2.txt": {
+      "path": "magmas/refutations2x2.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/refutations2x2.txt",
+      "sha256": "2178406c9e478fdb00e3ba841b84089bca02f9912c09ba8d020a44152c3cc6cd"
+    },
+    "refutations3x3.txt": {
+      "path": "magmas/refutations3x3.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/refutations3x3.txt",
+      "sha256": "2b969c517f72b70affb86638e909bfcae6b1c4d8880631e7cb67546cee39cfd7"
+    },
+    "refutations4x4.txt": {
+      "path": "magmas/refutations4x4.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/refutations4x4.txt",
+      "sha256": "7087113ce4acbb962d898be0ce6f90d2d9f554c98e09a1a6393963b0e99f94dc"
+    },
+    "vampire-generated.txt": {
+      "path": "magmas/vampire-generated.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/vampire-generated.txt",
+      "sha256": "6e101aa3196f6ff504aa6a5c51dbafc7b5994d5e37ad35e42b88d80ee30f9f37"
+    },
+    "z3-generated.txt": {
+      "path": "magmas/z3-generated.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/equational_theories/Generated/All4x4Tables/data/z3-generated.txt",
+      "sha256": "0ee4baa4390c5490df634a9f1c43cc3cf990182c706a86e67f2fcad84004d8b0"
+    },
+    "smallest_magma_examples.txt": {
+      "path": "magmas/smallest_magma_examples.txt",
+      "url": "https://raw.githubusercontent.com/teorth/equational_theories/1aec8a7acf223b7c56e4830977b6e90d4ef1924b/data/smallest_magma_examples.txt",
+      "sha256": "508e22c456cb7d2a1f4ee82c5c7d1ba307d4d64a9d8a710f93088898ba49e6e5"
     }
   }
 }

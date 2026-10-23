@@ -241,7 +241,7 @@ The exploration then only asks about premises of several laws, since every impli
 
 The graph also gives the implications that the ETP refutes, though not its counterexamples, some of which are infinite. With \code{-{}-etp-refutations}, each refuted implication $E \to F$ between listed laws is added to the context as a partial object (Section~\ref{sec:partial}): the ETP's counterexample satisfies $E$ and every law that $E$ implies, and violates $F$ and every law that implies $F$, and nothing else is known about it. These objects are reduced together with the seeded magmas (Section~\ref{sec:seeding}), so that only refutations that no other object accounts for remain; they are named \code{R}$k$ in the results. They matter when the ETP's counterexample is infinite, or finite but beyond the reach of the expert, since a question refuted only by such a magma would otherwise be accepted as unconfirmed.
 
-The ETP data used in this document are those of the ETP repository at commit \code{1aec8a7}, whose \code{equations.txt} and \code{graph.json} are recorded with their checksums in \code{etp\_version.json}.
+The ETP data used in this document are those of the ETP repository at commit \code{1aec8a7}, whose \code{equations.txt} and \code{graph.json} are recorded with their checksums in \code{etp\_version.json}. The script \code{fetch\_etp.py} downloads them, and the ETP's files of finite magmas used in Section~\ref{sec:case3}, which are recorded there as well, and checks each file against its checksum: \code{fetch\_etp.py DIR} puts \code{equations.txt} and \code{graph.json} into \code{DIR}, and the files of magmas into \code{DIR/magmas}.
 
 The script \code{etp.py} writes chosen ETP laws, together with their duals, as an equations file with the ETP's numbers as ids, so that the laws to explore can be chosen by number.
 
@@ -495,7 +495,15 @@ Since every question was decided, this is the complete implicational theory of t
 
 \subsection{Order at most three}
 
-The 149 laws have far more closed sets, and many premises combine laws whose consequences Vampire finds hard to decide. Four explorations were run, all with the ETP background, the context seeded with the ETP's finite magmas (Section~\ref{sec:etp}; 233 of 1374 tables were kept), a row time limit of 1 second, and otherwise the default limits. The second also used Mace4 in the per-law model search, for 30 seconds per law, the third, in addition, the ETP's refutations as objects, and the fourth, in addition, asked about the duals of unconfirmed implications instead of adding them (Section~\ref{sec:symmetry}). Table~\ref{tab:runs3} compares them.
+The 149 laws have far more closed sets, and many premises combine laws whose consequences Vampire finds hard to decide. Four explorations were run, all with the ETP background, the context seeded with the ETP's finite magmas (Section~\ref{sec:etp}; 233 of 1374 tables were kept), a row time limit of 1 second, and otherwise the default limits. The second also used Mace4 in the per-law model search, for 30 seconds per law, the third, in addition, the ETP's refutations as objects, and the fourth, in addition, asked about the duals of unconfirmed implications instead of adding them (Section~\ref{sec:symmetry}). Table~\ref{tab:runs3} compares them. With the ETP data fetched into \code{etp} (Section~\ref{sec:etp}), the fourth was run as
+\begin{Verbatim}
+python explorations/equational_theories/explore.py \
+    --equations explorations/equational_theories/equations_order3.json \
+    --expert vampire --vampire-row-time-limit 1 --mace4-time-limit 30 \
+    --etp-graph etp/graph.json --etp-equations etp/equations.txt \
+    --etp-refutations --ask-unconfirmed-duals --seed-context etp/magmas/*.txt
+\end{Verbatim}
+
 
 \begin{table}[ht]
 \centering
