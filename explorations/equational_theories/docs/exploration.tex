@@ -603,7 +603,7 @@ From the root of the repository:
 python explorations/equational_theories/explore.py \
     --equations my_laws.json --expert vampire
 \end{Verbatim}
-Table~\ref{tab:options} lists the options.
+Table~\ref{tab:options} lists the options. They can also be read from a TOML file with \code{-{}-config FILE}, keyed by option name without the dashes (\code{eprover-time-limit = 2}), the options given on the command line overriding the file. Paths are relative to the directory \code{explore.py} is run from, and patterns among the seed files, such as \code{etp/magmas/*.txt}, are expanded. The file \path{explorations/equational_theories/configs/order3.toml} holds the settings for the laws of order at most three, with the ETP data fetched into \code{etp} (Section~\ref{sec:etp}). Every run saves all its options as \code{settings.toml} in its results directory, so that \code{-{}-config} with that file runs it again.
 
 \begin{table}[ht]
 \centering
@@ -635,6 +635,7 @@ Table~\ref{tab:options} lists the options.
 -{}-seed-context PATH... & & add magmas to the context before starting \\
 -{}-report-every N & 1 & print every $N$th question; $0$ prints none \\
 -{}-results-dir PATH & new directory & where to save the results \\
+-{}-config FILE & & read options from a TOML file, the command line overriding it \\
 \bottomrule
 \end{tabularx}
 \caption{Options of \code{explore.py}. The Z3 options apply to the Z3 expert only, and the Vampire options to the Vampire expert only.}\label{tab:options}
@@ -683,6 +684,7 @@ The counts are those before the answer; the objects include the duals. An accept
 
 The results directory contains:
 \begin{description}
+  \item[\code{settings.toml}] every option of the run, with the commits of the library and of the ETP data, for \code{-{}-config};
   \item[\code{exploration.log}] everything printed;
   \item[\code{implications.txt}, \code{implications.json}] every implication found, together with its source, which is one of \code{background}, \code{confirmed}, \code{unconfirmed}, \code{mapped} and \code{mapped unconfirmed}; then the refuted unconfirmed implications, the rejected implications, and the conflicting ones with the rejected implication each contradicts;
   \item[\code{magmas.json}] the finite magmas of the context with their tables, under the names \code{M}$k$ and \code{M}$k$\code{\^{}op};

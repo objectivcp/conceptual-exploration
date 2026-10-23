@@ -1,0 +1,17 @@
+# The exploration of the ETP laws of order at most three, for
+#   explore.py --config explorations/equational_theories/configs/order3.toml
+# run from the repository's root after
+#   fetch_etp.py etp
+# which puts the ETP data recorded in etp_version.json into etp/.
+
+equations = "explorations/equational_theories/equations_order3.json"
+expert = "vampire"
+vampire-first-time-limit = 3
+vampire-row-time-limit = 1
+mace4-time-limit = 30
+eprover-time-limit = 2
+etp-graph = "etp/graph.json"
+etp-equations = "etp/equations.txt"
+etp-refutations = true
+ask-unconfirmed-duals = true
+seed-context = ["etp/magmas/*.txt"]

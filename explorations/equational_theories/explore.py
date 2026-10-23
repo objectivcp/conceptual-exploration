@@ -27,9 +27,12 @@ Using conceptual exploration:
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import shutil
+import subprocess
 import sys
+import tomllib
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +59,7 @@ from explorations.equational_theories.vampire import FreeMagma, VampireExpert
 
 DEFAULT_EQUATIONS_PATH = Path(__file__).resolve().parent / "equations.json"
 RESULTS_PATH = Path(__file__).resolve().parent / "results"
+ETP_VERSION = Path(__file__).resolve().parent / "etp_version.json"
 
 
 class _Tee:
@@ -516,8 +520,22 @@ def run_magma_exploration(
     return state, base
 
 
-if __name__ == "__main__":
+def build_parser() -> argparse.ArgumentParser:
+    """The command-line options of explore.py."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help=(
+            "A TOML file of options, such as the settings.toml that every run "
+            "saves with its results, keyed by option name without the dashes; "
+            "options given on the command line override it. Paths are "
+            "relative to the directory explore.py is run from, and patterns "
+            "such as etp/magmas/*.txt are expanded."
+        ),
+    )
     parser.add_argument(
         "--equations",
         type=Path,
@@ -786,7 +804,91 @@ if __name__ == "__main__":
             "already."
         ),
     )
-    args = parser.parse_args()
+    return parser
+
+
+SEED_OPTIONS = ("seed_magmas", "seed_context")
+
+
+def read_config(parser: argparse.ArgumentParser, path: Path) -> dict:
+    """The options of a TOML file, as defaults for the parser, converted as
+    the command line would convert them."""
+    actions = {action.dest: action for action in parser._actions}
+    defaults = {}
+    for key, value in tomllib.loads(path.read_text(encoding="utf-8")).items():
+        dest = key.replace("-", "_")
+        action = actions.get(dest)
+        if action is None or dest in ("help", "config"):
+            parser.error(f"{path}: unknown option {key!r}")
+        if action.type is not None:
+            value = [action.type(v) for v in value] if isinstance(value, list) else action.type(value)
+        if action.choices is not None and value not in action.choices:
+            parser.error(f"{path}: {key} must be one of {', '.join(map(str, action.choices))}")
+        defaults[dest] = value
+    return defaults
+
+
+def parse_arguments(parser: argparse.ArgumentParser, argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """The options of the command line, with those of --config as defaults,
+    and the patterns among the seed files expanded."""
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--config", type=Path, default=None)
+    known, _ = pre.parse_known_args(argv)
+    if known.config is not None:
+        parser.set_defaults(**read_config(parser, known.config))
+    args = parser.parse_args(argv)
+    for dest in SEED_OPTIONS:
+        expanded = []
+        for path in getattr(args, dest):
+            if any(c in str(path) for c in "*?["):
+                matches = sorted(glob.glob(str(path)))
+                if not matches:
+                    parser.error(f"no files match {path}")
+                expanded += map(Path, matches)
+            else:
+                expanded.append(path)
+        setattr(args, dest, expanded)
+    return args
+
+
+def _toml_value(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_toml_value(v) for v in value) + "]"
+    return json.dumps(str(value))
+
+
+def write_settings(parser: argparse.ArgumentParser, args: argparse.Namespace, path: Path) -> None:
+    """Save every option of the run, so that explore.py --config PATH runs it
+    again; the results directory is left out, so that a new one is made."""
+    root = Path(__file__).resolve().parent.parent.parent
+    try:
+        commit = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                                capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = "unknown"
+    etp = json.loads(ETP_VERSION.read_text(encoding="utf-8"))["commit"] if ETP_VERSION.exists() else "unknown"
+    lines = [
+        "# The options of an exploration, for explore.py --config; paths are",
+        "# relative to the directory explore.py was run from.",
+        f"# conceptual-exploration commit {commit}; ETP data of commit {etp} (etp_version.json).",
+        "",
+    ]
+    for action in parser._actions:
+        if action.dest in ("help", "config", "results_dir"):
+            continue
+        name = action.option_strings[0].lstrip("-")
+        value = getattr(args, action.dest)
+        lines.append(f"# {name} not set" if value is None else f"{name} = {_toml_value(value)}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = build_parser()
+    args = parse_arguments(parser, argv)
     if (args.etp_graph is None) != (args.etp_equations is None):
         parser.error("--etp-graph and --etp-equations go together")
     if args.etp_refutations and args.etp_graph is None:
@@ -799,6 +901,7 @@ if __name__ == "__main__":
     if (results_dir / "exploration.log").exists():
         parser.error(f"{results_dir} already holds results")
     results_dir.mkdir(parents=True, exist_ok=True)
+    write_settings(parser, args, results_dir / "settings.toml")
     # Line-buffered, so the log can be followed while the exploration runs.
     with open(results_dir / "exploration.log", "w", encoding="utf-8", buffering=1) as log:
         sys.stdout = _Tee(sys.__stdout__, log)
@@ -833,3 +936,7 @@ if __name__ == "__main__":
             )
         finally:
             sys.stdout = sys.__stdout__
+
+
+if __name__ == "__main__":
+    main()

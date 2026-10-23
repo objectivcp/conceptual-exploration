@@ -98,7 +98,13 @@ Magmas found earlier, such as the `magmas.json` of saved results, can be reused.
 python explorations/equational_theories/explore.py --equations explorations/equational_theories/equations_1var_order4.json --seed-context explorations/equational_theories/results/1var_order4_sizes1-6/magmas.json
 ```
 
-Each run saves its log (`exploration.log`), the implications found, each with its source (`implications.txt`, `implications.json`) together with the rejected implications, and its context (`magmas.json`, `free_magmas.json`, `etp_refutations.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
+Options can also be read from a TOML file with `--config FILE`, keyed by option name without the dashes, the command line overriding it; paths are relative to the directory `explore.py` is run from, and patterns such as `etp/magmas/*.txt` are expanded. [`configs/order3.toml`](configs/order3.toml) holds the settings for the laws of order at most three:
+
+```bash
+python explorations/equational_theories/explore.py --config explorations/equational_theories/configs/order3.toml
+```
+
+Each run saves its options, with the commits of the repository and of the ETP data, as `settings.toml`, so that `--config RESULTS_DIR/settings.toml` runs it again, and its log (`exploration.log`), the implications found, each with its source (`implications.txt`, `implications.json`) together with the rejected implications, and its context (`magmas.json`, `free_magmas.json`, `etp_refutations.json`, `context.cxt` with the objects whose rows are complete, and `partial_context.cxt` with every object, `?` marking the equations not known to hold or fail) to a new directory under `results/` named after the equations file and the starting time, or to `--results-dir PATH`.
 
 Or open the interactive Jupyter notebook:
 
