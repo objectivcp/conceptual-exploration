@@ -84,12 +84,17 @@ def save_results(
     directory: Path,
     settings: str,
     refuted: Sequence[Implication[Equation]] = (),
+    words: bool = False,
 ) -> None:
     """Write the implications found and the context of an exploration.
 
     implications.txt and implications.json list every implication found
     with its source, the rejected implications, and the unconfirmed ones not
-    accepted because they would contradict a rejected one; magmas.json holds
+    accepted because they would contradict a rejected one; rules.txt lists
+    the implications simplified into rules for reading, as printed at the
+    end of the exploration, after the background simplified the same way,
+    with each law written out, as a pair of words
+    if `words` (for semigroups); magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
     with their rows, which Vampire may have left partial; etp_refutations.json
     holds the objects standing for refutations of the ETP graph, and
@@ -111,6 +116,62 @@ def save_results(
     ids = lambda eqs: [ident(eq) for eq in sorted(eqs, key=order)]
 
     numbered = {eq.id: eq for eq in equations if eq.id is not None}
+
+    def law(eq: Equation) -> str:
+        sides = "".join(eq.lhs.factors()), "".join(eq.rhs.factors())
+        # Associativity itself has the same words on both sides.
+        if words and sides[0] != sides[1]:
+            return f"{label(eq)}: {sides[0]} = {sides[1]}"
+        return f"{label(eq)}: {eq.lhs} = {eq.rhs}"
+    laws = lambda eqs: ", ".join(law(eq) for eq in sorted(eqs, key=order)) or "∅"
+    # The background, simplified the same way into a cover of its own.
+    background = ExplorationBase(attributes=base.attributes, mappings=base.mappings)
+    for implication, source in base.implication_sources.items():
+        if source is ImplicationSource.BACKGROUND:
+            background.accept(implication, ImplicationSource.CONFIRMED)
+
+    # Each rule is followed by its images under the symmetries, other than
+    # itself, so that the file lists everything without applying them.
+    suffix = lambda j: "^op" if len(base.mappings) == 1 else f"^{j + 1}"
+    mapped_source = {
+        ImplicationSource.BACKGROUND: "mapped background",
+        ImplicationSource.CONFIRMED: "mapped",
+        ImplicationSource.UNCONFIRMED: "mapped unconfirmed",
+    }
+
+    def listed(rules, tag, source=None):
+        seen = set()
+        for k, rule in enumerate(rules, start=1):
+            own = source or rule.source
+            entries = [(f"{tag}{k}", rule.premise, rule.conclusion, own.value if own else "background")]
+            # Unconfirmed implications that the base does not map stand for themselves.
+            mappings = base.mappings if base.map_unconfirmed or own is not ImplicationSource.UNCONFIRMED else ()
+            for j, mapping in enumerate(mappings):
+                image = (frozenset(map(mapping, rule.premise)), frozenset(map(mapping, rule.conclusion)))
+                if image != (rule.premise, rule.conclusion):
+                    entries.append((f"{tag}{k}{suffix(j)}", *image, f"{mapped_source[own]} from [{tag}{k}]"))
+            for name, premise, conclusion, provenance in entries:
+                text = f"{laws(premise)}  =>  {'everything' if rule.everything else laws(conclusion)}"
+                if text not in seen:
+                    seen.add(text)
+                    yield f"[{name}] {text}   ({provenance})"
+
+    rules = simplified_rules(base)
+    background_rules = simplified_rules(background)
+    lines = [
+        f"The implications found by an exploration ({settings}), simplified for reading, each with "
+        "its provenance: premises and conclusions cut to what the symmetries and the other rules do "
+        "not give, and the rules then redundant dropped, each rule followed by its images under the "
+        "symmetries. The background rules entail the background, and all rules together everything "
+        "found.",
+        "",
+        f"Background ({len(background_rules)} rules and their images):",
+        *listed(background_rules, "B", ImplicationSource.BACKGROUND),
+        "",
+        f"Rules ({len(rules)} rules, as numbered in exploration.log, and their images):",
+        *listed(rules, ""),
+    ]
+    (directory / "rules.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def preimage(version, laws):
         # The laws a version satisfies where its original satisfies `laws`:
@@ -349,10 +410,10 @@ def run_magma_exploration(
 
     # Set up duality mapping if symmetry is enabled; in semigroups, laws are
     # compared up to associativity.
+    associativity = Equation.parse("x * (y * z) = (x * y) * z")
+    associative = any(eq.is_equivalent_to(associativity) for eq in assumed)
     mappings = []
     if use_duality_symmetry:
-        associativity = Equation.parse("x * (y * z) = (x * y) * z")
-        associative = any(eq.is_equivalent_to(associativity) for eq in assumed)
         mappings.append(ETP.get_duality_mapping(equations, associative=associative))
 
     def vampire_expert() -> VampireExpert:
@@ -535,7 +596,7 @@ def run_magma_exploration(
                 f"{background_transient_order or background_order}, premise size "
                 f"{background_premise_size or 'any'}"
             )
-        save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted])
+        save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted], words=associative)
         print(f"\nResults saved to {results_dir}.")
 
     return state, base

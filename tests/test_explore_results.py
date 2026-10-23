@@ -2,8 +2,8 @@
 
 import json
 
-from conceptual_exploration import PartialObject
-from conceptual_exploration.exploration.base import ExplorationBase
+from conceptual_exploration import Implication, PartialObject
+from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from explorations.equational_theories.etp import EtpRefutation
 from explorations.equational_theories.explore import save_results
 from explorations.equational_theories.magma import ETP, Equation, Magma
@@ -57,3 +57,30 @@ def test_with_associativity_assumed_the_duality_compares_words(tmp_path):
     run_magma_exploration(path, max_search_size=2, report_interval=0, results_dir=tmp_path / "out", axioms=[4512])
     rules = json.loads((tmp_path / "out" / "implications.json").read_text())
     assert {r["source"] for r in rules} >= {"mapped"}
+
+
+def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(tmp_path):
+    idempotent = Equation.parse("x = x * x", id=3)
+    other = Equation.parse("x = x * (x * x)", id=8)
+    left, right = Equation.parse("x = x * y", id=4), Equation.parse("x = y * x", id=5)
+    laws = [idempotent, left, right, other, Equation.parse("x * (y * z) = (x * y) * z", id=4512)]
+    background = [Implication([left], [idempotent]), Implication([right], [idempotent])]
+    base = ExplorationBase(attributes=laws, background_implications=background,
+                           mappings=[ETP.get_duality_mapping(laws, associative=True)])
+    base.accept(Implication([idempotent], [other]), ImplicationSource.CONFIRMED)
+    base.add_background(Implication([], [laws[-1]]))
+    save_results(base, laws, tmp_path, "test", words=True)
+    rules = (tmp_path / "rules.txt").read_text().splitlines()
+    assert rules[2:] == [
+        "Background (2 rules and their images):",
+        "[B1] Eq5: x = yx  =>  Eq3: x = xx   (background)",
+        "[B1^op] Eq4: x = xy  =>  Eq3: x = xx   (mapped background from [B1])",
+        "[B2] ∅  =>  Eq4512: (x * (y * z)) = ((x * y) * z)   (background)",
+        "",
+        "Rules (1 rules, as numbered in exploration.log, and their images):",
+        "[1] Eq3: x = xx  =>  Eq8: x = xxx   (confirmed)",
+    ]
+    save_results(base, laws, tmp_path, "test")
+    assert (tmp_path / "rules.txt").read_text().splitlines()[-1] == (
+        "[1] Eq3: x = (x * x)  =>  Eq8: x = (x * (x * x))   (confirmed)"
+    )
