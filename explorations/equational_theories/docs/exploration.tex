@@ -64,7 +64,7 @@ From the point of view of Formal Concept Analysis, the natural object of study i
 \]
 where $M$ is a finite set of laws and $\mathcal{G}$ is the class of all magmas. Its object class is not even a set, but its implications are perfectly well defined: $P \to C$ holds in $\mathbb{K}_{\mathrm{Mag}}$ if every magma satisfying all laws of $P$ satisfies all laws of $C$. By Birkhoff's completeness theorem, this is the case exactly when every law of $C$ can be derived from the laws of $P$ by the rules of equational logic. Its intents are the sets $\Th(G) \cap M$ for magmas $G$, the traces on $M$ of equational theories. Attribute exploration is the natural tool for computing the canonical basis of $\mathbb{K}_{\mathrm{Mag}}$ and, with it, all its intents: an expert either confirms an implication, ideally by a proof, or refutes it by a magma.
 
-The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31} and~\ref{sec:case3} discuss three explorations, and Section~\ref{sec:guide} explains how to run one's own.
+The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31}, \ref{sec:case3} and~\ref{sec:semigroups} discuss four explorations, and Section~\ref{sec:guide} explains how to run one's own.
 
 %======================================================================
 \section{Attribute exploration as implemented}\label{sec:library}
@@ -576,6 +576,68 @@ Longer runs on single questions did not help either: the conjecture that, given 
 
 \paragraph{What the results say.}
 In the fourth exploration, the 767 confirmed implications, together with the background and their duals, are proved. Every non-implication witnessed by a finite magma is checked, those witnessed by free magmas rest on Vampire's saturation, and those witnessed by the ETP's refutations rest on the ETP. The 3,671 closed sets of the theory would be correct if the 93 unconfirmed implications were true, but two of them, an implication and its dual, are false: the E prover showed that none of the 60 laws of their conclusions follows from their premises (Section~\ref{sec:free}). E decided none of the laws of the other 91 within 10 seconds each, and showed for each of the 5 rejected implications that none of their conclusion laws follows, so that free magmas refute them. The confirmed implications, the background and their duals generate a theory with 11,097 closed sets, an upper bound on the number of closed sets of the true theory, since each confirmed implication holds. None of the 93 is refuted by a single-premise refutation of the ETP, which are all in the context, and whether they hold in finite magmas is not known. Settling the unconfirmed implications and finding counterexamples to the rejected ones needs either proofs that Vampire and Prover9 do not find within a minute, or counterexamples that Vampire and Mace4 do not find: finite magmas beyond their reach, or free magmas whose rows Vampire cannot decide. A comparison with the semilattice of the work in progress mentioned in~\cite{LF26b} would settle many of them, or reveal errors on either side.
+
+%======================================================================
+\section{Case study: semigroup laws of order at most four}\label{sec:semigroups}
+
+Le Floch~\cite{LF26b} determined all implications between conjunctions of the laws of order at most four on semigroups: the 653 ETP laws whose two sides are right-associated, which are the ETP's forms of the laws on an associative operation, fall into 122 classes of equivalent laws and generate 456 theories (``associative theories''), found with Prover9, Mace4 and Vampire, with the proofs formalized in Lean. This section reproduces that result by attribute exploration, from the ETP's data alone.
+
+\subsection{Setup}
+
+\paragraph{Objects.} Option \code{-{}-axiom 4512} makes every object a semigroup: associativity is concluded from the empty premise in the background, so that every question's premise contains it, and of the ETP's 1374 finite magmas only the 24 associative ones are kept, of which the 12 that are not redundant are seeded into the context. The duality compares laws as words (Section~\ref{sec:duality}).
+
+\paragraph{Laws.} The 653 laws were selected from the ETP's list by the syntactic condition alone, both sides right-associated and order at most four; their number agrees with Le Floch's. The ETP graph, whose implications hold in all magmas and so in all semigroups, splits them into 219 classes. Its equivalences are only those that hold without associativity; the ones that associativity adds, which lead to Le Floch's 122 classes, are left to the exploration. One law of each class is enough, but the reversal of a law's words, its dual among semigroups, is equivalent to its mirror image only modulo associativity and need not lie in the class of that image, so the 219 first laws of the classes are not closed under duality. Adding their reversals (28 laws) and associativity gives the 248 laws of \code{equations\_semigroup.json}, written by \code{etp.py -{}-max-order 4 -{}-semigroup} (Section~\ref{sec:guide}). The ETP graph gives 228 background implications between them.
+
+\paragraph{Expert.} The Vampire expert ran with the settings of \code{configs/semigroup.toml}: 3 seconds on all cores for the first proof attempt, E for 2 seconds before Vampire in the free magma's row, row time limit~$0$, and, in the per-law model search (Section~\ref{sec:vampire}), 300 seconds for Vampire's model builder per law and 600 seconds for Mace4's size sweep, both with simplified premises:
+\begin{Verbatim}
+python explorations/equational_theories/explore.py \
+    --config explorations/equational_theories/configs/semigroup.toml
+\end{Verbatim}
+
+\subsection{Results}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}Xr@{}}
+\toprule
+Laws explored (of the 653, with associativity) & 248 \\
+Background implications from the ETP graph & 228 \\
+Questions & 251 \\
+\quad proved & 204 \\
+\quad refuted by a finite model found for the question & 40 \\
+\quad refuted by a model in the pool & 7 \\
+\quad refuted by a free magma, unconfirmed or rejected & 0 \\
+Canonical basis relative to the background, up to duality & 214 \\
+Closed sets of the theory & 456 \\
+Rounds & 1 \\
+Running time & 18 min \\
+\bottomrule
+\end{tabularx}
+\caption{The exploration of the semigroup laws of order at most four. The 47 counterexamples are semigroups of sizes 3 to 12, 16, 27 and 32, found by Vampire's model builder (30) and Mace4 (17); seven of them, found while the search went on for other laws of a question, answered a later question from the pool. The canonical basis has 343 implications in all, 71 of them self-dual; the program prints 204 rules. The running time is the wall-clock time on an 8-core laptop.}\label{tab:semigroups}
+\end{table}
+
+Every question was decided (Table~\ref{tab:semigroups}): the 204 accepted implications are proved, and the 47 counterexamples are finite semigroups, checked against every law, so that no answer rests on a prover's saturation.
+
+\paragraph{Comparison with Le Floch's result.} A law of the 653 holds in a closed set of the exploration when the first law of its ETP class does. So counted, the 456 closed sets are exactly Le Floch's 456 theories, and the classes of laws with the same closure are his 122, except that the exploration puts $x = x$ and associativity in one class, associativity being assumed. The exploration thus reproduces the classes, the theories and the implications between them without using any of his data.
+
+\paragraph{The hardest questions.} Four questions needed large models. Two have the premises of theories that Le Floch singles out~\cite[Section~4]{LF26b}: the premise of question~216 generates the theory of $\Eq{56} \wedge \Eq{75}$, whose smallest non-commutative model has 27 elements, and that of question~159 the theory of $\Eq{440} \wedge \Eq{513}$, whose smallest model violating $\Eq{504}$, $x = y(y(x(yy)))$, has 32. Mace4's sweep found both models. Questions~208 and~233 needed models of 16 elements, found by Mace4 and by Vampire's model builder.
+
+\subsection{How the model search was extended}
+
+The per-law model search of Section~\ref{sec:vampire} took its present form during this case study. A first exploration of Le Floch's 122 class representatives with associativity, without duality and with the former per-law search (10 seconds for Vampire's model builder and 30 for Mace4, both trying the sizes in increasing order, on the full premise), accepted three false implications as unconfirmed, which, written as words,
+\begin{itemize}
+  \item $xx = xyzy$, $xyz = xzy \to xx = xyzw$;
+  \item $xx = yyxx$, $xyy = yxx$, $xyz = zyx \to xx = yxzw$;
+  \item $xx = yzyx$, $xyz = yzx \to xx = yxzw$,
+\end{itemize}
+for which the premises are given in simplified form. They hid 8 of the 456 theories, and two true implications were never asked. One semigroup of 16 elements refutes all three; for the third premise, Mace4 shows that no smaller one exists. Separate tests showed what finds such models:
+\begin{itemize}
+  \item \emph{A fixed size.} Mace4 searching sizes in increasing order reached size~13 in 15 minutes without a model, while at size~16 alone it found one in 213 seconds. Ruling out the sizes below the smallest model is what takes the time, roughly doubling from one size to the next.
+  \item \emph{The simplified premise.} At size~16, Mace4 needed 213 seconds with the simplified premise of the first implication and 897 with its full premise of 25 laws; for the third implication, Vampire's model builder found a model in 112 seconds with the simplified premise and none in 15 minutes with the full one, which it left at size~8. For magmas of order three, the full premise had done slightly better (Section~\ref{sec:case3}), hence the option.
+  \item \emph{Not saturation.} E and Vampire, 10 minutes each, saturated none of the three problems, so longer proof attempts in the free magma's row would not have helped.
+\end{itemize}
+Larger sizes are not hopeless for laws whose two sides are products, such as those of the three implications: adding a copy of an element, with the same row and column, preserves such a law and its failures, so that a counterexample of size $n$ gives counterexamples of every larger size, and a search at any size at least the smallest succeeds. The size sweep exploits this on all cores without guessing the size, and the search goes on for the laws a model does not violate, so that the pool answers the next questions about the same premise. With these changes and duality, an exploration of Le Floch's representatives together with the reversals of 11 of them, which his classes contain, already gave his 456 theories; the exploration of this section chooses its laws from the ETP's classes instead.
 
 %======================================================================
 \section{User's guide}\label{sec:guide}
