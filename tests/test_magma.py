@@ -38,6 +38,25 @@ def test_term_duality():
     assert str(dual_t) == "(z * (y * x))"
 
 
+def test_a_term_is_right_associated_by_its_word():
+    t = Term.parse("((x * y) * x) * z")
+    assert t.factors() == ["x", "y", "x", "z"]
+    assert str(t.right_associated()) == "(x * (y * (x * z)))"
+
+
+def test_in_semigroups_the_dual_of_a_law_reverses_its_words():
+    # The dual of x = y(x(yy)) is ((yy)x)y = x, which only up to
+    # associativity is x = y(y(xy)).
+    eq66 = Equation.parse("x = y * (x * (y * y))", id=66)
+    eq73 = Equation.parse("x = y * (y * (x * y))", id=73)
+    with pytest.raises(ValueError, match="not closed under duality"):
+        ETP.get_duality_mapping([eq66, eq73])
+    dual = ETP.get_duality_mapping([eq66, eq73], associative=True)
+    assert dual(eq66) == eq73 and dual(eq73) == eq66
+    with pytest.raises(ValueError, match="not closed under duality"):
+        ETP.get_duality_mapping([eq66], associative=True)
+
+
 def test_equation_parsing_and_holds():
     comm = Equation.parse("x * y = y * x", name="Commutativity")
     assoc = Equation.parse("(x * y) * z = x * (y * z)", name="Associativity")

@@ -21,7 +21,9 @@ which covers refutations by infinite magmas.
 
 Laws that imply each other are interchangeable in an implication, so an
 exploration needs only one law of each class of equivalent laws:
-`representatives` chooses them, closed under duality.
+`representatives` chooses them, closed under duality, and
+`semigroup_representatives` among the right-associated laws, closed under
+duality among semigroups.
 """
 
 from __future__ import annotations
@@ -226,6 +228,39 @@ def representatives(
     return dict(sorted(chosen.items()))
 
 
+def right_associated(equation: Equation) -> bool:
+    """Whether both sides of a law are right-associated, which makes it the
+    ETP's form of a law on semigroups."""
+    return equation.lhs == equation.lhs.right_associated() and equation.rhs == equation.rhs.right_associated()
+
+
+def semigroup_representatives(
+        laws: EtpLaws,
+        classes: Sequence[Sequence[int]],
+) -> dict[int, list[int]]:
+    """The first law of each class of equivalent right-associated laws, and
+    the reversal of each law chosen, each mapped to the members of its class.
+
+    Among semigroups, the dual of a law is the law with both words reversed,
+    whose right-associated form is another ETP law, possibly in a class
+    whose first law is a different one: it is chosen as well, so that the
+    laws chosen are closed under duality. The classes must contain the
+    reversals of their laws.
+    """
+    class_of = {number: list(members) for members in classes for number in members}
+
+    def reversal(number: int) -> int:
+        dual = laws.law(number).dual()
+        number_of_reversal = laws.id_of(Equation(dual.lhs.right_associated(), dual.rhs.right_associated()))
+        if number_of_reversal not in class_of:
+            raise ValueError(f"The reversal of Eq{number} is in none of the classes")
+        return number_of_reversal
+
+    chosen = {members[0] for members in classes}
+    chosen |= {reversal(number) for number in chosen}
+    return {number: class_of[number] for number in sorted(chosen)}
+
+
 def graph_background(
         equations: Sequence[Equation],
         graph: ImplicationGraph,
@@ -358,6 +393,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                         help="choose representatives of the laws of at most K operations; needs --graph")
     parser.add_argument("--graph", type=Path, metavar="PATH",
                         help=f"the ETP's graph.json ({GRAPH_URL})")
+    parser.add_argument("--semigroup", action="store_true",
+                        help="with --max-order, choose among the right-associated laws, the laws on semigroups, "
+                             "closed under reversing words, and add associativity (Eq4512)")
     parser.add_argument("-o", "--output", type=Path, metavar="PATH",
                         help="where to write the equations (default: standard output)")
     args = parser.parse_args(argv)
@@ -365,14 +403,23 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("give either law numbers or --max-order")
     if (args.max_order is None) != (args.graph is None):
         parser.error("--max-order and --graph go together")
+    if args.semigroup and args.max_order is None:
+        parser.error("--semigroup needs --max-order")
     laws = EtpLaws.load(args.etp_equations)
     if args.max_order is None:
         entries = [{"id": eq.id, "equation": f"{eq.lhs} = {eq.rhs}"} for eq in laws.with_duals(args.numbers)]
     else:
         graph = ImplicationGraph.load(args.graph)
         numbers = [eq.id for eq in laws.laws if order(eq) <= args.max_order]
+        if args.semigroup:
+            numbers = [n for n in numbers if right_associated(laws.law(n))]
         classes = graph.equivalence_classes(numbers)
-        chosen = representatives(laws, classes)
+        if args.semigroup:
+            chosen = semigroup_representatives(laws, classes)
+            associativity = laws.id_of(Equation.parse("x * (y * z) = (x * y) * z"))
+            chosen[associativity] = [associativity]
+        else:
+            chosen = representatives(laws, classes)
         entries = [
             {"id": number, "equation": f"{laws.law(number).lhs} = {laws.law(number).rhs}", "class": members}
             for number, members in chosen.items()

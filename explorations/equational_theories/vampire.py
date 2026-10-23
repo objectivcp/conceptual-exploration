@@ -25,10 +25,13 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
+import time
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from itertools import count
 from pathlib import Path
 
 from conceptual_exploration.core.context import PartialObject
@@ -140,15 +143,19 @@ class FreeMagma:
 class VampireExpert(MagmaExpert):
     """Validates implications between magma laws with Vampire.
 
-    The pool of magmas is checked first, as by MagmaExpert. Then:
-
-    1. Vampire runs its portfolio of strategies on the implication, on all
+    1. The pool of magmas is checked first, as by MagmaExpert, and so are the
+       answers remembered (see below).
+    2. Vampire runs its portfolio of strategies on the implication, on all
        `workers` cores at once (`first_time_limit` seconds, by default
        `prove_time_limit`); a proof confirms it.
-    2. Its finite model builder briefly searches for a counterexample of any
+    3. Its finite model builder briefly searches for a counterexample of any
        size (`quick_model_time_limit` seconds). A model is checked against the
        laws and joins the pool.
-    3. Otherwise Vampire is asked about every law that the premise does not
+    4. If the conclusion has a single law and step 2 ended with
+       CounterSatisfiable, the free magma over the premise violates that law
+       and refutes the implication, with no further call: the rest of its
+       row is decided by the context already.
+    5. Otherwise Vampire is asked about every law that the premise does not
        imply by the background implications and those proved so far,
        separately and in parallel, for `prove_time_limit` seconds each if the
        law is in the conclusion and `row_time_limit` seconds otherwise (not
@@ -163,24 +170,33 @@ class VampireExpert(MagmaExpert):
        law that would imply a law on the negative side is on the negative
        side. If a law of the conclusion is on the negative side, the free
        magma refutes the implication; if every law of the conclusion is
-       proved, so is the implication.
-    4. Otherwise the model builder searches again, for each law of the
-       conclusion not proved separately (`model_time_limit` seconds each, in
-       parallel), and so does Mace4 if `mace4_time_limit` is positive
-       (`mace4_time_limit` seconds each).
-    5. Failing that, the answer is Undecided: the laws of the conclusion that
-       were proved are accepted. If Vampire has shown the implication false as
-       a whole and only one law of the conclusion is left, that law fails in
-       the free magma, which refutes the implication: after the brief model
-       search of step 2 if the conclusion had only that law, without
-       computing the rest of the row, which the context decides already, and
-       after another brief search for a model violating that law otherwise.
-       If more laws are left, the rest is rejected; if it has decided nothing against it,
-       the rest is accepted as unconfirmed. The partial row of the free magma
-       is not added to the context: its positive side holds in every object
-       satisfying the premise, and each law on its negative side is denied by
-       an object of the context satisfying the premise, so it could refute
-       nothing that the context does not.
+       proved, so is the implication. If step 2 ended with
+       CounterSatisfiable and a single law of the conclusion is left, that
+       law fails in the free magma, which refutes the implication, after
+       another brief search for a finite model violating it.
+    6. Otherwise finite models are searched for, of the premise and violating
+       a law of the conclusion not proved, one law at a time, on all cores:
+       by Vampire's model builder (`model_time_limit` seconds per law) and,
+       if `mace4_time_limit` is positive, by Mace4, which sweeps the sizes in
+       parallel: each of its searches is for one law at one size, and a core
+       that finishes one takes the smallest size not yet started (for
+       `mace4_time_limit` seconds in all). Each model found is checked and
+       joins the pool, and the searches for the laws it violates stop; the
+       others go on until every law is violated or the time is up. The
+       smallest model refutes the implication, and the pool the next questions about
+       the same premise. With `model_premise` "simplified", the searches use a
+       subset of the premise whose closure under the background implications
+       and those proved is the whole premise, keeping the laws every object
+       satisfies, which the background assumes rather than derives; with
+       "both", both premises are searched.
+    7. Failing that, the answer is Undecided: the laws of the conclusion that
+       were proved are accepted. If Vampire has shown the implication false
+       as a whole, the rest is rejected; if it has decided nothing against
+       it, the rest is accepted as unconfirmed. The partial row of the free
+       magma is not added to the context: its positive side holds in every
+       object satisfying the premise, and each law on its negative side is
+       denied by an object of the context satisfying the premise, so it could
+       refute nothing that the context does not.
 
     So the expert never accepts an implication it knows to be false. The verdicts
     behind a free magma's negative side rest on Vampire's saturation, which,
@@ -189,7 +205,9 @@ class VampireExpert(MagmaExpert):
 
     Proofs, rejections and unconfirmed answers are remembered, so that a resumed
     exploration asking the same questions again does not run Vampire again;
-    refutations are remembered by the pool and the context.
+    refutations are remembered by the pool and the context. So is each law
+    whose model search in step 6 ran out of time, with its premise, so that
+    the next question about them skips that search.
     """
 
     def __init__(
@@ -208,6 +226,7 @@ class VampireExpert(MagmaExpert):
         eprover_time_limit: int = 0,
         eprover: str = "eprover",
         first_time_limit: int | None = None,
+        model_premise: str = "full",
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -231,6 +250,9 @@ class VampireExpert(MagmaExpert):
             self.eprover = shutil.which(eprover)
             if self.eprover is None:
                 raise FileNotFoundError(f"E prover executable {eprover!r} not found")
+        if model_premise not in ("full", "simplified", "both"):
+            raise ValueError(f"model_premise must be full, simplified or both, not {model_premise!r}")
+        self.model_premise = model_premise
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
@@ -239,6 +261,8 @@ class VampireExpert(MagmaExpert):
         # premise satisfies a law without asking Vampire.
         self._known = ImplicationTheory[Equation](background)
         self._undecided: dict[Implication[Equation], Undecided] = {}
+        # Premises and laws whose model search in step 6 ran out of time.
+        self._searched: set[tuple[frozenset[Equation], Equation]] = set()
 
     def validate(
         self,
@@ -315,9 +339,11 @@ class VampireExpert(MagmaExpert):
                 return self._refute(magma, eval_attrs, implication)
             self.last_status = "free magma"
             return self._completed(premise, set(free.positive), set(free.negative) | set(rest), attributes)
-        magma = self._search_models(implication, rest)
-        if magma is not None:
-            return self._refute(magma, eval_attrs, implication)
+        models = self._search_models(implication, rest)
+        if models:
+            # The pool answers the next questions about the same premise.
+            self.cached_magmas.extend(models[1:])
+            return self._refute(models[0], eval_attrs, implication)
 
         # Known to be false if Vampire says so, but on which law is not known;
         # otherwise nothing speaks against the rest.
@@ -356,39 +382,98 @@ class VampireExpert(MagmaExpert):
         self,
         implication: Implication[Equation],
         laws: Iterable[Equation],
-    ) -> Magma | None:
-        """A finite model of the premise violating one of the laws, searched
-        for each law separately and in parallel, which is much faster than a
-        search for a model violating their conjunction, by Vampire and, if
-        enabled, by Mace4."""
+    ) -> list[Magma]:
+        """Step 6: finite models of the premise, each violating a law, searched
+        for one law at a time, which is much faster than a search for a model
+        violating their conjunction, by Vampire and, if enabled, by Mace4 at
+        one size at a time. The searches for a law stop at the first model
+        violating it; all models found are returned, the smallest first."""
         premise = frozenset(implication.premise)
-        searches = [(False, law) for law in sorted(laws)]
-        if self.mace4 is not None:
-            searches += [(True, law) for law in sorted(laws)]
+        laws = sorted(law for law in laws if (premise, law) not in self._searched)
+        violated = {law: threading.Event() for law in laws}
+        premises = self._model_premises(premise)
+        deadline = time.monotonic() + self.mace4_time_limit
 
-        def search(job: tuple[bool, Equation]) -> Magma | None:
-            mace4, law = job
-            if mace4:
-                return self._search_mace4_model(implication, law)
-            problem = tptp_problem(premise, [law])
-            return self._search_model(implication, problem, self.model_time_limit)
+        def searches():
+            for searched in premises:
+                for law in laws:
+                    problem = tptp_problem(searched, [law])
+                    yield law, lambda problem=problem, law=law: self._model(
+                        implication,
+                        self._run(problem, ["--saturation_algorithm", "fmb"], self.model_time_limit, violated[law])[1],
+                    )
+            if self.mace4 is None:
+                return
+            for size in count(2):
+                for searched in premises:
+                    for law in laws:
+                        left = int(deadline - time.monotonic())
+                        if left < 1 or all(event.is_set() for event in violated.values()):
+                            return
+                        if not violated[law].is_set():
+                            yield law, lambda searched=searched, law=law, size=size, left=left: (
+                                self._search_mace4_model(implication, searched, law, size, left, violated[law])
+                            )
 
-        with ThreadPoolExecutor(self.workers) as pool:
-            return next((m for m in pool.map(search, searches) if m is not None), None)
+        queue = searches()
+        lock = threading.Lock()
+        found: list[Magma] = []
 
-    def _search_mace4_model(self, implication: Implication[Equation], law: Equation) -> Magma | None:
-        limit = self.mace4_time_limit
-        try:
-            run = subprocess.run(
-                [self.mace4, "-n", "2", "-N", "-1", "-t", str(limit)],
-                input=ladr_problem(implication.premise, law),
-                capture_output=True,
-                text=True,
-                timeout=limit + 30,
-            )
-        except subprocess.TimeoutExpired:
-            return None
-        table = parse_mace4_model(run.stdout)
+        def work() -> None:
+            while True:
+                with lock:
+                    law, search = next(queue, (None, None))
+                if search is None:
+                    return
+                if violated[law].is_set():
+                    continue
+                magma = search()
+                if magma is not None:
+                    with lock:
+                        found.append(magma)
+                        for other in laws:
+                            if not magma.holds(other):
+                                violated[other].set()
+
+        threads = [threading.Thread(target=work) for _ in range(self.workers)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self._searched.update((premise, law) for law in laws if not violated[law].is_set())
+        # Searches at several sizes run at once, so a larger model may come first.
+        return sorted(found, key=lambda magma: magma.size)
+
+    def _model_premises(self, premise: frozenset[Equation]) -> list[frozenset[Equation]]:
+        """The premises the model searches use, by `model_premise`."""
+        if self.model_premise == "full":
+            return [premise]
+        # The laws every object satisfies are assumed, not derived, so a
+        # model of the rest need not satisfy them: they are kept.
+        assumed = premise & self._known.closure(set())
+        simplified = frozenset(self._known.simplify(Implication(premise - assumed, frozenset())).premise) | assumed
+        if self.model_premise == "simplified" or simplified == premise:
+            return [simplified]
+        return [premise, simplified]
+
+    def _search_mace4_model(
+        self,
+        implication: Implication[Equation],
+        premise: Iterable[Equation],
+        law: Equation,
+        size: int,
+        time_limit: int,
+        cancelled: threading.Event | None = None,
+    ) -> Magma | None:
+        """A model of `premise` of the given size violating `law`, by Mace4,
+        checked against the whole implication."""
+        output = self._execute(
+            [self.mace4, "-n", str(size), "-N", str(size), "-t", str(time_limit)],
+            ladr_problem(premise, law),
+            time_limit + 30,
+            cancelled,
+        )
+        table = parse_mace4_model(output)
         if table is None:
             return None
         return self._checked_model(implication, table, "Mace4")
@@ -471,20 +556,52 @@ class VampireExpert(MagmaExpert):
         status = re.search(r"SZS status (\w+)", run.stdout)
         return status.group(1) if status else "Unknown"
 
-    def _run(self, problem: str, options: list[str], time_limit: int) -> tuple[str, str]:
+    def _run(
+        self,
+        problem: str,
+        options: list[str],
+        time_limit: int,
+        cancelled: threading.Event | None = None,
+    ) -> tuple[str, str]:
         with tempfile.NamedTemporaryFile("w", suffix=".p", delete=False) as file:
             file.write(problem)
             path = Path(file.name)
         try:
-            run = subprocess.run(
-                [self.vampire, *options, "--time_limit", str(time_limit), str(path)],
-                capture_output=True,
-                text=True,
+            output = self._execute(
+                [self.vampire, *options, "--time_limit", str(time_limit), str(path)], None, time_limit + 30, cancelled
             )
         finally:
             path.unlink(missing_ok=True)
-        status = re.search(r"SZS status (\w+)", run.stdout)
-        return (status.group(1) if status else "Unknown"), run.stdout
+        status = re.search(r"SZS status (\w+)", output)
+        return (status.group(1) if status else "Unknown"), output
+
+    @staticmethod
+    def _execute(
+        command: list[str],
+        given: str | None,
+        timeout: float,
+        cancelled: threading.Event | None,
+    ) -> str:
+        """The output of `command`, given `given` as input; empty if it is
+        killed, when `cancelled` is set or after `timeout` seconds."""
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.DEVNULL if given is None else subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+        give_up = time.monotonic() + timeout
+        while True:
+            try:
+                return process.communicate(given, timeout=0.2)[0]
+            except subprocess.TimeoutExpired:
+                # Input is sent on the first call only.
+                given = None
+                if (cancelled is not None and cancelled.is_set()) or time.monotonic() > give_up:
+                    process.kill()
+                    process.communicate()
+                    return ""
 
     @staticmethod
     def _model(implication: Implication[Equation], output: str) -> Magma | None:

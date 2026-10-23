@@ -1,0 +1,18 @@
+# The exploration of the ETP laws on semigroups of order at most four, for
+#   explore.py --config explorations/equational_theories/configs/semigroup.toml
+# run from the repository's root after
+#   fetch_etp.py etp
+# which puts the ETP data recorded in etp_version.json into etp/.
+
+equations = "explorations/equational_theories/equations_semigroup.json"
+axiom = ["4512"]
+expert = "vampire"
+vampire-first-time-limit = 3
+vampire-row-time-limit = 0
+vampire-model-time-limit = 300
+mace4-time-limit = 600
+model-premise = "simplified"
+eprover-time-limit = 2
+etp-graph = "etp/graph.json"
+etp-equations = "etp/equations.txt"
+seed-context = ["etp/magmas/*.txt"]

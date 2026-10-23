@@ -58,6 +58,21 @@ class Term:
     def __lt__(self, other: Term) -> bool:
         return str(self) < str(other)
 
+    def factors(self) -> list[str]:
+        """Return the variables of the term from left to right: its word,
+        which determines the term up to associativity."""
+        if isinstance(self, Var):
+            return [self.name]
+        return self.left.factors() + self.right.factors()
+
+    def right_associated(self) -> Term:
+        """Return the right-associated term with the same word."""
+        names = self.factors()
+        term: Term = Var(names[-1])
+        for name in reversed(names[:-1]):
+            term = Op(Var(name), term)
+        return term
+
     @staticmethod
     def parse(s: str) -> Term:
         """Parse a magma term from a string (e.g. 'x * (y * z)' or '(x * y) * (z * w)')."""
@@ -776,19 +791,26 @@ class ETP:
     @staticmethod
     def get_duality_mapping(
         attributes: Sequence[Equation],
+        associative: bool = False,
     ) -> Callable[[Equation], Equation]:
         """Return a duality symmetry mapping for ExplorationBase.
 
         Maps each equation E to its dual E^op (if present in the attribute set).
+        With `associative`, for objects that are all semigroups, laws are
+        compared up to associativity, as words: the dual of a law is then the
+        law with both words reversed.
         Raises ValueError if attributes are not closed under duality.
         """
+        def form(eq: Equation) -> Equation:
+            return Equation(eq.lhs.right_associated(), eq.rhs.right_associated()) if associative else eq
+
         eq_map: dict[Equation, Equation] = {}
         for eq in attributes:
-            dual_eq = eq.dual()
+            dual_eq = form(eq.dual())
             # Find matching dual in attributes using equivalence
             matched = None
             for candidate in attributes:
-                if dual_eq.is_equivalent_to(candidate):
+                if dual_eq.is_equivalent_to(form(candidate)):
                     matched = candidate
                     break
             if matched is None:

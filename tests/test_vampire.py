@@ -4,6 +4,9 @@ import shutil
 
 import pytest
 
+import threading
+import time
+
 from conceptual_exploration import Implication
 from explorations.equational_theories.magma import Equation, Magma
 from explorations.equational_theories.vampire import (
@@ -52,8 +55,8 @@ def test_parse_mace4_model_reads_a_cayley_table():
 def test_mace4_finds_a_checked_model():
     expert = VampireExpert(initial_magmas=[], mace4_time_limit=5)
     question = implication(["x * y = y * x"], ["(x * y) * z = x * (y * z)"])
-    magma = expert._search_mace4_model(question, next(iter(question.conclusion)))
-    assert magma.name.startswith("Mace4-Counterexample")
+    magma = expert._search_mace4_model(question, question.premise, next(iter(question.conclusion)), 3, 5)
+    assert magma.name.startswith("Mace4-Counterexample") and magma.size == 3
     assert magma.holds(Equation.parse("x * y = y * x"))
     assert not magma.holds(Equation.parse("(x * y) * z = x * (y * z)"))
 
@@ -96,7 +99,7 @@ def scripted(expert, answer):
     searches made, as their time limits."""
     searches = []
 
-    def run(problem, options, time_limit):
+    def run(problem, options, time_limit, cancelled=None):
         conjecture = next(line for line in problem.splitlines() if "conjecture" in line)
         if "fmb" in options:
             searches.append(time_limit)
@@ -210,7 +213,7 @@ def test_the_first_attempt_runs_on_all_cores_with_its_own_limit():
     expert = VampireExpert(initial_magmas=[], workers=4, first_time_limit=3)
     runs = []
 
-    def run(problem, options, time_limit):
+    def run(problem, options, time_limit, cancelled=None):
         runs.append((options, time_limit))
         return "Timeout", ""
     expert._run = run
@@ -303,7 +306,7 @@ def test_laws_outside_the_conclusion_get_their_own_time_limit(row_time_limit, as
     limits = {}
     answer = laws("CounterSatisfiable", "CounterSatisfiable")
 
-    def run(problem, options, time_limit):
+    def run(problem, options, time_limit, cancelled=None):
         conjecture = next(line for line in problem.splitlines() if "conjecture" in line)
         if "casc" in options and "&" not in conjecture:
             limits[conjecture] = time_limit
@@ -317,3 +320,71 @@ def test_laws_outside_the_conclusion_get_their_own_time_limit(row_time_limit, as
     other = [v for k, v in limits.items() if "m(m(Vx,Vx),Vx)" in k]
     assert other == ([row_time_limit] if asked_other else [])
     assert (flexible in counterexample.positive | counterexample.negative) == asked_other
+
+
+@pytest.mark.skipif(shutil.which("mace4") is None, reason="Mace4 not installed")
+def test_mace4_sweeps_the_sizes_in_parallel():
+    expert = VampireExpert(initial_magmas=[], workers=4, mace4_time_limit=20)
+    scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    question = implication(["x * y = y * x"], ["(x * y) * z = x * (y * z)"])
+    counterexample = expert.validate(question)
+    assert expert.last_status == "model"
+    assert counterexample.object.name.startswith("Mace4") and counterexample.refutes(question)
+
+
+LEFT_PROJECTION = "\n".join(
+    f"m('fmb_$i_{a}','fmb_$i_{b}') = 'fmb_$i_{a}'" for a in (1, 2) for b in (1, 2)
+)
+TWO_LAWS = implication(["x * x = x * (x * x)"], ["x = x * x", "x * y = y * x"])
+
+
+def test_the_search_goes_on_for_the_laws_the_first_model_satisfies():
+    expert = VampireExpert(initial_magmas=[], workers=2)
+
+    def answer(conjecture, options):
+        if "fmb" not in options or "&" in conjecture:
+            return "Timeout", ""
+        # The constant magma is commutative, the left projection idempotent.
+        return "CounterSatisfiable", (CONSTANT_MODEL if f"Vx = {IDEMPOTENT}" in conjecture else LEFT_PROJECTION)
+    scripted(expert, answer)
+    counterexample = expert.validate(TWO_LAWS, TWO_LAWS.premise | TWO_LAWS.conclusion)
+    assert expert.last_status == "model"
+    assert len(expert.cached_magmas) == 2
+    # The next question about the premise is answered from the pool.
+    left = [law for law in TWO_LAWS.conclusion if counterexample.object.holds(law)]
+    assert expert.validate(Implication(TWO_LAWS.premise, frozenset(left))).refutes(
+        Implication(TWO_LAWS.premise, frozenset(left))
+    )
+    assert expert.last_status == "pool"
+
+
+def test_a_law_whose_search_ran_out_is_not_searched_again_with_its_premise():
+    expert = VampireExpert(initial_magmas=[], workers=2)
+    searches = scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    expert.validate(TWO_LAWS, TWO_LAWS.premise | TWO_LAWS.conclusion)
+    assert searches == [expert.quick_model_time_limit] + [expert.model_time_limit] * 2
+    searches.clear()
+    one = implication(["x * x = x * (x * x)"], ["x = x * x"])
+    assert expert.validate(one).unconfirmed
+    # Only the brief search of step 3.
+    assert searches == [expert.quick_model_time_limit]
+
+
+def test_a_cancelled_command_is_killed():
+    cancelled = threading.Event()
+    threading.Timer(0.3, cancelled.set).start()
+    start = time.monotonic()
+    assert VampireExpert._execute(["sleep", "30"], None, 60, cancelled) == ""
+    assert time.monotonic() - start < 5
+
+
+def test_the_simplified_premise_keeps_the_laws_every_object_satisfies():
+    associative = Equation.parse("(x * y) * z = x * (y * z)")
+    idempotent, other = Equation.parse("x = x * x"), Equation.parse("x = x * (x * x)")
+    background = [Implication(frozenset(), frozenset({associative})), IDEMPOTENCE]
+    premise = frozenset({associative, idempotent, other})
+    simplified = VampireExpert(initial_magmas=[], background=background, model_premise="simplified")
+    assert simplified._model_premises(premise) == [frozenset({associative, idempotent})]
+    both = VampireExpert(initial_magmas=[], background=background, model_premise="both")
+    assert both._model_premises(premise) == [premise, frozenset({associative, idempotent})]
+    assert VampireExpert(initial_magmas=[], background=background)._model_premises(premise) == [premise]

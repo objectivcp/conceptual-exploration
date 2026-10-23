@@ -51,3 +51,9 @@ def test_the_order3_preset_reads():
     defaults = read_config(build_parser(), ROOT / "explorations/equational_theories/configs/order3.toml")
     assert defaults["expert"] == "vampire" and defaults["eprover_time_limit"] == 2
     assert defaults["seed_context"] == [Path("etp/magmas/*.txt")]
+
+
+def test_the_semigroup_preset_reads():
+    defaults = read_config(build_parser(), ROOT / "explorations/equational_theories/configs/semigroup.toml")
+    assert defaults["axiom"] == ["4512"] and defaults["model_premise"] == "simplified"
+    assert defaults["vampire_row_time_limit"] == 0

@@ -42,3 +42,18 @@ def test_the_duals_of_free_magmas_and_refutations_are_saved_with_their_own_laws(
     assert (free["F1"]["premise"], free["F1^op"]["premise"]) == ([4], [5])
     refutations = {r["name"]: r for r in json.loads((tmp_path / "etp_refutations.json").read_text())}
     assert (refutations["R1"]["refutes"], refutations["R1^op"]["refutes"]) == ([4, 5], [5, 4])
+
+
+def test_with_associativity_assumed_the_duality_compares_words(tmp_path):
+    from explorations.equational_theories.explore import run_magma_exploration
+
+    laws = [
+        {"id": 66, "equation": "x = (y * (x * (y * y)))"},
+        {"id": 73, "equation": "x = (y * (y * (x * y)))"},
+        {"id": 4512, "equation": "(x * (y * z)) = ((x * y) * z)"},
+    ]
+    path = tmp_path / "laws.json"
+    path.write_text(json.dumps(laws))
+    run_magma_exploration(path, max_search_size=2, report_interval=0, results_dir=tmp_path / "out", axioms=[4512])
+    rules = json.loads((tmp_path / "out" / "implications.json").read_text())
+    assert {r["source"] for r in rules} >= {"mapped"}

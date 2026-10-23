@@ -259,11 +259,13 @@ def run_magma_exploration(
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
     mace4_time_limit: int = 0,
+    model_premise: str = "full",
     eprover_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
     etp_refutations: bool = False,
     map_unconfirmed: bool = True,
+    axioms: Sequence[int | str] = (),
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -272,7 +274,8 @@ def run_magma_exploration(
     row_setting = (
         "" if vampire_row_time_limit is None
         else f", {vampire_row_time_limit} s per other law of a free magma"
-    ) + (f", Mace4 {mace4_time_limit} s for a model" if mace4_time_limit > 0 else ""
+    ) + (f", Mace4 {mace4_time_limit} s for models" if mace4_time_limit > 0 else ""
+    ) + (f", {model_premise} premises for models" if model_premise != "full" else ""
     ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else "")
     first_setting = (
         "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
@@ -316,12 +319,6 @@ def run_magma_exploration(
     for eq in equations:
         print(f"  - {eq}")
 
-    # Set up duality mapping if symmetry is enabled
-    mappings = []
-    if use_duality_symmetry:
-        duality_map = ETP.get_duality_mapping(equations)
-        mappings.append(duality_map)
-
     background = []
     if background_order is not None:
         background = background_implications(
@@ -338,6 +335,25 @@ def run_magma_exploration(
             f"\nTook {len(from_graph)} Background Implications from the ETP graph, "
             f"which lists {len(listed)} of the {len(equations)} equations."
         )
+    assumed = []
+    if axioms:
+        # Laws every object satisfies, such as associativity for semigroups.
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        wanted = {int(a) if str(a).isdigit() else a for a in axioms}
+        assumed = [eq for eq in equations if ident(eq) in wanted]
+        missing = wanted - {ident(eq) for eq in assumed}
+        if missing:
+            raise ValueError(f"Axioms not among the equations: {sorted(map(str, missing))}")
+        background.append(Implication([], assumed))
+        print(f"\nAssumed in Every Object:  {', '.join(eq.name or str(eq) for eq in assumed)}")
+
+    # Set up duality mapping if symmetry is enabled; in semigroups, laws are
+    # compared up to associativity.
+    mappings = []
+    if use_duality_symmetry:
+        associativity = Equation.parse("x * (y * z) = (x * y) * z")
+        associative = any(eq.is_equivalent_to(associativity) for eq in assumed)
+        mappings.append(ETP.get_duality_mapping(equations, associative=associative))
 
     def vampire_expert() -> VampireExpert:
         return VampireExpert(
@@ -349,6 +365,7 @@ def run_magma_exploration(
             background=background,
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
+            model_premise=model_premise,
             eprover_time_limit=eprover_time_limit,
         )
 
@@ -379,6 +396,10 @@ def run_magma_exploration(
         for path in seed_context:
             for magma in load_magmas(path):
                 tables.setdefault((magma.size, magma.table), magma)
+        if axioms:
+            kept = {key: m for key, m in tables.items() if all(m.holds(eq) for eq in assumed)}
+            print(f"Dropped {len(tables) - len(kept)} of the {len(tables)} magmas to seed, which violate an axiom.")
+            tables = kept
         seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
         refutations = graph_refutations(equations, graph, laws) if etp_refutations else []
         reduced = reduce_objects(seeds + refutations)
@@ -623,9 +644,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         metavar="S",
         help=(
-            "Seconds the Mace4 model finder gets, alongside Vampire's second "
-            "search, for a finite counterexample to each law of the "
-            "conclusion not proved (default: 0, Mace4 not used)."
+            "Seconds the Mace4 model finder gets in all, alongside Vampire's "
+            "second search, for finite counterexamples to the laws of the "
+            "conclusion not proved, sweeping the sizes on all cores, one law "
+            "and one size per search (default: 0, Mace4 not used)."
+        ),
+    )
+    parser.add_argument(
+        "--model-premise",
+        choices=("full", "simplified", "both"),
+        default="full",
+        help=(
+            "The premise the second search for counterexamples uses: the "
+            "question's, a subset whose closure under the background and the "
+            "implications proved is the question's, or both (default: full). "
+            "A model is checked against the question's premise in any case."
         ),
     )
     parser.add_argument(
@@ -759,6 +792,22 @@ def build_parser() -> argparse.ArgumentParser:
             "implications between two of the equations are given to the "
             "exploration as background implications; needs --etp-equations."
         ),
+    )
+    parser.add_argument(
+        "--axiom",
+        nargs="+",
+        default=[],
+        metavar="LAW",
+        help=(
+            "Laws every object satisfies, by id or name, such as 4512 "
+            "(associativity) to explore semigroups: they are given as a "
+            "background implication with an empty premise."
+        ),
+    )
+    parser.add_argument(
+        "--no-duality",
+        action="store_true",
+        help="Do not use the duality symmetry, so that the equations need not be closed under duality.",
     )
     parser.add_argument(
         "--ask-unconfirmed-duals",
@@ -908,7 +957,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         try:
             run_magma_exploration(
                 equations_path=args.equations,
-                use_duality_symmetry=True,
+                use_duality_symmetry=not args.no_duality,
                 z3_timeout_ms=args.z3_timeout_ms if args.z3_timeout_ms > 0 else None,
                 report_interval=args.report_every,
                 min_search_size=args.min_search_size,
@@ -928,11 +977,13 @@ def main(argv: Sequence[str] | None = None) -> None:
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,
                 mace4_time_limit=args.mace4_time_limit,
+                model_premise=args.model_premise,
                 eprover_time_limit=args.eprover_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
                 etp_refutations=args.etp_refutations,
                 map_unconfirmed=not args.ask_unconfirmed_duals,
+                axioms=args.axiom,
             )
         finally:
             sys.stdout = sys.__stdout__

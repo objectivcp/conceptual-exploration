@@ -18,6 +18,7 @@ from explorations.equational_theories.etp import (
     main,
     order,
     representatives,
+    semigroup_representatives,
 )
 from explorations.equational_theories.explore import run_magma_exploration
 from explorations.equational_theories.magma import ETP, Equation
@@ -198,3 +199,13 @@ def test_the_command_writes_representatives_with_their_classes(tmp_path):
     assert [(e["id"], e["class"]) for e in entries] == [(1, [1]), (2, [2]), (3, [3, 4]), (4, [3, 4]), (5, [5])]
     # x * y = y * x has two operations and is left out of the class of x = x * x.
     assert order(ETP.load_equations(output)[2]) == 1
+
+
+def test_semigroup_representatives_are_closed_under_reversing_words():
+    # Words: x = xxy reverses to x = yxx, and x = xy to x = yx.
+    texts = ["x = x", "x = x * (x * y)", "x = y * x", "x = x * y", "x = y * (x * x)"]
+    laws = EtpLaws([Equation.parse(text, id=k) for k, text in enumerate(texts, start=1)])
+    classes = [[1], [2, 3], [4, 5]]
+    assert semigroup_representatives(laws, classes) == {
+        1: [1], 2: [2, 3], 3: [2, 3], 4: [4, 5], 5: [4, 5],
+    }
