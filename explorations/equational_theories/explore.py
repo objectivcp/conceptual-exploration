@@ -250,6 +250,7 @@ def run_magma_exploration(
     results_dir: str | Path | None = None,
     expert_kind: str = "z3",
     vampire_prove_time_limit: int = 10,
+    vampire_first_time_limit: int | None = None,
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
@@ -269,6 +270,9 @@ def run_magma_exploration(
         else f", {vampire_row_time_limit} s per other law of a free magma"
     ) + (f", Mace4 {mace4_time_limit} s for a model" if mace4_time_limit > 0 else ""
     ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else "")
+    first_setting = (
+        "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
+    )
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -276,7 +280,7 @@ def run_magma_exploration(
           f"{'' if map_unconfirmed or not use_duality_symmetry else ', duals of unconfirmed implications asked'}")
     if expert_kind == "vampire":
         print(
-            f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove, "
+            f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove{first_setting}, "
             f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
             f"{row_setting}"
         )
@@ -335,6 +339,7 @@ def run_magma_exploration(
         return VampireExpert(
             attributes=equations,
             prove_time_limit=vampire_prove_time_limit,
+            first_time_limit=vampire_first_time_limit,
             model_time_limit=vampire_model_time_limit,
             quick_model_time_limit=vampire_quick_model_time_limit,
             background=background,
@@ -482,7 +487,7 @@ def run_magma_exploration(
             expert_settings = "Knuth-Bendix completion expert"
         elif expert_kind == "vampire":
             expert_settings = (
-                f"Vampire expert, {vampire_prove_time_limit} s to prove, "
+                f"Vampire expert, {vampire_prove_time_limit} s to prove{first_setting}, "
                 f"{vampire_quick_model_time_limit} s and {vampire_model_time_limit} s for a model"
                 f"{row_setting}"
             )
@@ -547,6 +552,16 @@ if __name__ == "__main__":
         default=10,
         metavar="S",
         help="Seconds Vampire gets to prove an implication or a single law (default: 10).",
+    )
+    parser.add_argument(
+        "--vampire-first-time-limit",
+        type=int,
+        default=None,
+        metavar="S",
+        help=(
+            "Seconds Vampire gets, on all cores, for its first attempt at the whole "
+            "question (default: the proving time limit; 3 is enough)."
+        ),
     )
     parser.add_argument(
         "--vampire-model-time-limit",
@@ -805,6 +820,7 @@ if __name__ == "__main__":
                 results_dir=results_dir,
                 expert_kind=args.expert,
                 vampire_prove_time_limit=args.vampire_prove_time_limit,
+                vampire_first_time_limit=args.vampire_first_time_limit,
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,

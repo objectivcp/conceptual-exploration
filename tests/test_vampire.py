@@ -206,6 +206,20 @@ def test_one_law_shown_false_needs_no_free_magma_row():
 IDEMPOTENCE = Implication(frozenset({Equation.parse("x = x * x")}), frozenset({Equation.parse("x = x * (x * x)")}))
 
 
+def test_the_first_attempt_runs_on_all_cores_with_its_own_limit():
+    expert = VampireExpert(initial_magmas=[], workers=4, first_time_limit=3)
+    runs = []
+
+    def run(problem, options, time_limit):
+        runs.append((options, time_limit))
+        return "Timeout", ""
+    expert._run = run
+    expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
+    assert runs[0] == (["--mode", "casc", "--cores", "4"], 3)
+    # The laws of the free magma's row keep the proving time limit, on one core each.
+    assert (["--mode", "casc"], expert.prove_time_limit) in runs
+
+
 def test_proved_laws_complete_the_row_with_the_known_implications():
     expert = VampireExpert(initial_magmas=[], workers=2, background=[IDEMPOTENCE])
     # x = x * x proved, x = x * (x * x) not: it follows from x = x * x.

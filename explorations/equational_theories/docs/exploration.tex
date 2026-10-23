@@ -262,7 +262,7 @@ The \code{VampireExpert} uses the first-order theorem prover Vampire. A question
 The expert proceeds through the following steps and stops at the first one that decides the question.
 \begin{enumerate}
   \item \textbf{Pool and memory.} The pool is checked as by the Z3 expert. A question entailed by an implication proved before ($P' \subseteq P$, $C \subseteq C'$) is accepted, and an undecided answer is reused if the same question is asked again.
-  \item \textbf{Proof.} Vampire's portfolio mode (\code{-{}-mode casc}) runs on the problem (by default for 10 seconds). A proof confirms the implication. If the run instead ends with a finite model, the model is the counterexample.
+  \item \textbf{Proof.} Vampire's portfolio mode (\code{-{}-mode casc}) runs on the problem, on all cores, since nothing else runs at this point (option \code{-{}-vampire-first-time-limit}, by default the proving time limit of 10 seconds). A proof confirms the implication. If the run instead ends with a finite model, the model is the counterexample. On the 100 whole conclusions of the benchmark described in Section~\ref{sec:free}, eight cores decided the same 81 as one core and none in more than 1.8 seconds, against 9.6 seconds for the slowest decision on one core; with a limit of 3 seconds, the step took 70\% less time than on one core with 10 seconds, and lost no decision.
   \item \textbf{Quick model search.} Vampire's finite model builder (\code{-{}-saturation\_algorithm fmb}) looks for a counterexample of any size (by default for 1 second).
   \item \textbf{One law shown false.} If $C$ has a single law and step~2 ended with CounterSatisfiable, the free magma over $P$ violates that law and refutes the implication. No further call is made: the rest of its row is decided by the context already, the laws outside $P \cup C$ being denied for $P$ by its objects.
   \item \textbf{Free magma.} The row of the free magma over $P$ is computed, as described in Section~\ref{sec:free}. If a law of $C$ is on its negative side, the free magma refutes the implication. If every law of $C$ is on its positive side, the implication is proved. If step~2 ended with CounterSatisfiable and a single law $c$ of $C$ is not on the positive side, the free magma violates $c$: a brief search (1~second) looks for a finite model violating $c$, and the free magma refutes the implication if it finds none.
@@ -615,6 +615,7 @@ Table~\ref{tab:options} lists the options.
 -{}-equations PATH & \code{equations.json} & the laws to explore \\
 -{}-expert z3|vampire|completion & \code{z3} & which expert answers the questions \\
 -{}-vampire-prove-time-limit S & 10 & seconds for a proof, and for each law of the conclusion in a free magma's row \\
+-{}-vampire-first-time-limit S & prove limit & seconds for the first proof attempt, on all cores; 3 suffices \\
 -{}-vampire-row-time-limit S & prove limit & seconds for each other law of a free magma's row; $0$ leaves them unknown \\
 -{}-vampire-quick-model-time-limit S & 1 & seconds for the first finite model search \\
 -{}-vampire-model-time-limit S & 10 & seconds for each per-law finite model search \\

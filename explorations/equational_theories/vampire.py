@@ -142,8 +142,9 @@ class VampireExpert(MagmaExpert):
 
     The pool of magmas is checked first, as by MagmaExpert. Then:
 
-    1. Vampire runs its portfolio of strategies on the implication
-       (`prove_time_limit` seconds); a proof confirms it.
+    1. Vampire runs its portfolio of strategies on the implication, on all
+       `workers` cores at once (`first_time_limit` seconds, by default
+       `prove_time_limit`); a proof confirms it.
     2. Its finite model builder briefly searches for a counterexample of any
        size (`quick_model_time_limit` seconds). A model is checked against the
        laws and joins the pool.
@@ -206,6 +207,7 @@ class VampireExpert(MagmaExpert):
         mace4: str = "mace4",
         eprover_time_limit: int = 0,
         eprover: str = "eprover",
+        first_time_limit: int | None = None,
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -213,6 +215,7 @@ class VampireExpert(MagmaExpert):
             raise FileNotFoundError(f"Vampire executable {vampire!r} not found")
         self.vampire = executable
         self.prove_time_limit = prove_time_limit
+        self.first_time_limit = prove_time_limit if first_time_limit is None else first_time_limit
         self.model_time_limit = model_time_limit
         self.quick_model_time_limit = quick_model_time_limit
         self.row_time_limit = prove_time_limit if row_time_limit is None else row_time_limit
@@ -275,7 +278,8 @@ class VampireExpert(MagmaExpert):
             return answer
 
         problem = tptp_problem(implication.premise, implication.conclusion)
-        status, output = self._run(problem, ["--mode", "casc"], self.prove_time_limit)
+        # Alone at this point, so on every core.
+        status, output = self._run(problem, ["--mode", "casc", "--cores", str(self.workers)], self.first_time_limit)
         if status == "Theorem":
             return self._prove(implication)
         magma = self._model(implication, output)
