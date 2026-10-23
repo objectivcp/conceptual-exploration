@@ -608,13 +608,15 @@ Questions & 251 \\
 \quad refuted by a finite model found for the question & 40 \\
 \quad refuted by a model in the pool & 7 \\
 \quad refuted by a free magma, unconfirmed or rejected & 0 \\
-Canonical basis relative to the background, up to duality & 214 \\
+Canonical basis relative to the background and duality & 204 \\
+\quad relative to the ETP graph's implications alone, up to duality & 214 \\
+\quad relative to no background, up to duality & 308 \\
 Closed sets of the theory & 456 \\
 Rounds & 1 \\
 Running time & 18 min \\
 \bottomrule
 \end{tabularx}
-\caption{The exploration of the semigroup laws of order at most four. The 47 counterexamples are semigroups of sizes 3 to 12, 16, 27 and 32, found by Vampire's model builder (30) and Mace4 (17); seven of them, found while the search went on for other laws of a question, answered a later question from the pool. The canonical basis has 343 implications in all, 71 of them self-dual; the program prints 204 rules. The running time is the wall-clock time on an 8-core laptop.}\label{tab:semigroups}
+\caption{The exploration of the semigroup laws of order at most four. The 47 counterexamples are semigroups of sizes 3 to 12, 16, 27 and 32, found by Vampire's model builder (30) and Mace4 (17); seven of them, found while the search went on for other laws of a question, answered a later question from the pool. Duality acts on the background as well: the dual of an implication of the ETP graph between right-associated laws reverses their words, holds only in semigroups and is not in the graph, and the exploration adds these duals, 86 implications, to the background it works with. Relative to that background, and with every question decided in one round, the canonical basis up to duality consists of the 204 accepted implications (336 implications in all, 72 of them self-dual). Relative to the graph's implications and associativity alone, it has 214 up to duality (343 in all), and relative to no background, for the whole theory, 308 (508 in all). The program prints 204 rules. The running time is the wall-clock time on an 8-core laptop.}\label{tab:semigroups}
 \end{table}
 
 Every question was decided (Table~\ref{tab:semigroups}): the 204 accepted implications are proved, and the 47 counterexamples are finite semigroups, checked against every law, so that no answer rests on a prover's saturation.
