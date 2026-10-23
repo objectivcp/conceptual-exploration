@@ -601,8 +601,9 @@ if __name__ == "__main__":
         default=0,
         metavar="S",
         help=(
-            "Seconds the E prover gets, alongside Vampire, to decide each law "
-            "of the conclusion in a free magma's row (default: 0, E not used)."
+            "Seconds the E prover gets first to decide each law of the "
+            "conclusion in a free magma's row, Vampire then getting the laws "
+            "it leaves (default: 0, E not used; 2 is enough)."
         ),
     )
     parser.add_argument(

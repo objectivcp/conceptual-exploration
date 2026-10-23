@@ -110,6 +110,10 @@ def parse_model(output: str) -> tuple[tuple[int, ...], ...] | None:
     return tuple(tuple(row) for row in table)  # type: ignore[arg-type]
 
 
+# The verdicts that decide whether a law follows.
+DECISIVE = ("Theorem", "CounterSatisfiable")
+
+
 @dataclass(frozen=True, slots=True)
 class FreeMagma:
     """The free magma over a set of laws: terms in countably many variables,
@@ -151,8 +155,9 @@ class VampireExpert(MagmaExpert):
        the law on the positive side of the free magma over the premise, a
        counter-satisfiable verdict on the negative side, and a timeout leaves
        it unknown. If `eprover_time_limit` is positive, the E prover is asked
-       about each law of the conclusion as well, for that many seconds, and
-       either prover's verdict counts. The row is then completed with the
+       about each law of the conclusion first, for that many seconds (2 is
+       enough: when E decides a law, it nearly always does so within a
+       fraction of a second), and Vampire only about the laws E leaves. The row is then completed with the
        known implications: what the laws proved imply is proved too, and a
        law that would imply a law on the negative side is on the negative
        side. If a law of the conclusion is on the negative side, the free
@@ -395,27 +400,28 @@ class VampireExpert(MagmaExpert):
         premise = frozenset(implication.premise)
         implied = self._known.closure(premise) | premise
         unknown = set(attributes) - implied
-        # The conclusion first, so that its laws start first, with E.
         conclusion = sorted(unknown & implication.conclusion)
-        jobs = [(False, law) for law in conclusion]
+        verdicts: dict[Equation, str] = {}
         if self.eprover is not None:
-            jobs += [(True, law) for law in conclusion]
+            # E first, briefly: when it decides a law, it nearly always does
+            # so within a fraction of a second.
+            with ThreadPoolExecutor(self.workers) as pool:
+                problems = [tptp_problem(premise, [law]) for law in conclusion]
+                verdicts.update(zip(conclusion, pool.map(self._run_eprover, problems)))
+        # Vampire on the laws of the conclusion that E left, which start first,
+        # and on the others.
+        laws = [law for law in conclusion if verdicts.get(law) not in DECISIVE]
         if self.row_time_limit > 0:
-            jobs += [(False, law) for law in sorted(unknown - implication.conclusion)]
+            laws += sorted(unknown - implication.conclusion)
 
-        def decide(job: tuple[bool, Equation]) -> str:
-            eprover, law = job
-            if eprover:
-                return self._run_eprover(tptp_problem(premise, [law]))
+        def decide(law: Equation) -> str:
             limit = self.prove_time_limit if law in implication.conclusion else self.row_time_limit
             return self._run(tptp_problem(premise, [law]), ["--mode", "casc"], limit)[0]
 
         with ThreadPoolExecutor(self.workers) as pool:
-            verdicts = list(zip(jobs, pool.map(decide, jobs)))
-        proved = {law for (_, law), v in verdicts if v == "Theorem"}
-        negative = {law for (_, law), v in verdicts if v == "CounterSatisfiable"}
-        if proved & negative:
-            raise ValueError(f"The provers disagree on {sorted(proved & negative)} for {implication}")
+            verdicts.update(zip(laws, pool.map(decide, laws)))
+        proved = {law for law, v in verdicts.items() if v == "Theorem"}
+        negative = {law for law, v in verdicts.items() if v == "CounterSatisfiable"}
         return self._completed(premise, implied | proved, negative, attributes)
 
     def _completed(

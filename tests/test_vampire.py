@@ -224,13 +224,20 @@ def test_a_refuted_law_refutes_the_laws_that_imply_it():
 
 
 @pytest.mark.skipif(shutil.which("eprover") is None, reason="E not installed")
-def test_the_e_prover_decides_laws_vampire_does_not():
-    expert = VampireExpert(initial_magmas=[], workers=2, eprover_time_limit=5)
-    scripted(expert, lambda conjecture, options: ("Timeout", ""))
+def test_the_e_prover_decides_laws_first():
+    expert = VampireExpert(initial_magmas=[], workers=2, eprover_time_limit=2)
+    calls = []
+
+    def answer(conjecture, options):
+        calls.append(options)
+        return "Timeout", ""
+    scripted(expert, answer)
     question = implication(["x = x * x"], ["x * y = y * x"])
     counterexample = expert.validate(question)
     assert counterexample.negative == question.conclusion
     assert expert.last_status == "free magma"
+    # The proof attempt and the brief model search; the law itself only E.
+    assert len(calls) == 2
 
 
 def test_undecided_rest_is_unconfirmed_when_nothing_speaks_against_it():
