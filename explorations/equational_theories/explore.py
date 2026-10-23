@@ -90,11 +90,12 @@ def save_results(
 
     implications.txt and implications.json list every implication found
     with its source, the rejected implications, and the unconfirmed ones not
-    accepted because they would contradict a rejected one; rules.txt lists
-    the implications simplified into rules for reading, as printed at the
-    end of the exploration, after the background simplified the same way,
-    with each law written out, as a pair of words
-    if `words` (for semigroups); magmas.json holds
+    accepted because they would contradict a rejected one;
+    simplified_implications.txt lists the implications simplified into
+    rules for reading, as printed at the end of the exploration, after the
+    background simplified the same way, each followed by its images under
+    the symmetries and with its provenance, and with each law written out,
+    as a pair of words if `words` (for semigroups); magmas.json holds
     the finite magmas of the context and free_magmas.json the free magmas,
     with their rows, which Vampire may have left partial; etp_refutations.json
     holds the objects standing for refutations of the ETP graph, and
@@ -171,7 +172,7 @@ def save_results(
         f"Rules ({len(rules)} rules, as numbered in exploration.log, and their images):",
         *listed(rules, ""),
     ]
-    (directory / "rules.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (directory / "simplified_implications.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def preimage(version, laws):
         # The laws a version satisfies where its original satisfies `laws`:

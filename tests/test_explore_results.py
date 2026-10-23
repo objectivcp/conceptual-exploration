@@ -70,7 +70,7 @@ def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(
     base.accept(Implication([idempotent], [other]), ImplicationSource.CONFIRMED)
     base.add_background(Implication([], [laws[-1]]))
     save_results(base, laws, tmp_path, "test", words=True)
-    rules = (tmp_path / "rules.txt").read_text().splitlines()
+    rules = (tmp_path / "simplified_implications.txt").read_text().splitlines()
     assert rules[2:] == [
         "Background (2 rules and their images):",
         "[B1] Eq5: x = yx  =>  Eq3: x = xx   (background)",
@@ -81,6 +81,6 @@ def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(
         "[1] Eq3: x = xx  =>  Eq8: x = xxx   (confirmed)",
     ]
     save_results(base, laws, tmp_path, "test")
-    assert (tmp_path / "rules.txt").read_text().splitlines()[-1] == (
+    assert (tmp_path / "simplified_implications.txt").read_text().splitlines()[-1] == (
         "[1] Eq3: x = (x * x)  =>  Eq8: x = (x * (x * x))   (confirmed)"
     )
