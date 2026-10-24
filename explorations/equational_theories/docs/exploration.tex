@@ -45,7 +45,7 @@
 \maketitle
 
 \begin{abstract}
-This document describes how the \code{conceptual-exploration} library carries out the attribute exploration of implications between equational laws of magmas, the question studied by the Equational Theories Project. It is written for a reader who knows attribute exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is done differently from the book: partial objects, symmetries, experts that cannot always decide, and the resumption of an exploration when an implication accepted without proof is refuted. It then describes what is specific to equational theories: the attributes and objects, background knowledge derived by bounded equational reasoning, and three experts: one searching for finite counterexamples with the Z3 SMT solver, one using the Vampire theorem prover, which also refutes implications with free magmas, and one deciding questions by Knuth--Bendix completion. Five case studies are discussed in detail: sixteen classical laws, all thirty-one one-variable laws with at most four operations, the ETP laws of order at most two and three, and the semigroup laws of order at most four, whose implications from several laws have been determined, or almost, by other means in other work, and the commutative semigroup laws of order at most five, beyond the ETP's laws. A user's guide closes the document.
+This document describes how the \code{conceptual-exploration} library carries out the attribute exploration of implications between equational laws of magmas, the question studied by the Equational Theories Project. It is written for a reader who knows attribute exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is done differently from the book: partial objects, symmetries, experts that cannot always decide, and the resumption of an exploration when an implication accepted without proof is refuted. It then describes what is specific to equational theories: the attributes and objects, background knowledge derived by bounded equational reasoning, and three experts: one searching for finite counterexamples with the Z3 SMT solver, one using the Vampire theorem prover, which also refutes implications with free magmas, and one deciding questions by Knuth--Bendix completion. Six case studies are discussed in detail: sixteen classical laws, all thirty-one one-variable laws with at most four operations, the ETP laws of order at most two and three, and the semigroup laws of order at most four, whose implications from several laws have been determined, or almost, by other means in other work, and the commutative and all semigroup laws of order at most five, beyond the ETP's laws, where some counterexamples, too large for any model search, are constructed instead. A user's guide closes the document.
 \end{abstract}
 
 \tableofcontents
@@ -64,7 +64,7 @@ From the point of view of Formal Concept Analysis, the natural object of study i
 \]
 where $M$ is a finite set of laws and $\mathcal{G}$ is the class of all magmas. Its object class is not even a set, but its implications are perfectly well defined: $P \to C$ holds in $\mathbb{K}_{\mathrm{Mag}}$ if every magma satisfying all laws of $P$ satisfies all laws of $C$. By Birkhoff's completeness theorem, this is the case exactly when every law of $C$ can be derived from the laws of $P$ by the rules of equational logic. Its intents are the sets $\Th(G) \cap M$ for magmas $G$, the traces on $M$ of equational theories. Attribute exploration is the natural tool for computing the canonical basis of $\mathbb{K}_{\mathrm{Mag}}$ and, with it, all its intents: an expert either confirms an implication, ideally by a proof, or refutes it by a magma.
 
-The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31}, \ref{sec:case3}, \ref{sec:semigroups} and~\ref{sec:csemigroups} discuss five explorations, and Section~\ref{sec:guide} explains how to run one's own.
+The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31}, \ref{sec:case3}, \ref{sec:semigroups}, \ref{sec:csemigroups} and~\ref{sec:semigroups5} discuss six explorations, and Section~\ref{sec:guide} explains how to run one's own.
 
 %======================================================================
 \section{Attribute exploration as implemented}\label{sec:library}
@@ -268,7 +268,7 @@ The expert proceeds through the following steps and stops at the first one that 
   \item \textbf{Quick model search.} Vampire's finite model builder (\code{-{}-saturation\_algorithm fmb}) looks for a counterexample of any size (by default for 1 second).
   \item \textbf{One law shown false.} If $C$ has a single law and step~2 ended with CounterSatisfiable, the free magma over $P$ violates that law and refutes the implication. No further call is made: the rest of its row is decided by the context already, the laws outside $P \cup C$ being denied for $P$ by its objects.
   \item \textbf{Free magma.} The row of the free magma over $P$ is computed, as described in Section~\ref{sec:free}. If a law of $C$ is on its negative side, the free magma refutes the implication. If every law of $C$ is on its positive side, the implication is proved. If step~2 ended with CounterSatisfiable and a single law $c$ of $C$ is not on the positive side, the free magma violates $c$: a brief search (1~second) looks for a finite model violating $c$, and the free magma refutes the implication if it finds none.
-  \item \textbf{Per-law model search.} For each law $c$ of $C$ that the free magma did not prove, the model builder looks for a model of $P$ violating $c$ (by default for 10 seconds each), all searches sharing the cores. This is much faster than a search for a model violating the conjunction $C$, which has to consider all the ways of violating it at once. Optionally, the model finder Mace4\footnote{\url{https://www.cs.unm.edu/~mccune/prover9/}} searches as well (option \code{-{}-mace4-time-limit}, off by default), with its own propagation and symmetry reduction, which sometimes finds models that Vampire's model builder does not reach in time. Each Mace4 search is for one law at one size, and the sizes are swept in parallel: a core that finishes a search, having found a model or shown that there is none of that size, takes the next search, for the smallest size not yet started; the sweep gets the given time in all. A search at a fixed size where a model exists is often fast, while ruling out the smaller sizes first, as a search size by size has to, can take much longer. Each model found is checked and joins the pool, and the searches for the laws it violates stop; the others go on until every law of $C$ is violated or the time is up. The smallest model found refutes $P \to C$, and the pool then answers the next questions about $P$, whose conclusions are the laws the model satisfies, without a further call. A law whose search ran out of time is not searched for again with the same premise. With option \code{-{}-model-premise simplified}, the searches use a subset of $P$ whose closure under the background and the implications proved so far is $P$, keeping the laws that every object satisfies, which the background assumes rather than derives; \code{both} searches with both premises. Every model is checked against the whole premise.
+  \item \textbf{Per-law model search.} For each law $c$ of $C$ that the free magma did not prove, the model builder looks for a model of $P$ violating $c$ (by default for 10 seconds each), all searches sharing the cores. This is much faster than a search for a model violating the conjunction $C$, which has to consider all the ways of violating it at once. Optionally, the model finder Mace4\footnote{\url{https://www.cs.unm.edu/~mccune/prover9/}} searches as well (option \code{-{}-mace4-time-limit}, off by default), with its own propagation and symmetry reduction, which sometimes finds models that Vampire's model builder does not reach in time. Each Mace4 search is for one law at one size, and the sizes are swept in parallel: a core that finishes a search, having found a model or shown that there is none of that size, takes the next search, for the smallest size not yet started; the sweep gets the given time in all. A search at a fixed size where a model exists is often fast, while ruling out the smaller sizes first, as a search size by size has to, can take much longer. Each model found is checked and joins the pool, and the searches for the laws it violates stop; the others go on until every law of $C$ is violated or the time is up. The smallest model found refutes $P \to C$, and the pool then answers the next questions about $P$, whose conclusions are the laws the model satisfies, without a further call. A law whose search ran out of time is not searched for again with the same premise. Among semigroups, with option \code{-{}-truncation-words}, the truncated free semigroups of the variety of $P$ are tried first (Section~\ref{sec:truncated}), which refute laws whose smallest countermodels are far beyond the model searches. With option \code{-{}-model-premise simplified}, the searches use a subset of $P$ whose closure under the background and the implications proved so far is $P$, keeping the laws that every object satisfies, which the background assumes rather than derives; \code{both} searches with both premises. Every model is checked against the whole premise.
   \item \textbf{Undecided.} Otherwise, the laws of $C$ that the free magma proved are accepted as confirmed. The rest of $C$, which has at least two laws if step~2 ended with CounterSatisfiable, is rejected if it did, that is, if Vampire showed $P \to C$ false as a whole, and is accepted as unconfirmed otherwise. The partial row of the free magma is not added to the context. Its positive side holds in every object of the context that satisfies $P$, since objects are completed with the trusted implications, and every law on its negative side lies outside $C$ and is therefore denied by some object satisfying $P$; so the row could refute nothing that the context does not already refute.
 \end{enumerate}
 Every finite model is read from the output of Vampire or Mace4 and checked against the laws; a model that does not refute the question stops the program with an error. Vampire's proofs and its CounterSatisfiable verdicts obtained by saturation are trusted. The expert counts its answers by kind (\code{pool}, \code{proved}, \code{model}, \code{free magma}, \code{rejected}, \code{unconfirmed}), and the counts are printed at the end.
@@ -706,6 +706,78 @@ Every question was decided (Table~\ref{tab:csemigroups}): the 163 accepted impli
 \paragraph{Every theory has a model.} The 17 objects of the context have distinct intents, and these are the 17 meet-irreducible closed sets. As in Section~\ref{sec:semigroups}, commutative semigroups are closed under products, so that every closed set is the intent of a commutative semigroup, a finite one, the free magma being replaced by the semigroup of 113 elements, and the implications found are the whole propositional theory of commutative semigroups over these laws.
 
 %======================================================================
+\section{Case study: semigroup laws of order at most five}\label{sec:semigroups5}
+%======================================================================
+
+Le Floch~\cite[Section~1]{LF26b} writes that equations of order up to five ``seem within reach'' and that a preliminary investigation finds 380 classes of equivalent laws up to that order. This section determines the classes and almost all of the implications between conjunctions of these laws, by sorting the laws into classes and then exploring one law of each, with the result of Section~\ref{sec:semigroups} as background. Several questions had counterexamples far beyond the model searches, and two ways of constructing them took the place of the search: truncated free semigroups, built by the expert for each such question, and semigroups built in advance as seeds.
+
+\subsection{Classes of laws}
+
+Generated as pairs of words up to renaming and swapping sides, there are 3,284 semigroup laws of order at most five (1,796 up to reversal), 653 of them of order at most four. \code{semigroup.py classes} evaluates each law on 294 semigroups: the 218 of at most four elements up to isomorphism, enumerated by Mace4, and those of the context of Section~\ref{sec:semigroups} with their duals. Laws with different values on one of them are not equivalent, which leaves 263 groups of laws that no semigroup separates. Within each, Vampire tries to prove each law equivalent to the smallest one not yet in a class, 10 seconds for each direction, and the laws it proves equivalent form a class; this is repeated with the laws left. In 37 minutes this gave 380 classes, and on the laws of order at most four exactly Le Floch's 122. For 320 pairs of classes Vampire neither proved nor refuted the equivalence of their first laws, so that the proofs alone only bound the number of classes by 380: some classes could have been one. The exploration below shows that they are not, its 380 classes being separated by checked finite semigroups.
+
+\subsection{Setup}
+
+\paragraph{Laws and background.} One law of each class is taken, closed under reversal: a law and its reversal for a class and its dual class, and for each of the 84 self-dual classes a law that is its own reversal where there is one; for the 7 others, both a law and its reversal, given as equivalent in the background. With associativity, these are the 388 laws of \code{equations\_semigroup5.json}, written by \code{semigroup.py inputs}. The background is the result of Section~\ref{sec:semigroups}, its implications and their duals mapped onto the laws taken from their classes: 591 implications, which give exactly the 456 theories of Section~\ref{sec:semigroups} on the laws of order at most four.
+
+\paragraph{Seeds and expert.} The seeds are the 294 semigroups above, the 33 monomial semigroups of Section~\ref{sec:monomial}, and the Heisenberg groups over $\mathbb{Z}_3$ and $\mathbb{Z}_5$ (Section~\ref{sec:constructed}): 329 semigroups, of which 61 are not redundant. The expert has the settings of Section~\ref{sec:semigroups}, with truncated free semigroups of at most 20,000 words (preset \code{configs/semigroup5.toml}).
+
+\subsection{Truncated free semigroups}\label{sec:truncated}
+
+A first exploration, without truncated free semigroups and without the constructed seeds, asked 278 questions in an hour, four of them accepted as unconfirmed after the full model search. Their premises contain $x^3 = x^4$, $x^3 = yx^3$ and one of $x^2y = yxy^2$, $x^2y = yxyx$, $xyxy = yxx$ and $x^2yx = xy^2$, and the laws left are of the form $x^3 = y^2zx$ or $x^3 = xyz^2$. On two of them, with or without the laws already proved among the premises, neither Vampire in 10 minutes for each law nor E and Twee in 30 minutes or more found a proof, and Mace4 found no model in 15 minutes. Nor do the Rees quotients of the free semigroup refute them, as the monomial semigroups did for commutative semigroups: in such a quotient, the words of a finite set closed under factors together with a zero, a law holds only if every substitution that sends its sides to different words sends both out of the set, so that $x^2y = yxy^2$, with $y$ for $x$ and $zx$ for $y$, makes $y^2zx$ zero, as $y^2zx$ and $zxyzxzx$ differ.
+
+The countermodels are quotients of a different kind. For laws $P$ and $k$ generators, let $S_n$ be the free semigroup on $k$ generators of the variety of $P$ with every product of $n$ or more letters made zero: the words of length below $n$ together with a zero, modulo the congruence generated by the instances of $P$, a side of length $n$ or more being the zero. It is computed by closing the instances under multiplication by the generators, a finite computation. $S_n$ satisfies $P$ and is generated by the $k$ generators, so it is a quotient of the free semigroup of the variety, and a law with $k$ variables that fails in $S_n$ at the generators does not follow from $P$. The elements that divide its failing side, together with the zero, then form a smaller countermodel, the Rees quotient by the ideal of the others. For the four questions:
+\begin{center}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Third premise law & Open laws & $S_n$ & Countermodel \\
+\midrule
+$x^2y = yxy^2$ & $x^3 = y^2zx$ & $S_8$, 271 elements & 39 \\
+$x^2y = yxyx$ & $x^3 = x^2yz$, $y^2xz$, $y^2zx$ & $S_7$, 208 & 36 \\
+$xyxy = yxx$ & $x^3 = xyz^2$, $yxz^2$, $yzx^2$ & $S_7$, 208 & 36 \\
+$x^2yx = xy^2$ & $x^3 = xyz^2$, $yxz^2$, $yzx^2$ & $S_8$, 271 & 39 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Each took a fraction of a second, and each countermodel was checked against its premise and law. In $S_7$, $y^2zx$ is zero at the generators, being equal to words of seven letters or more, and in $S_8$ it is not.
+
+The Vampire expert now tries these semigroups first in its per-law model search, among semigroups (option \code{-{}-truncation-words}): for each law of the conclusion with at most four variables, $S_n$ for increasing $n$ while it has at most the given number of words, within 30 seconds in all. The instances of a law whose two sides have very different lengths, such as $x = yzwuvt$, are many even when the long side is zero, and the time limit keeps such premises from holding up the exploration.
+
+\subsection{Constructed seeds}\label{sec:constructed}
+
+An exploration with truncated free semigroups, but with the 294 seeds only, asked 764 questions in 98 minutes and accepted five implications as unconfirmed. For four of them, the countermodels had to be constructed by hand. Three, with premises such as $x^2 = y^2zwu$ among many laws and the open law $x^2 = yzwux$, are refuted by the square-free monomials over five generators, of 32 elements (Section~\ref{sec:monomial}), a commutative semigroup that satisfies all of their premises. The fourth, $x = y^5x \to xyx = yxx \wedge xyz = yxz$, is refuted by a group: in a group, $x = y^5x$ says that the group has exponent dividing 5, and $xyx = yxx$ that it is commutative. The Heisenberg group over $\mathbb{Z}_5$, of the upper unitriangular $3 \times 3$ matrices, is a non-abelian group of exponent 5, with 125 elements, the fewest such a group has. Both are cheap to evaluate on the laws: the monomial semigroup by the shortcut for magmas with a zero (Section~\ref{sec:objects}), and the group because a law of at most seven letters holds in a group of exponent 5 only if each variable occurs as often on both sides modulo 5, which leaves at most three variables, while the laws that fail do so on a random assignment. With the 33 monomial semigroups and the Heisenberg groups over $\mathbb{Z}_3$ and $\mathbb{Z}_5$ among the seeds, none of the four remained open.
+
+\subsection{Results}
+
+\begin{table}[!htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}Xr@{}}
+\toprule
+Laws explored (one of each of the 380 classes, 7 reversals and associativity) & 388 \\
+Background implications from the semigroup exploration & 591 \\
+Seeds kept (of 329) & 61 \\
+Questions & 757 \\
+\quad proved & 665 \\
+\quad refuted by a truncated free semigroup & 65 \\
+\quad refuted by a model in the pool & 19 \\
+\quad refuted by a model found by Vampire or Mace4 & 7 \\
+\quad unconfirmed & 1 \\
+Canonical basis relative to the background and duality & 666 \\
+\quad relative to no background, up to duality & 825 \\
+Classes of equivalent laws & 380 \\
+Closed sets of the theory & 4,450 \\
+\quad without the unconfirmed implication & 4,454 \\
+Rounds & 1 \\
+Running time & 61 min \\
+\bottomrule
+\end{tabularx}
+\caption{The exploration of the semigroup laws of order at most five. The 91 counterexamples are semigroups of 5 to 56 elements: 83 truncated free semigroups, of which 65 answered the question they were built for and 18 later questions from the pool, 5 models found by Vampire's model builder and 3 by Mace4. The canonical basis, which includes the unconfirmed implication and its dual, has 1,226 implications in all relative to the background and its duals, and 1,478 relative to no background. The running time is the wall-clock time on an 8-core laptop.}\label{tab:semigroups5}
+\end{table}
+
+Every question but one was decided (Table~\ref{tab:semigroups5}): the 665 accepted implications are proved, and the 91 counterexamples are finite semigroups, checked against every law. The 380 classes are those of the class computation, and they are separated by these semigroups, so that Le Floch's preliminary count of 380 classes is confirmed. The one undecided question has the premise $x^3 = x^4$, $x^3 = x^2yx$, $x^3 = xy^2x$, $x^3 = yx^3$, $x^3 = y^2x^2$, $x^3 = y^3x$, $x^2y = xyxy$, $x^2y = yxy^2$ and the open law $x^3 = y^2zx$, that of the first row of the table above with a larger premise; truncated free semigroups up to $S_{11}$, of 535 elements, do not separate it, and their sizes keep growing. If that implication holds, the semigroup laws of order at most five generate exactly 4,450 theories; if not, there are at most 4,454, the closed sets of the implications proved, and the questions after it would need a further round.
+
+%======================================================================
 \section{User's guide}\label{sec:guide}
 %======================================================================
 
@@ -726,7 +798,20 @@ python explorations/equational_theories/etp.py equations.txt 3 43 4512 \
 \end{Verbatim}
 where \code{equations.txt} is the ETP's list of laws; the duals of the chosen laws are added. With \code{-{}-max-order K -{}-graph graph.json} instead of numbers, it writes one law of each class of equivalent ETP laws of order at most $K$, closed under duality (Section~\ref{sec:case3}), each with the members of its class. With \code{-{}-semigroup} in addition, it chooses among the right-associated laws, the ETP's forms of laws on semigroups: the first law of each class, the reversals of these laws, so that the laws are closed under duality among semigroups, and associativity; the file \code{equations\_semigroup.json} lists the 248 laws so chosen for order at most four, to be explored with \code{-{}-axiom 4512} (preset \code{configs/semigroup.toml}).
 
-Beyond the ETP's order four, \code{semigroup.py} generates semigroup laws as pairs of words. Its command \code{commutative-inputs} writes the laws, the background and the seeds of the exploration of Section~\ref{sec:csemigroups} (preset \code{configs/csemigroup5.toml}):
+Beyond the ETP's order four, \code{semigroup.py} generates semigroup laws as pairs of words. Its command \code{classes} sorts them into classes of laws equivalent among semigroups, and \code{inputs} writes the laws, the background and the seeds of the exploration of Section~\ref{sec:semigroups5} from the classes (preset \code{configs/semigroup5.toml}):
+\begin{Verbatim}
+python explorations/equational_theories/semigroup.py classes \
+    explorations/equational_theories/results/semigroup_order5_classes \
+    --max-order 5 --etp-equations etp/equations.txt --seeds \
+    explorations/equational_theories/results/\
+semigroup_vampire_mace4_e_etp_classes/magmas.json
+python explorations/equational_theories/semigroup.py inputs \
+    explorations/equational_theories/results/\
+semigroup_order5_classes/classes.json --order4 \
+    explorations/equational_theories/results/\
+semigroup_vampire_mace4_e_etp_classes/implications.json
+\end{Verbatim}
+Its command \code{commutative-inputs} writes the laws, the background and the seeds of the exploration of Section~\ref{sec:csemigroups} (preset \code{configs/csemigroup5.toml}):
 \begin{Verbatim}
 python explorations/equational_theories/semigroup.py commutative-inputs \
     --order4-equations explorations/equational_theories/equations_semigroup.json \
@@ -762,6 +847,7 @@ Table~\ref{tab:options} lists the options. They can also be read from a TOML fil
 -{}-vampire-model-time-limit S & 10 & seconds for each per-law finite model search \\
 -{}-mace4-time-limit S & 0 & seconds for Mace4's size sweep in the per-law search, in all; $0$ leaves Mace4 out \\
 -{}-model-premise full|simplified|both & \code{full} & the premise the per-law model searches use \\
+-{}-truncation-words W & 0 & with associativity assumed, try truncated free semigroups of at most $W$ words before the per-law model search; $0$ leaves them out \\
 -{}-eprover-time-limit S & 0 & seconds for E first on each law of the conclusion in a free magma's row, Vampire then getting the rest; $0$ leaves E out, 2 suffices \\
 -{}-min-search-size N & 1 & smallest table size Z3 tries \\
 -{}-max-search-size N & 6 & largest table size Z3 tries \\
