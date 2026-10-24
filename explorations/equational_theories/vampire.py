@@ -390,6 +390,9 @@ class VampireExpert(MagmaExpert):
         violating it; all models found are returned, the smallest first."""
         premise = frozenset(implication.premise)
         laws = sorted(law for law in laws if (premise, law) not in self._searched)
+        if not laws:
+            # Otherwise the size sweep below, having no searches, never stops.
+            return []
         violated = {law: threading.Event() for law in laws}
         premises = self._model_premises(premise)
         deadline = time.monotonic() + self.mace4_time_limit

@@ -370,6 +370,18 @@ def test_a_law_whose_search_ran_out_is_not_searched_again_with_its_premise():
     assert searches == [expert.quick_model_time_limit]
 
 
+def test_the_size_sweep_stops_when_every_law_was_searched_before():
+    expert = VampireExpert(initial_magmas=[], workers=2, mace4_time_limit=1, mace4="true")
+    scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    expert._search_mace4_model = lambda *args: time.sleep(0.05)
+    expert.validate(TWO_LAWS, TWO_LAWS.premise | TWO_LAWS.conclusion)
+    one = implication(["x * x = x * (x * x)"], ["x = x * x"])
+    again = threading.Thread(target=expert.validate, args=(one,), daemon=True)
+    again.start()
+    again.join(10)
+    assert not again.is_alive()
+
+
 def test_a_cancelled_command_is_killed():
     cancelled = threading.Event()
     threading.Timer(0.3, cancelled.set).start()
