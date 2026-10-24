@@ -8,9 +8,11 @@ as studied in the Equational Theories Project (ETP).
 from __future__ import annotations
 
 import json
+import random
 import re
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from itertools import product
 from pathlib import Path
 from typing import ClassVar
@@ -205,15 +207,49 @@ class Equation:
         dual_name = f"Dual({self.name})" if self.name else None
         return Equation(self.lhs.dual(), self.rhs.dual(), name=dual_name)
 
-    def holds_in_table(self, size: int, table: Sequence[Sequence[int]]) -> bool:
-        """Check if the equation holds universally in a magma defined by its Cayley table."""
-        vars_list = self.variables
-        if not vars_list:
-            return self.lhs.eval({}, table) == self.rhs.eval({}, table)
+    # Assignments tried at random first, and the most evaluated at once.
+    SAMPLES: ClassVar[int] = 64
+    BLOCK: ClassVar[int] = 2 ** 16
 
-        for vals in product(range(size), repeat=len(vars_list)):
-            env = dict(zip(vars_list, vals))
-            if self.lhs.eval(env, table) != self.rhs.eval(env, table):
+    def holds_in_table(self, size: int, table: Sequence[Sequence[int]]) -> bool:
+        """Check if the equation holds universally in a magma defined by its Cayley table.
+
+        Most laws that fail do so on one of a few random assignments, tried
+        first. Then every assignment is tried, those of the last variables
+        in blocks at once, each side evaluated to the list of its values.
+        In a nilpotent magma, where every term with enough leaves is a zero,
+        such a side is that zero whatever the assignment (see `_nilpotency`).
+        """
+        lhs: Term | int = self.lhs
+        rhs: Term | int = self.rhs
+        nilpotent = _nilpotency(tuple(map(tuple, table)))
+        if nilpotent is not None:
+            leaves, zero = nilpotent
+            lhs, rhs = (zero if len(side.factors()) >= leaves else side for side in (lhs, rhs))
+            if lhs == rhs == zero:
+                return True
+        vars_list = tuple(sorted(set().union(*(side.vars() for side in (lhs, rhs) if isinstance(side, Term)))))
+        if not vars_list:
+            return _values(lhs, {}, table) == _values(rhs, {}, table)
+
+        if size ** len(vars_list) > 4 * self.SAMPLES:
+            sample = random.Random(0)
+            for _ in range(self.SAMPLES):
+                env = {v: sample.randrange(size) for v in vars_list}
+                if _values(lhs, env, table) != _values(rhs, env, table):
+                    return False
+        blocked = len(vars_list)
+        while blocked > 1 and size ** blocked > self.BLOCK:
+            blocked -= 1
+        fixed, block = vars_list[:-blocked], vars_list[-blocked:]
+        total = size ** blocked
+        columns = {v: [i // size ** (blocked - 1 - k) % size for i in range(total)] for k, v in enumerate(block)}
+        for vals in product(range(size), repeat=len(fixed)):
+            env = {**columns, **dict(zip(fixed, vals))}
+            left, right = _values(lhs, env, table), _values(rhs, env, table)
+            if isinstance(left, int):
+                left, right = right, left
+            if left != right if isinstance(right, list) else any(v != right for v in left):
                 return False
         return True
 
@@ -271,6 +307,48 @@ class Equation:
         if s_id != o_id:
             return s_id < o_id
         return str(self) < str(other)
+
+
+def _values(term: Term | int, env: dict[str, int | list[int]], table: Sequence[Sequence[int]]) -> int | list[int]:
+    """The values of a term over a block of assignments: a list, or a number
+    if its variables are fixed in the block or it is a number itself."""
+    if isinstance(term, int):
+        return term
+    if isinstance(term, Var):
+        return env[term.name]
+    left, right = _values(term.left, env, table), _values(term.right, env, table)
+    if isinstance(left, int):
+        row = table[left]
+        return row[right] if isinstance(right, int) else [row[b] for b in right]
+    if isinstance(right, int):
+        return [table[a][right] for a in left]
+    return [table[a][b] for a, b in zip(left, right)]
+
+
+@lru_cache(maxsize=1024)
+def _nilpotency(table: tuple[tuple[int, ...], ...], max_leaves: int = 12) -> tuple[int, int] | None:
+    """(k, z) if z is a zero (z * a = a * z = z for all a) and every term with
+    at least k leaves, k at most `max_leaves`, takes the value z whatever
+    its variables; None otherwise.
+
+    The values of the terms with n leaves are the products of those with i
+    and n - i leaves. If they are all z for every n from k to 2k - 2, they
+    are for any n >= k: a term with more leaves has a subterm with between k
+    and 2k - 2 of them (descend into the bigger factor), which is z, and z
+    absorbs whatever it is multiplied with.
+    """
+    n = len(table)
+    zeros = [z for z in range(n) if all(table[z][a] == z == table[a][z] for a in range(n))]
+    if not zeros:
+        return None
+    zero = {zeros[0]}
+    values = [set(), set(range(n))]
+    for leaves in range(2, 2 * max_leaves - 1):
+        values.append({table[a][b] for i in range(1, leaves) for a in values[i] for b in values[leaves - i]})
+        k = next((m for m in range(1, leaves + 1) if values[m] == zero), None)
+        if k is not None and leaves >= 2 * k - 2 and all(values[m] == zero for m in range(k, 2 * k - 1)):
+            return k, zeros[0]
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -804,12 +882,26 @@ class ETP:
         def form(eq: Equation) -> Equation:
             return Equation(eq.lhs.right_associated(), eq.rhs.right_associated()) if associative else eq
 
+        def words(eq: Equation) -> tuple:
+            # The pair of words up to renaming and swapping sides.
+            forms = []
+            for a, b in ((eq.lhs, eq.rhs), (eq.rhs, eq.lhs)):
+                names: dict[str, int] = {}
+                forms.append(tuple(tuple(names.setdefault(v, len(names)) for v in side.factors()) for side in (a, b)))
+            return min(forms)
+
+        # Among semigroups, laws are equal up to renaming exactly when their
+        # words are, which a dictionary finds at once.
+        by_words: dict[tuple, Equation] = {}
+        if associative:
+            for candidate in attributes:
+                by_words.setdefault(words(candidate), candidate)
         eq_map: dict[Equation, Equation] = {}
         for eq in attributes:
             dual_eq = form(eq.dual())
             # Find matching dual in attributes using equivalence
-            matched = None
-            for candidate in attributes:
+            matched = by_words.get(words(dual_eq)) if associative else None
+            for candidate in [] if associative else attributes:
                 if dual_eq.is_equivalent_to(form(candidate)):
                     matched = candidate
                     break

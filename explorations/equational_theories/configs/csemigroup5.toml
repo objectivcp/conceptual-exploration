@@ -1,0 +1,31 @@
+# The exploration of the commutative semigroup laws of order at most five, for
+#   explore.py --config explorations/equational_theories/configs/csemigroup5.toml
+# run from the repository's root after
+#   fetch_etp.py etp
+# which puts the ETP data recorded in etp_version.json into etp/. Its input was
+# written by
+#   semigroup.py commutative-inputs --order4-equations explorations/equational_theories/equations_semigroup.json \
+#       --order4 explorations/equational_theories/results/semigroup_vampire_mace4_e_etp_classes/implications.json \
+#       --etp-equations etp/equations.txt
+# (see semigroup.py): the background is the theory of the semigroup laws of
+# order at most four found by the exploration of semigroup.toml, and the seeds
+# are the commutative semigroups of at most five elements, the monomial
+# semigroups of at most 32, the semigroups that exploration found and the ETP's
+# magmas, of which those that are not commutative semigroups are dropped.
+
+equations = "explorations/equational_theories/equations_csemigroup5.json"
+axiom = ["4512", "43"]
+no-duality = true
+expert = "vampire"
+vampire-first-time-limit = 3
+vampire-row-time-limit = 0
+vampire-model-time-limit = 300
+mace4-time-limit = 600
+model-premise = "simplified"
+eprover-time-limit = 2
+background = ["explorations/equational_theories/background_csemigroup5.json"]
+seed-context = [
+    "explorations/equational_theories/seeds_csemigroup5.json",
+    "explorations/equational_theories/results/semigroup_vampire_mace4_e_etp_classes/magmas.json",
+    "etp/magmas/*.txt",
+]

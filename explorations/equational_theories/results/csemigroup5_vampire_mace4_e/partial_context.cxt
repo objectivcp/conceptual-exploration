@@ -1,0 +1,199 @@
+B
+
+17
+160
+
+M1
+M2
+M3
+M4
+M5
+M6
+M7
+M8
+M9
+M10
+M11
+M12
+M13
+M14
+M15
+F1
+M16
+Eq1
+Eq2
+Eq3
+Eq8
+Eq11
+Eq38
+Eq40
+Eq43
+Eq47
+Eq56
+Eq307
+Eq308
+Eq311
+Eq323
+Eq411
+Eq440
+Eq3253
+Eq3267
+Eq3306
+Eq3414
+Eq4268
+Eq4270
+Eq4271
+Eq4276
+Eq4284
+Eq4512
+x = xxxxxx
+x = xxxxxy
+x = xxxxyy
+x = xxxxyz
+x = xxxyyy
+x = xxxyyz
+x = xxxyzw
+x = xxyyyy
+x = xxyyyz
+x = xxyyzz
+x = xxyyzw
+x = xxyzwu
+x = xyyyyy
+x = xyyyyz
+x = xyyyzz
+x = xyyyzw
+x = xyyzzw
+x = xyyzwu
+x = xyzwuv
+x = yyyyyy
+x = yyyyyz
+x = yyyyzz
+x = yyyyzw
+x = yyyzzz
+x = yyyzzw
+x = yyyzwu
+x = yyzzww
+x = yyzzwu
+x = yyzwuv
+x = yzwuvt
+xx = xxxxx
+xx = xxxxy
+xx = xxxyy
+xx = xxxyz
+xx = xxyyy
+xx = xxyyz
+xx = xxyzw
+xx = xyyyy
+xx = xyyyz
+xx = xyyzz
+xx = xyyzw
+xx = xyzwu
+xx = yyyyy
+xx = yyyyz
+xx = yyyzz
+xx = yyyzw
+xx = yyzzw
+xx = yyzwu
+xx = yzwuv
+xy = xyzwu
+xy = xzwuv
+xy = zwuvt
+xxx = xxxx
+xxx = xxxy
+xxx = xxyy
+xxx = xxyz
+xxx = xyyy
+xxx = xyyz
+xxx = xyzw
+xxx = yyyy
+xxx = yyyz
+xxx = yyzz
+xxx = yyzw
+xxx = yzwu
+xxy = xxyy
+xxy = xxyz
+xxy = xxzz
+xxy = xxzw
+xxy = xyyz
+xxy = xyzz
+xxy = xyzw
+xxy = xzzw
+xxy = xzwu
+xxy = yyzz
+xxy = yyzw
+xxy = yzzw
+xxy = yzwu
+xxy = zzww
+xxy = zzwu
+xxy = zwuv
+xyz = xyzw
+xyz = xywu
+xyz = xwuv
+xyz = wuvt
+xxxx = xxy
+xxxx = xyy
+xxxx = xyz
+xxxx = yyz
+xxxx = yzw
+xxxy = xxy
+xxxy = xxz
+xxxy = xyy
+xxxy = xyz
+xxxy = xzz
+xxxy = xzw
+xxxy = yyz
+xxxy = yzz
+xxxy = yzw
+xxxy = zzw
+xxxy = zwu
+xxyy = xyz
+xxyy = xzw
+xxyy = zwu
+xxyz = xyz
+xxyz = xyw
+xxyz = xwu
+xxyz = yzw
+xxyz = ywu
+xxyz = wuv
+xxxxx = xy
+xxxxx = yz
+xxxxy = xy
+xxxxy = xz
+xxxxy = yz
+xxxxy = zw
+xxxyy = xy
+xxxyy = xz
+xxxyy = yz
+xxxyy = zw
+xxxyz = xy
+xxxyz = xw
+xxxyz = yz
+xxxyz = yw
+xxxyz = wu
+xxyyz = xy
+xxyyz = xz
+xxyyz = xw
+xxyyz = zw
+xxyyz = wu
+xxyzw = xy
+xxyzw = xu
+xxyzw = yz
+xxyzw = yu
+xxyzw = uv
+X......X.................XX...........X.........................................................................................................................
+X......X................XX......................................................................................................................................
+X......X...............X.X....................................................XX..X..XX.........................................................................
+X.....XX..XX....X...XX.XXX..............................XXXXXXXXXXX.XXXXXX....XXXXXX.XXXX.XXXXXX.X.XXX.XX.....XX.X.XXX.X.XX.X...................................
+X......X............XXXXXX....................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.........................
+X......X......XX.........X......................................................................................................................................
+X.XX...XX.X..XX.X.X.....XXX.............................X.....................X...........X........................X.X...........X.......X...X..................
+X......XXX.............X.X..............................X...X............................................................................X.........X............
+X......X...............XXX....................................................XXXXXXXXXXXX......................................................................
+X.....XX..XX....XX..XX.XXX..............................XXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXXXXX....XX.X.XXX.X.XX.X...................................
+X......X..X.....X........X..............................X.....................X....................................X............................................
+X.....XX..XX....X...XX.XXX..............................XXXXXXXXXXXXXXXXXXX...XXXXXX.XXXX.XXXXXX.X.XXX.XX.....XX.X.XXX.X.XX.X...................................
+X.....XX..XXX...XX..XXXXXX..............................XXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.........................
+X..XX.XX......XXX.XX.X...X......................................................................................................................................
+X....XXX..XXXX..XXXXXXXXXX..............................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+X......X...............X.X....................................................XXXXXXXXXXXX......................................................................
+X......X...............X.X....................................................XXX.X..XXX........................................................................

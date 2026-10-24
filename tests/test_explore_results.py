@@ -84,3 +84,21 @@ def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(
     assert (tmp_path / "simplified_implications.txt").read_text().splitlines()[-1] == (
         "[1] Eq3: x = (x * x)  =>  Eq8: x = (x * (x * x))   (confirmed)"
     )
+
+
+def test_implications_of_a_background_file_are_taken_as_background(tmp_path):
+    from explorations.equational_theories.explore import run_magma_exploration
+
+    laws = [
+        {"id": 3, "equation": "x = (x * x)"},
+        {"id": 4, "equation": "x = (x * y)"},
+        {"name": "x = xyy", "equation": "x = (x * (y * y))"},
+    ]
+    (tmp_path / "laws.json").write_text(json.dumps(laws))
+    (tmp_path / "background.json").write_text(json.dumps([{"premise": [4], "conclusion": [3, "x = xyy"]}]))
+    run_magma_exploration(
+        tmp_path / "laws.json", use_duality_symmetry=False, max_search_size=2, report_interval=0,
+        results_dir=tmp_path / "out", background_files=[tmp_path / "background.json"],
+    )
+    rules = json.loads((tmp_path / "out" / "implications.json").read_text())
+    assert {"premise": [4], "conclusion": [3, "x = xyy"], "source": "background"} in rules

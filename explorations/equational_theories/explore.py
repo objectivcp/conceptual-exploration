@@ -328,6 +328,7 @@ def run_magma_exploration(
     etp_refutations: bool = False,
     map_unconfirmed: bool = True,
     axioms: Sequence[int | str] = (),
+    background_files: Sequence[str | Path] = (),
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -397,6 +398,22 @@ def run_magma_exploration(
             f"\nTook {len(from_graph)} Background Implications from the ETP graph, "
             f"which lists {len(listed)} of the {len(equations)} equations."
         )
+    if background_files:
+        # Laws are identified as in implications.json: by id, or else by
+        # name or text.
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        by_ident = {ident(eq): eq for eq in equations}
+        for path in background_files:
+            entries = json.loads(Path(path).read_text(encoding="utf-8"))
+            unknown = {law for e in entries for law in e["premise"] + e["conclusion"]} - set(by_ident)
+            if unknown:
+                raise ValueError(f"Laws of {path} not among the equations: {sorted(map(str, unknown))[:5]}")
+            given = [
+                Implication([by_ident[law] for law in e["premise"]], [by_ident[law] for law in e["conclusion"]])
+                for e in entries
+            ]
+            background += given
+            print(f"\nTook {len(given)} Background Implications from {path}.")
     assumed = []
     if axioms:
         # Laws every object satisfies, such as associativity for semigroups.
@@ -833,6 +850,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--background",
+        type=Path,
+        nargs="+",
+        default=[],
+        metavar="PATH",
+        help=(
+            "Files of implications known to hold, given to the exploration as "
+            "background implications: JSON lists of objects with a premise "
+            "and a conclusion, each a list of laws given by their id, or else "
+            "their name or text, as in implications.json."
+        ),
+    )
+    parser.add_argument(
         "--background-transient-order",
         type=int,
         default=None,
@@ -1046,6 +1076,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 etp_refutations=args.etp_refutations,
                 map_unconfirmed=not args.ask_unconfirmed_duals,
                 axioms=args.axiom,
+                background_files=args.background,
             )
         finally:
             sys.stdout = sys.__stdout__

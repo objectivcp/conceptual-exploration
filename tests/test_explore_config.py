@@ -57,3 +57,8 @@ def test_the_semigroup_preset_reads():
     defaults = read_config(build_parser(), ROOT / "explorations/equational_theories/configs/semigroup.toml")
     assert defaults["axiom"] == ["4512"] and defaults["model_premise"] == "simplified"
     assert defaults["vampire_row_time_limit"] == 0
+
+
+def test_the_commutative_semigroup_preset_reads():
+    defaults = read_config(build_parser(), ROOT / "explorations/equational_theories/configs/csemigroup5.toml")
+    assert defaults["axiom"] == ["4512", "43"] and defaults["no_duality"] is True
