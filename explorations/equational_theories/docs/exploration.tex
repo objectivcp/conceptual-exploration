@@ -37,7 +37,7 @@
 \setlist{itemsep=2pt,topsep=4pt}
 
 \title{Conceptual Exploration of Equational Theories of Magmas\\[4pt]
-\large Implementation notes, two case studies, and a user's guide}
+\large Implementation notes, case studies, and a user's guide}
 \author{The \code{conceptual-exploration} library}
 \date{October 2026}
 
@@ -45,7 +45,7 @@
 \maketitle
 
 \begin{abstract}
-This document describes how the \code{conceptual-exploration} library carries out the attribute exploration of implications between equational laws of magmas, the question studied by the Equational Theories Project. It is written for a reader who knows attribute exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is done differently from the book: partial objects, symmetries, experts that cannot always decide, and the resumption of an exploration when an implication accepted without proof is refuted. It then describes what is specific to equational theories: the attributes and objects, background knowledge derived by bounded equational reasoning, and three experts: one searching for finite counterexamples with the Z3 SMT solver, one using the Vampire theorem prover, which also refutes implications with free magmas, and one deciding questions by Knuth--Bendix completion. Three case studies are discussed in detail: sixteen classical laws, all thirty-one one-variable laws with at most four operations, and the ETP laws of order at most two and three, whose implications from several laws have been determined, or almost, by other means in other work. A user's guide closes the document.
+This document describes how the \code{conceptual-exploration} library carries out the attribute exploration of implications between equational laws of magmas, the question studied by the Equational Theories Project. It is written for a reader who knows attribute exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is done differently from the book: partial objects, symmetries, experts that cannot always decide, and the resumption of an exploration when an implication accepted without proof is refuted. It then describes what is specific to equational theories: the attributes and objects, background knowledge derived by bounded equational reasoning, and three experts: one searching for finite counterexamples with the Z3 SMT solver, one using the Vampire theorem prover, which also refutes implications with free magmas, and one deciding questions by Knuth--Bendix completion. Five case studies are discussed in detail: sixteen classical laws, all thirty-one one-variable laws with at most four operations, the ETP laws of order at most two and three, and the semigroup laws of order at most four, whose implications from several laws have been determined, or almost, by other means in other work, and the commutative semigroup laws of order at most five, beyond the ETP's laws. A user's guide closes the document.
 \end{abstract}
 
 \tableofcontents
@@ -64,7 +64,7 @@ From the point of view of Formal Concept Analysis, the natural object of study i
 \]
 where $M$ is a finite set of laws and $\mathcal{G}$ is the class of all magmas. Its object class is not even a set, but its implications are perfectly well defined: $P \to C$ holds in $\mathbb{K}_{\mathrm{Mag}}$ if every magma satisfying all laws of $P$ satisfies all laws of $C$. By Birkhoff's completeness theorem, this is the case exactly when every law of $C$ can be derived from the laws of $P$ by the rules of equational logic. Its intents are the sets $\Th(G) \cap M$ for magmas $G$, the traces on $M$ of equational theories. Attribute exploration is the natural tool for computing the canonical basis of $\mathbb{K}_{\mathrm{Mag}}$ and, with it, all its intents: an expert either confirms an implication, ideally by a proof, or refutes it by a magma.
 
-The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31}, \ref{sec:case3} and~\ref{sec:semigroups} discuss four explorations, and Section~\ref{sec:guide} explains how to run one's own.
+The library implements the exploration algorithm of the book~\cite{GO16} in a general form, in the Python package \code{conceptual\_exploration}, and the equational-theories domain in the directory \path{explorations/equational_theories}. Section~\ref{sec:library} describes how the general algorithm differs from the book. Section~\ref{sec:et} describes the domain: attributes, objects, the duality symmetry, background knowledge, and the experts. Sections~\ref{sec:case16}, \ref{sec:case31}, \ref{sec:case3}, \ref{sec:semigroups} and~\ref{sec:csemigroups} discuss five explorations, and Section~\ref{sec:guide} explains how to run one's own.
 
 %======================================================================
 \section{Attribute exploration as implemented}\label{sec:library}
@@ -200,9 +200,9 @@ The attributes are the laws listed in a JSON file, each with an equation string 
 \end{Verbatim}
 Terms are parsed into trees with variables as leaves and $*$ as the only operation; laws are compared syntactically. The set of laws must be closed under duality (Section~\ref{sec:duality}).
 
-\subsection{Objects: finite and free magmas}
+\subsection{Objects: finite and free magmas}\label{sec:objects}
 
-A \emph{finite magma} is given by its Cayley table on $\{0, \dots, n-1\}$. Whether it satisfies a law is decided by evaluating both sides under all $n^k$ assignments to the $k$ variables of the law, so rows of finite magmas are always complete.
+A \emph{finite magma} is given by its Cayley table on $\{0, \dots, n-1\}$. Whether it satisfies a law is decided by evaluating both sides under all $n^k$ assignments to the $k$ variables of the law, so rows of finite magmas are always complete. Most laws that fail do so on one of a few random assignments, which are tried first; the others are evaluated on blocks of assignments at once. When the magma has a zero, an element $z$ with $z * a = a * z = z$ for all $a$, that every term with at least $k$ leaves takes, a side with $k$ or more leaves is $z$ whatever the assignment: a law with two such sides holds without any evaluation, and a law with one reduces to the other side being $z$. Whether this is so is decided by the values of the terms with $k$ to $2k - 2$ leaves, since a term with more leaves has a subterm with between $k$ and $2k-2$ of them.
 
 A \emph{free magma} (Section~\ref{sec:free}) is a genuine magma, but usually an infinite one, so the library does not construct it; it represents it by its premise and computes only its row, which may be partial.
 
@@ -507,7 +507,7 @@ python explorations/equational_theories/explore.py \
 \end{Verbatim}
 
 
-\begin{table}[ht]
+\begin{table}[!htbp]
 \centering
 \small
 \begin{tabularx}{\textwidth}{@{}Xrrrr@{}}
@@ -596,7 +596,7 @@ python explorations/equational_theories/explore.py \
 
 \subsection{Results}
 
-\begin{table}[ht]
+\begin{table}[!htbp]
 \centering
 \small
 \begin{tabularx}{\textwidth}{@{}Xr@{}}
@@ -644,6 +644,68 @@ for which the premises are given in simplified form. They hid 8 of the 456 theor
 Larger sizes are not hopeless for laws whose two sides are products, such as those of the three implications: adding a copy of an element, with the same row and column, preserves such a law and its failures, so that a counterexample of size $n$ gives counterexamples of every larger size, and a search at any size at least the smallest succeeds. The size sweep exploits this on all cores without guessing the size, and the search goes on for the laws a model does not violate, so that the pool answers the next questions about the same premise. With these changes and duality, an exploration of Le Floch's representatives together with the reversals of 11 of them, which his classes contain, already gave his 456 theories; the exploration of this section chooses its laws from the ETP's classes instead.
 
 %======================================================================
+\section{Case study: commutative semigroup laws of order at most five}\label{sec:csemigroups}
+%======================================================================
+
+The ETP's laws stop at order four. Among commutative semigroups, the laws of order five are few enough to explore: this section explores them with the result of Section~\ref{sec:semigroups} as background, and shows how questions whose counterexamples are too large to search for were settled by constructing the counterexamples instead.
+
+\subsection{Setup}
+
+\paragraph{Laws.} Among commutative semigroups, a term is determined by how often each variable occurs in it, so a law is a pair of monomials. Generated as pairs of words up to renaming variables and swapping sides, there are 3,284 semigroup laws of order at most five, of which 653 have order at most four, Le Floch's number. In commutative form, each side sorted and the variables renamed to give the smallest pair, they become 246 laws, 2, 4, 12, 28, 66 and 134 of orders 0 to 5; a law whose two sides become the same monomial, such as commutativity, becomes $x = x$. Laws equivalent among semigroups remain equivalent among commutative semigroups, so of the 112 laws of order at most four one is taken for each class of laws that are equivalent among semigroups, by the result of Section~\ref{sec:semigroups}, or equal in commutative form: 24 laws. The 134 laws of order five are all taken. With associativity and commutativity, $\Eq{4512}$ and $\Eq{43}$, as axioms, this gives the 160 laws of \code{equations\_csemigroup5.json}, written by \code{semigroup.py commutative-inputs} (Section~\ref{sec:guide}). The exploration runs without duality, since reversing the words leaves a commutative law unchanged.
+
+\paragraph{Background.} The implications of the exploration of Section~\ref{sec:semigroups} hold in all semigroups, and so in the commutative ones. Mapped onto the 24 laws, they give 152 background implications, which have 26 closed sets on these laws: the 26 of the 456 semigroup theories that contain commutativity. Since that theory is complete, it contains every implication between these laws that holds in all semigroups, among them those of the ETP graph and of the previous sections. The laws of order five get no background.
+
+\paragraph{Objects.} The seeds are the 399 commutative semigroups of at most five elements, up to isomorphism, enumerated by Mace4; 33 monomial semigroups (Section~\ref{sec:monomial}); the semigroups of the context of Section~\ref{sec:semigroups}; and the ETP's finite magmas. Of these 1,863 tables, 444 are commutative semigroups, and 15 of them are not redundant.
+
+\paragraph{Expert.} The Vampire expert ran with the settings of Section~\ref{sec:semigroups}, which the preset \path{configs/csemigroup5.toml} holds:
+\begin{Verbatim}
+python explorations/equational_theories/explore.py \
+    --config explorations/equational_theories/configs/csemigroup5.toml
+\end{Verbatim}
+
+\subsection{Countermodels too large to search for}\label{sec:monomial}
+
+A first exploration, without the monomial semigroups among the seeds, was stopped after 95 questions in 65 minutes. Six of them had been accepted as unconfirmed, each after the full per-law model search of about ten minutes. Their premises were $x^2 = m$ for the six monomials $m$ of degree five that contain a square, from $x^2 = y^2zwu$ to $x^2 = y^5$, and in each the laws left unproved were $x^2 = xyzwu$ and $x^2 = yzwuv$. These premises hold wherever every square, and every monomial containing a square, is one and the same element, and the square-free monomials over five generators refute them all: their 31 products of distinct generators together with a zero, to which every product with a repeated generator is sent. Every square is $0$ there, and so is every monomial containing a square, so that the premises hold, while $xyzwu$, with five distinct generators for the variables, is the product of all five, not $0$, and so is $yzwuv$.
+
+No smaller commutative semigroup refutes them. If every square is $0$ and a product $a_1 \cdots a_5$ is not, every product of a subset of the $a_i$ divides it and is not $0$ either, and the products of two different subsets $P$ and $Q$ differ: if, say, $a \in P \setminus Q$, the product of $P$ times the product of the $a_i$ outside $Q$ contains $a$ twice and is $0$, while the product of $Q$ times the same is $a_1 \cdots a_5$. With the zero, this gives at least 32 elements, beyond what the model searches found in ten minutes.
+
+Such semigroups can be constructed instead. For a finite set $D$ of nonzero exponent vectors over $n$ generators that is closed downwards, the monomials of $D$ together with a zero, a product being sent to the zero when it leaves $D$, form a commutative semigroup: the Rees quotient of the free commutative semigroup by the ideal of the monomials outside $D$. The seeds include those of at most 32 elements whose monomials are square-free, or have every exponent below $e$, or have degree at most $d$, or are square-free of degree at most $d$, on at most six generators: 33 semigroups, written by \code{semigroup.py commutative-inputs}. Four of them are among the 15 seeds kept: $x^4 = 0$ on one generator (4 elements), exponents below 3 on three generators (27), the square-free monomials on five (32), and degree at most 2 on six (28).
+
+These semigroups satisfy many laws vacuously: every product of three elements is $0$ in the last of them, so that a law with at least three letters on each side holds, and evaluating such a law with seven variables on all $28^7$ assignments would take hours. The shortcut for magmas with a zero (Section~\ref{sec:objects}) decides them without evaluation, and the 33 semigroups are evaluated on the 160 laws in 18 seconds.
+
+\subsection{Results}
+
+\begin{table}[!htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}Xr@{}}
+\toprule
+Laws explored (24 of order at most four, 134 of order five, and the two axioms) & 160 \\
+Background implications from the semigroup exploration & 152 \\
+Seeds kept (of 444 commutative semigroups) & 15 \\
+Questions & 165 \\
+\quad proved & 163 \\
+\quad refuted by a finite model found for the question & 1 \\
+\quad refuted by a free magma & 1 \\
+\quad unconfirmed or rejected & 0 \\
+Canonical basis relative to the background & 163 \\
+\quad relative to no background & 192 \\
+Closed sets of the theory & 45 \\
+Classes of equivalent laws & 40 \\
+Rounds & 1 \\
+Running time & 70 s \\
+\bottomrule
+\end{tabularx}
+\caption{The exploration of the commutative semigroup laws of order at most five. The finite counterexample, of 12 elements, was found by Vampire's model builder. Of the 40 classes, 24 contain laws of order at most four and 16 only laws of order five; associativity and commutativity are in the class of $x = x$. With every question decided in one round and no symmetry, the canonical basis relative to the background consists of the 163 accepted implications. The running time is the wall-clock time on an 8-core laptop, the evaluation of the seeds included.}\label{tab:csemigroups}
+\end{table}
+
+Every question was decided (Table~\ref{tab:csemigroups}): the 163 accepted implications are proved, and the context's 17 objects are the 15 seeds, the 12-element counterexample and a free magma. The commutative semigroup laws of order at most five thus generate 45 theories, against 26 for those of order at most four, and fall into 40 classes.
+
+\paragraph{The free magma.} The free magma refutes question~71, whose premise is $x^3 = yzwu$, and its row, complete on the 160 laws, comes from the provers' saturation (Section~\ref{sec:free}). It is that of a finite semigroup as well. In a commutative semigroup satisfying $x^3 = yzwu$, all products of four elements are equal, to an element $0$ that absorbs every other and equals every cube, so that the free one on seven generators consists of $0$ and the monomials of degree at most three with every exponent below~$3$, 113 elements: the monomial semigroup of that set. The laws explored have at most seven variables, and such a law holds in the free semigroup of the variety on infinitely many generators exactly when it holds in the one on seven. Evaluated on the 160 laws, the 113-element semigroup has exactly the free magma's row, so that every non-implication of this exploration rests on a checked finite semigroup.
+
+\paragraph{Every theory has a model.} The 17 objects of the context have distinct intents, and these are the 17 meet-irreducible closed sets. As in Section~\ref{sec:semigroups}, commutative semigroups are closed under products, so that every closed set is the intent of a commutative semigroup, a finite one, the free magma being replaced by the semigroup of 113 elements, and the implications found are the whole propositional theory of commutative semigroups over these laws.
+
+%======================================================================
 \section{User's guide}\label{sec:guide}
 %======================================================================
 
@@ -663,6 +725,15 @@ python explorations/equational_theories/etp.py equations.txt 3 43 4512 \
     -o my_laws.json
 \end{Verbatim}
 where \code{equations.txt} is the ETP's list of laws; the duals of the chosen laws are added. With \code{-{}-max-order K -{}-graph graph.json} instead of numbers, it writes one law of each class of equivalent ETP laws of order at most $K$, closed under duality (Section~\ref{sec:case3}), each with the members of its class. With \code{-{}-semigroup} in addition, it chooses among the right-associated laws, the ETP's forms of laws on semigroups: the first law of each class, the reversals of these laws, so that the laws are closed under duality among semigroups, and associativity; the file \code{equations\_semigroup.json} lists the 248 laws so chosen for order at most four, to be explored with \code{-{}-axiom 4512} (preset \code{configs/semigroup.toml}).
+
+Beyond the ETP's order four, \code{semigroup.py} generates semigroup laws as pairs of words. Its command \code{commutative-inputs} writes the laws, the background and the seeds of the exploration of Section~\ref{sec:csemigroups} (preset \code{configs/csemigroup5.toml}):
+\begin{Verbatim}
+python explorations/equational_theories/semigroup.py commutative-inputs \
+    --order4-equations explorations/equational_theories/equations_semigroup.json \
+    --order4 explorations/equational_theories/results/\
+semigroup_vampire_mace4_e_etp_classes/implications.json \
+    --etp-equations etp/equations.txt
+\end{Verbatim}
 
 \subsection{Running an exploration}
 
@@ -704,6 +775,7 @@ Table~\ref{tab:options} lists the options. They can also be read from a TOML fil
 -{}-ask-unconfirmed-duals & off & ask about the duals of unconfirmed implications instead of adding them \\
 -{}-seed-magmas PATH... & & add magmas to the expert's pool \\
 -{}-seed-context PATH... & & add magmas to the context before starting \\
+-{}-background PATH... & & add the implications of files in the format of \code{implications.json} to the background \\
 -{}-report-every N & 1 & print every $N$th question; $0$ prints none \\
 -{}-results-dir PATH & new directory & where to save the results \\
 -{}-config FILE & & read options from a TOML file, the command line overriding it \\
@@ -735,6 +807,8 @@ python explorations/equational_theories/explore.py \
     --etp-graph graph.json --etp-equations equations.txt
 \end{Verbatim}
 This background costs nothing to compute and leaves only questions whose premise has several laws. It helps most when the implications between pairs of laws are hard to settle. Add \code{-{}-etp-refutations} to put the graph's refutations into the context as well (Section~\ref{sec:etp}); with the ETP's finite magmas seeded, only refutations that they do not account for are kept, such as those by infinite magmas.
+
+Implications known from elsewhere, such as the result of an earlier exploration, can be given with \code{-{}-background FILE}, in the format of \code{implications.json}, laws given by their id or else their name or text; every implication of the file must hold. The exploration of Section~\ref{sec:csemigroups} takes the theory of the semigroup exploration this way.
 
 \subsection{Reusing magmas}
 
