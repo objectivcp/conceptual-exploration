@@ -180,3 +180,10 @@ def test_the_square_free_monomials_on_five_generators_refute_what_no_smaller_sem
     assert magma.holds(equation(semigroup.parse_law("xx = yyzwu")))
     assert not magma.holds(equation(semigroup.parse_law("xx = xyzwu")))
     assert semigroup.monomial_semigroup(5, lambda v: max(v) < 2, "too big", max_size=31) is None
+
+
+def test_the_heisenberg_group_over_z5_has_exponent_5_and_does_not_commute():
+    group = semigroup.heisenberg_group(5)
+    assert group.size == 125 and group.holds(semigroup.ASSOCIATIVITY)
+    assert group.holds(equation(semigroup.parse_law("x = yyyyyx")))
+    assert not group.holds(equation(semigroup.parse_law("xy = yx")))

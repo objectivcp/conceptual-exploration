@@ -1,0 +1,873 @@
+B
+
+240
+388
+
+M1
+M2
+M3
+M4
+M4^op
+M5
+M5^op
+M6
+M7
+M7^op
+M8
+M8^op
+M9
+M10
+M10^op
+M11
+M11^op
+M12
+M12^op
+M13
+M13^op
+M14
+M14^op
+M15
+M15^op
+M16
+M17
+M18
+M18^op
+M19
+M19^op
+M20
+M20^op
+M21
+M21^op
+M22
+M23
+M23^op
+M24
+M24^op
+M25
+M25^op
+M26
+M26^op
+M27
+M27^op
+M28
+M28^op
+M29
+M30
+M30^op
+M31
+M31^op
+M32
+M33
+M34
+M35
+M35^op
+M36
+M36^op
+M37
+M38
+M38^op
+M39
+M39^op
+M40
+M41
+M42
+M43
+M43^op
+M44
+M44^op
+M45
+M46
+M47
+M48
+M49
+M50
+M50^op
+M51
+M51^op
+M52
+M53
+M54
+M55
+M56
+M57
+M58
+M59
+M60
+M61
+M62
+M62^op
+M63
+M63^op
+M64
+M64^op
+M65
+M65^op
+M66
+M66^op
+M67
+M67^op
+M68
+M69
+M69^op
+M70
+M70^op
+M71
+M71^op
+M72
+M73
+M74
+M74^op
+M75
+M76
+M76^op
+M77
+M77^op
+M78
+M78^op
+M79
+M79^op
+M80
+M80^op
+M81
+M82
+M82^op
+M83
+M83^op
+M84
+M85
+M85^op
+M86
+M87
+M87^op
+M88
+M88^op
+M89
+M89^op
+M90
+M90^op
+M91
+M91^op
+M92
+M92^op
+M93
+M93^op
+M94
+M94^op
+M95
+M95^op
+M96
+M96^op
+M97
+M97^op
+M98
+M98^op
+M99
+M100
+M101
+M101^op
+M102
+M103
+M104
+M105
+M105^op
+M106
+M106^op
+M107
+M107^op
+M108
+M108^op
+M109
+M109^op
+M110
+M110^op
+M111
+M111^op
+M112
+M112^op
+M113
+M114
+M115
+M116
+M117
+M118
+M118^op
+M119
+M119^op
+M120
+M120^op
+M121
+M121^op
+M122
+M122^op
+M123
+M123^op
+M124
+M124^op
+M125
+M125^op
+M126
+M126^op
+M127
+M127^op
+M128
+M128^op
+M129
+M130
+M130^op
+M131
+M131^op
+M132
+M132^op
+M133
+M133^op
+M134
+M135
+M135^op
+M136
+M137
+M138
+M139
+M140
+M141
+M142
+M143
+M144
+M144^op
+M145
+M146
+M146^op
+M147
+M148
+M149
+M150
+M150^op
+M151
+M152
+Eq1
+Eq2
+Eq3
+Eq4
+Eq5
+Eq8
+Eq10
+Eq11
+Eq14
+Eq16
+Eq38
+Eq39
+Eq40
+Eq41
+Eq43
+Eq47
+Eq56
+Eq66
+Eq73
+Eq75
+Eq307
+Eq308
+Eq309
+Eq310
+Eq311
+Eq312
+Eq313
+Eq314
+Eq315
+Eq316
+Eq318
+Eq323
+Eq325
+Eq326
+Eq327
+Eq329
+Eq333
+Eq343
+Eq411
+Eq419
+Eq429
+Eq436
+Eq440
+Eq477
+Eq504
+Eq511
+Eq513
+Eq3253
+Eq3255
+Eq3256
+Eq3258
+Eq3259
+Eq3260
+Eq3261
+Eq3264
+Eq3265
+Eq3267
+Eq3271
+Eq3273
+Eq3274
+Eq3278
+Eq3290
+Eq3292
+Eq3300
+Eq3301
+Eq3304
+Eq3306
+Eq3308
+Eq3309
+Eq3315
+Eq3316
+Eq3319
+Eq3322
+Eq3323
+Eq3326
+Eq3331
+Eq3334
+Eq3342
+Eq3345
+Eq3346
+Eq3353
+Eq3355
+Eq3370
+Eq3388
+Eq3414
+Eq4268
+Eq4269
+Eq4270
+Eq4271
+Eq4272
+Eq4273
+Eq4274
+Eq4275
+Eq4276
+Eq4277
+Eq4278
+Eq4279
+Eq4280
+Eq4283
+Eq4284
+Eq4286
+Eq4288
+Eq4290
+Eq4291
+Eq4293
+Eq4296
+Eq4297
+Eq4299
+Eq4300
+Eq4301
+Eq4304
+Eq4305
+Eq4314
+Eq4318
+Eq4320
+Eq4321
+Eq4325
+Eq4327
+Eq4331
+Eq4339
+Eq4343
+Eq4358
+Eq4360
+Eq4362
+Eq4364
+Eq4369
+Eq4512
+x = xxxxxx
+x = xyyyyy
+x = yxyyyy
+x = yyyyxy
+x = yyyyyx
+xx = xxxxx
+xx = xxyxx
+xx = xxyyy
+xx = xyxyx
+xx = xyxyy
+xx = xyxzx
+xx = xyxzy
+xx = xyxzw
+xx = xyyyx
+xx = xyzxy
+xx = xyzxz
+xx = xyzxw
+xx = xyzyx
+xx = xyzyw
+xx = xyzwx
+xx = xyzwy
+xx = xyzwz
+xx = xyzwu
+xx = yxxyy
+xx = yyxxy
+xx = yxyxy
+xx = yyxyx
+xx = yxyzx
+xx = yzywy
+xx = yxyzw
+xx = yxzxy
+xx = yxzxw
+xx = yxzyx
+xx = yxzyz
+xx = yxzyw
+xx = yxzwx
+xx = yzxwy
+xx = yzwxw
+xx = yzxwu
+xx = yyyxx
+xx = yzxyx
+xx = yzxyz
+xx = yzxwx
+xx = yzwxz
+xx = yzyxz
+xx = yzywx
+xx = yzwyx
+xx = yzwzx
+xx = yzwux
+xy = xyxxx
+xy = xyxyy
+xy = xyyyy
+xy = xyzxy
+xy = xyzzz
+xy = xzyzz
+xy = xzzzy
+xy = yxxxx
+xxxxy = yx
+xy = yxxyy
+xy = yxyyy
+xy = yzzzx
+xxyxz = yz
+xxx = xxxx
+xxx = xxxy
+xxx = xxyx
+xxx = xxyy
+xxx = xxyz
+xxx = xyxx
+xxx = xyxy
+xxx = xyxz
+xxx = xyyx
+xxx = xyyy
+xxx = xyyz
+xxx = xyzx
+xxx = xyzy
+xxx = xyzz
+xxx = xyzw
+xxx = yxxx
+xxx = yxxy
+xxx = yxxz
+xxx = yxyx
+xxx = yxyy
+xxx = yxyz
+xxx = yxzx
+xxx = yzwy
+xxx = yxzz
+xxx = yzwu
+xxx = yyxx
+xxx = yyxy
+xxx = yyxz
+xxx = yyyx
+xxx = yyyy
+xxx = yyzx
+xxx = yyzz
+xxx = yzxx
+xxx = yzxz
+xxx = yzyx
+xxx = yzyz
+xxx = yzzx
+xxx = yzwx
+xxy = xxyx
+xxy = xxyy
+xxy = xxyz
+xxy = xxzy
+xxy = xyxx
+xxy = xyxy
+xxy = xyxz
+xxy = xyyx
+xxy = xyyy
+xxy = xyyz
+xxy = xyzx
+xxy = xyzy
+xxy = xyzz
+xxy = xyzw
+xxy = xzxx
+xxy = xzxy
+xxy = xzxz
+xxy = xzyy
+xxy = xzyz
+xxy = xzzy
+xxy = xzwy
+xxy = yxxx
+xxy = yxxy
+xxy = yxyx
+xxy = yxyy
+xxy = yxyz
+xxy = yxzx
+xxy = yxzy
+xxy = yxzz
+xxy = yxzw
+xxy = yyxx
+xxy = yyxy
+xxy = yyzy
+xxy = yzxy
+xxy = yzyy
+xxy = yzyz
+xxy = zxxy
+xxy = zxyy
+xxy = zxyz
+xxy = zxzy
+xxy = zxzz
+xxy = zxwy
+xxy = zyxy
+xxy = zyzy
+xxy = zywy
+xxy = zzxy
+xxy = zwxy
+xyx = xyxx
+xyx = xyxy
+xyx = xyxz
+xyx = xyyx
+xyx = xyyy
+xyx = xyyz
+xyx = xyzx
+xyx = xyzy
+xyx = xyzz
+xyx = xyzw
+xyx = xzxy
+xyx = xzyx
+xyx = xzyy
+xyx = xzyw
+xyx = xzzy
+xyx = yxxx
+xyx = yxxy
+xyx = zxxw
+xyx = yxyx
+xyx = yxzx
+xyx = yxzz
+xyx = zwuv
+xyx = yzxx
+xyx = yzyx
+xyx = yzzx
+xyx = zywx
+xyx = zxyx
+xyx = zyyx
+xyx = zwyx
+xyy = xyyx
+xyy = xyyy
+xyy = xyyz
+xyy = xyzx
+xyy = xyzy
+xyy = xyzz
+xyy = xyzw
+xyy = xzyx
+xyy = xzyy
+xyy = xzyz
+xyy = xzyw
+xyxx = xzz
+xyy = xzzy
+xyy = xzwy
+xxyy = yxx
+xyy = yxxy
+xyy = zxyx
+xyy = yzxy
+xyy = zwyx
+xyy = zxxy
+xyy = zxyy
+xyy = zxyz
+xyy = zwxy
+xyy = zyxy
+xyz = xyzx
+xyz = xyzy
+xyz = xyzz
+xyz = xyzw
+xyz = xywz
+xyz = xzyx
+xyz = xzyy
+xyz = xzyz
+xyz = xwyz
+xyz = yxzy
+xyz = zyxz
+xyz = zxyz
+xyz = wxyz
+xxxy = xxy
+xxxy = xyx
+xxxy = xyy
+xxxy = yxx
+xxxy = yxy
+xxyx = xyx
+xxyx = xyy
+xxyx = xzz
+xxyx = yxx
+xxyx = zyy
+xxyx = zxx
+xxyy = xyx
+xxyy = xyy
+xxyy = xzx
+xxyy = yxy
+xxyy = yzy
+xxyy = zwz
+xxyz = xzx
+xxyz = xyy
+xxyz = xyz
+xxyz = xzz
+xxyz = zyy
+xxyz = yzy
+xxyz = yxz
+xxyz = yzz
+xxyz = zxz
+xxyz = zyz
+xyxx = xyy
+xyxx = yxx
+xyxy = xyy
+xyxy = xzz
+xyxy = yxx
+xyxy = yzz
+xyxy = zyy
+xyxz = xyy
+xyxz = xyz
+xyxz = xzz
+xyxz = xww
+xyxz = zxx
+xyxz = yxz
+xyxz = yzz
+xyyz = xyz
+xxxxy = xy
+xxxyx = xy
+xxxyx = yx
+xxxyz = yz
+xxyxy = xy
+xxyyx = xy
+X.............XXXXXX.........................................................................X....X...X...........X......X.XXXX.....X.X.X...X.........XXXX............X.........X.X.XXXXX.XXX.................................................................................................................................................................................................XXXX..
+X...........X.......XXXXXXXXXXX................XXXXXXXXXXXXXXXXXXX...................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX......
+X...................X..........................X...................................................................X..........X.....X........................................................X....................................................................................XX.X............X.X...........X...................................X....X..........................................
+X...................X..........X...............X..................X.............................................X.XX....X..X..X.....X........................................................X....................................................................................XX.XX..........XX.X..........XX............XX.....................X....XX.X..XX.X....X...X...XXX.X...X...X.XX.....
+X...................X............X.............X.......................X..........................X....XX..........X.....X....X.....X.............................................X..........X.....................................XX..XX.X..............XXX.....XX...............XX.X............X.X...........X.......................XX...XX.....XX..XX.....X..X..........................X......
+X...................X............X.............X.......................X..........................X....XX..........X.....X....X.....X.............................................X..........X.....................................XX..XX.X..............XXX.....XX...............XX.X............X.X...........X.......................XX...XX.....XX..XX.....X..X..........................X......
+X...................X..........X...............X..................X.............................................X.XX....X..X..X.....X........................................................X....................................................................................XX.XX..........XX.X..........XX............XX.....................X....XX.X..XX.X....X...X...XXX.X...X...X.XX.....
+X.............X.....X..........................X..................................................X...X...........X......X.XXXX.....X........................................................X.....................................X...X................X.........................X..............X..............X...................................XX.X.X..X...................X...................
+X...................XX..........XXX............XXX...................XXXXX...........X..........................X......X......X.....XXX.........................................XXXXX........XXXXX.................................XXXX...........................................XXXXXXXXXX...................XXXXXXX.................XXXXX........X..........................X.X....XX.....X......
+X...................X....X.....X....XX.........X..X.........X.....X...X...X.....X...X....X.............X....X.................X.....XX................................X............X.........X....X.........X.........X......X..........X.........X......X........X.X..X.....X..XX...X.......X......X....X..XXX.X......X...........X..........XX..XXX...XX......X......X......X.X..........X.XX.XXX.
+X...................X....X.....X....XX.........X..X.........X.....X...X...X.....X...X....X.............X....X.................X.....XX................................X............X.........X....X.........X.........X......X..........X.........X......X........X.X..X.....X..XX...X.......X......X....X..XXX.X......X...........X..........XX..XXX...XX......X......X......X.X..........X.XX.XXX.
+X...................XX..........XXX............XXX...................XXXXX...........X..........................X......X......X.....XXX.........................................XXXXX........XXXXX.................................XXXX...........................................XXXXXXXXXX...................XXXXXXX.................XXXXX........X..........................X.X....XX.....X......
+X.X..X........XX....X..........XXX..X.X........X..................XXXXXX.....XXXXX................XX..XXX.......X.XX....XX.XXXXX....X...........................................XXX....XXXX..X.....................................XX..XX.XX............XXXX.....XX...............XX.XX..........XX.X..........XX............XX........XXX..XXX.XXX.XXXXXXX.X..XX.X....X...X...XXX.X...X...X.XXXX.XX
+X....X................................X........X..................X..X.X......................................................X.....................................................................................................................................................................................................................................................................
+X....X................................X........X..................X....X........X.............................................X.....................................................................................................................................................................................................................................................................
+X.X..X.........X....X..........XXX....X........X..................XXXXXX..........................XX............X.............XX....X...........................................XXX..........X.....................................XX..XX.XX......................................XX.XX........................XX......................XXX..........XXX..XX....XX......X.......X.X.....X.....XXX..XX
+X.X..X.........X....X..........X.X..X.X........X..................X.X.XX.......XX..................X...X..........X...........XX....X............................................XX......XX..X......................................X...X..X.............X.X......X...............X..X...........X..X...........X.............X..........X....X...X.X.X.XX..X...X.X....X........XX.........X.XX.X.X.
+X....X................................X........X..................X....X........X.............................................X.....................................................................................................................................................................................................................................................................
+X....X................................X........X..................X..X.X......................................................X.....................................................................................................................................................................................................................................................................
+X.X..X.........X....X..........X.X..X.X........X..................X.X.XX.......XX..................X...X..........X...........XX....X............................................XX......XX..X......................................X...X..X.............X.X......X...............X..X...........X..X...........X.............X..........X....X...X.X.X.XX..X...X.X....X........XX.........X.XX.X.X.
+X.X..X.........X....X..........XXX....X........X..................XXXXXX..........................XX............X.............XX....X...........................................XXX..........X.....................................XX..XX.XX......................................XX.XX........................XX......................XXX..........XXX..XX....XX......X.......X.X.....X.....XXX..XX
+X.XX.XXX..X....XX...XXXXX......XXXXX..XXXXX....XXXXXXXXXX.........XXXXXXXXXXX........XXXX.........XXXX..........XX.....X.XX...XXX...XXXXXXXXXXXXXXXXXX..........................XXXXXXX......XXXXXXXXXXXXXXX.......................XXXXXXXXXXXXXXXXXXXXX..........................XXXXXXXXXXXXXXX..............XXXXXXXXXXXXXX..........XXXXXXXXX....XXX..XXX...XXX...XXXX......X.XX...XXXX...XXX..XX
+X.X.XXX..X.X...X...XX.X..X..X.XX.X.XXXXXXX....XXX.X..XX..X.XX.XX..X.X.XXX.X.X..XX..XX.X..X..X..X...X...X.X..X.X...X..X....XX..XX...XXX.X.X..X...X.X......XX....X..X...XX.X..XXXX.XXX..X..XX.XX.X..X..X..X...X..X..X...X..X.X.X.X.XX.X.X.X..X..X...X.X.XX.X.X..X...XXXX.XX.X.XXXXXXX..X..X....X...X..XX..XXXXXXX.X..X...X...XX.X.X.XX.XX..X.X..XX.XXXX.X.XX..X.X.X.XX...XX..XXXX.XX...X.XX..XXXX.XXX.
+X.X.XXX..X.X...X...XX.X..X..X.XX.X.XXXXXXX....XXX.X..XX..X.XX.XX..X.X.XXX.X.X..XX..XX.X..X..X..X...X...X.X..X.X...X..X....XX..XX...XXX.X.X..X...X.X......XX....X..X...XX.X..XXXX.XXX..X..XX.XX.X..X..X..X...X..X..X...X..X.X.X.X.XX.X.X.X..X..X...X.X.XX.X.X..X...XXXX.XX.X.XXXXXXX..X..X....X...X..XX..XXXXXXX.X..X...X...XX.X.X.XX.XX..X.X..XX.XXXX.X.XX..X.X.X.XX...XX..XXXX.XX...X.XX..XXXX.XXX.
+X.XX.XXX..X....XX...XXXXX......XXXXX..XXXXX....XXXXXXXXXX.........XXXXXXXXXXX........XXXX.........XXXX..........XX.....X.XX...XXX...XXXXXXXXXXXXXXXXXX..........................XXXXXXX......XXXXXXXXXXXXXXX.......................XXXXXXXXXXXXXXXXXXXXX..........................XXXXXXXXXXXXXXX..............XXXXXXXXXXXXXX..........XXXXXXXXX....XXX..XXX...XXX...XXXX......X.XX...XXXX...XXX..XX
+X....X.XXX..X.X.......................XXXXXXXXXX.X.X.X...X..X.....XX.X.X.X.XXX.XXXXXX..X..X.X.....X...X...X....X..X.X....X.XXXX.....................................................................................................................................................................................................................................................................
+X.............X.......................X...XXXXX...................................................X...X...........X......X.XXXX.....................................................................................................................................................................................................................................................................
+X...................X..........................X................................................................X.XX....X.....X.....X........................................................X....................................................................................XX.XX..........XX.X..........XX............XX.....................X....XX.X..XX.X....X.......XXX.X................
+X...................X..........................X..................................................X....XX..........X..........X.....X........................................................X.....................................XX..XX.X..............XXX.....XX...............XX.X............X.X...........X........................X..........XX..XX.....X..X.................................
+X...................X..........................X..................................................X....XX..........X..........X.....X........................................................X.....................................XX..XX.X..............XXX.....XX...............XX.X............X.X...........X........................X..........XX..XX.....X..X.................................
+X...................X..........................X................................................................X.XX....X.....X.....X........................................................X....................................................................................XX.XX..........XX.X..........XX............XX.....................X....XX.X..XX.X....X.......XXX.X................
+X...................X..........................X........................................................................X.....X.....X........................................................X.................................................................................................................XX............XX.....................X....X......X......X.......XXX.X................
+X...................X..........................X........................................................X.....................X.....X........................................................X.....................................XX...X.X..............XX......XX...............X.............................X........................X..........X...............................................
+X...................X..........................X........................................................X.....................X.....X........................................................X.....................................XX...X.X..............XX......XX...............X.............................X........................X..........X...............................................
+X...................X..........................X........................................................................X.....X.....X........................................................X.................................................................................................................XX............XX.....................X....X......X......X.......XXX.X................
+X...........X.......XX.X.X..XX.................XXXXXXXXXXXXXXXXXXX...................X.X.X..XXX..X.X.XX.X.XX..X.........X....XX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............................XXXXXXXXXXXXXXXXXXXXXXXX.............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X.....................................................................................XX.XX..X..XX......X.......XXXXXXX.X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..............XXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X....................................................................................XX...X.XXX.X.X.X..XXX...X.X...X....XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....................................XX..XX.....X.XXXXX....X..XX.....................
+X....................................................................................XX...X.XXX.X.X.X..XXX...X.X...X....XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....................................XX..XX.....X.XXXXX....X..XX.....................
+X.....................................................................................XX.XX..X..XX......X.......XXXXXXX.X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..............XXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X....................................................................................X......XXX.........X.........X........X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X......................................................................................X.X...X...XX.....................XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X......................................................................................X.X...X...XX.....................XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X....................................................................................X......XXX.........X.........X........X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X....................................................................................X......XXX.........X.......X.............X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X......................................................................................X.X...X...X.....X................X.....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X......................................................................................X.X...X...X.....X................X.....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X....................................................................................X......XXX.........X.......X.............X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X............................................................................................X....X...X...........X.........X.X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X.....................................................................................XX.XX..X..XX..............XXXXXXX.X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..............XXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X....................................................................................XX...X.XXX.X.X.X..XXX...X.X...X.....X....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....................................XX..XX.....X.XXXXX....X..XX.....................
+X....................................................................................XX...X.XXX.X.X.X..XXX...X.X...X.....X....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....................................XX..XX.....X.XXXXX....X..XX.....................
+X.....................................................................................XX.XX..X..XX..............XXXXXXX.X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..............XXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X.............X..............................................................................X....XX..XXX.......X.XX....XX.XXXX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X.....................................................................................X...X..X..X.....X............X.........XX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXX......................................X..XX.....X.XXXXX....X..XX.....................
+X............................................................................................X........XX........X............XX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X............................................................................................X....XX............X........X....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X............................................................................................X.....X...X..........X........X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X............................................................................................X.....X...X..........X........X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X............................................................................................X....XX............X........X....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X.....................................................................................X...X..X..X..X...............X..........X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXX......................................X..XX.....X.XXXXX....X..XX.....................
+X......................................................................................X.X...X...XX....XX..........X....XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X....................................................................................X......XXX.........X.......X.XX....X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X....................................................................................X......XXX.........X.......X.XX....X..X..X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..................................................................X...............................................
+X......................................................................................X.X...X...XX....XX..........X....XX....X..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX............................................................................XXXXXXXXXXXXXXXXXXXXXXXX...............XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X.....................................................................................X...X..X..X..X..X.X..........X....X....XX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...............................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXX......................................X..XX.....X.XXXXX....X..XX.....................
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.X....XX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.X...X.X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.X..X..X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.XX....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.XX....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.X..X..X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.......XX.X.X..XX.................XXXXXXX.X.XXXXXX......................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXX.XX.XXXXXXX.X.XXXXXXXXXXXX.XXXXXXXXXX.XX.XXXXXX.XXXXXX.X.XXX.XXXX.XX.XXXX..............................XXX.XX..XX.XX.XXX..XX..X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X.....................................X...X.X.X.......................................................X.......................X.....................................................................................................................................................................................................................................................................
+X.....................................X...X...X...............................................................................X.....................................................................................................................................................................................................................................................................
+X....X................................X.X......X..................X....X......................................................X.....................................................................................................................................................................................................................................................................
+X...........X.......XX.X.X..XX.................XXXXXXXXXXXXXXXXXXX...................X.X.X..XXX..X.X.XX.X.XX..X....X....X....XX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............................XXXXXXXXXXXXXXXXXXXXXXXX.............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X...........X.......XX.X.X..XX.................XXXXXXXX..XX.X.X.X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXX.X.XXXXXX.XX.XXXXXXXX.XXX.XXXXXXXXXXX.X.XXXX.X.XXXXX.XX.XXXXXXXXXXX..X.X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X...........X.......XX.X.X..XX.................XXXXX.XXX.X.XXX..X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXX.XXXXXX.XXXXX.XXX.XXXXXXXXX.XX.XXXXXX.XXXXXX.X.XXXX.XXXX.XXX.XXXXXXXXX.X.XXXX..............................XXXXXX.XXX.XX.XXXX.XXX.X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.XXX.X.XXX..X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXX.XXXXXX.XXXXX.XXX.XXXXXXXXX.XX.XXXXXX.XXXXXX.X.XXXX.XXXX.XXX.XXXXXXXXX.X.XXXX..............................XXXXXX.XXX.XX.XXXX.XXX.X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXXXXX..XX.X.X.X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXX.X.XXXXXX.XX.XXXXXXXX.XXX.XXXXXXXXXXX.X.XXXX.X.XXXXX.XX.XXXXXXXXXXX..X.X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X.........XXXXX.....XXXXXXXXXXXXXXXXXX.........XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+X.............X...................................................................................XX..XXX.......X.XX....XX.XXXX.....................................................................................................................................................................................................................................................................
+X.............X..............................................................................X....X...X...........X......X.XXXX..............................................................XXX..X...X.....X...X......X.XX.........................................................................................................................................................................
+X...........X.X.....XXXX.XX.XX.................XXXXXXXXX.XXXXXX.X....................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.XX.XXXX.....XXXXXXXXXXXXXXXXX.XXXXXXXXXXXXXXX.XXXXXXXXX..............XXXXXXXXXXXXXX.XXXXXXXXX.XXXXXXXXXXXX.XXXXXXXXXXXXX.XXXXXX.XXXXXXXX.XXXXXXXXXXX.XXXX.XXXXXXXXX.XXX.XXXXXXX.XXX.XX.XXXXXX.XXX.XX.XXXX.XXX.X.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.X.....XXXX.XX.XX.................XXXXXXXXXXXXXXXXXXX...................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.XX.XXXX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X...........X.X.....XXXX.XX.XX.................XXXXXXXXX.XXXXXX.X....................XXX.XX.XXX.XXXXXXXXXXXX.XXXXXXXXXX.XX.XXXX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXX.XXXXXXXXX.XXXXXXXXXXXX.XXXXXXXXXXXXX.XXXXXX.XXXXXXXX.XXXXXXXXXXX.XXXX.XXXXXXXXX.XXX.XXXXXXX.XXX.XX.XXXXXX.XXX.XX.XXXX.XXX.X.............XXXXXXXXXXXXXXXXXXX.XXX.XXXXXXXXXXX.XXX.X.......
+X.............X......................................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX......
+X...........X.X.....XXXXXXXXXXX................XXXXXXXXXXXXXXXXXXX...................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.....XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.............XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX......
+X..............XX..X.........................................................................X................................X.....X.X.....X...........X.............X.........X.X.X.X.......................................................................................................................................................................................................X.XX..
+X.............................................................................................................................XXX..X................................................................................................................................................................................................................................................................
+X......................................................................................X.X...X...X......................X.....X..............................................................XX.X.XXXXXX..X.XXXXXX..X.X..XX.XX.XXX.............................................................................XXX..X..X..XX.XX...XX..................XX........X..............XXXXXXXX.XXX.X.......
+X....................................................................................X......XXX.........X.....................X..............................................................XXXXX.X.XXX.X..XXXX..X...XXXXXXX.X.XX.XXXX.X.XXX.X....X.XX.XXX..X...XXX..XX.....XXXX...................................................................X...............................................
+X......................................................................................................X......................X..............................................................X..............X...........................X................X........X....X.....X.......X..............X.......XX.....................X..............XXX...XX......X......X........X..........X........
+X...............................................................................................................X.............X..............................................................XX....................................XXX............................................XXXXXX.......................XXX.....................XXXX....................................X.X....X.............
+X...................X....X.....................X..X.........X............................X....................................X.....XX................................X......................X....X.........X.........X......X...........................X.............X............................X.......X...X......X...........X..............XXX....X......X......X........X..........X........
+X...................XX.........................XXX...................................X........................................X.....XXX......................................................XXXXX.................................XXXX...........................................XXX..........................XXX.....................XXXX.........X...............................................
+X....................................................................................X......XXX.........X.....................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X.XXXXX..XXXX.X.X..X.X.XX.X..XX.XXXXX.XXX.X....X...................................................................X..............................X................
+X......................................................................................X.X...X...X......................X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X........................X....................................................XXXX.X.XX..XX.XX.X.XXX.................XX..XXXXX.X.....X.XX..X..XX...................
+X....................................................................................X......XXX.........X.....................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X.XXXXX..XXXX.X.X..X.X.XX.X..XX.XXXXX.XXX.X....X...................................................................X............................X..................
+X......................................................................................X.X...X...X......................X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X......X......................................................................XXXX.X.XX..XX.XX.X.XXX.................XX..XXXXX.X.....X.XX..X..XX...................
+X....................................................................................XX...X.XXX.X.X.X..XXX...X.X...X..........X..............................................................XXXXXXXXXXXXX..XXXXXXXX..XXXXXXX.XXXX.XXXXXXXXXXXX..XXX.XX.XXXXXXX..XXXXXXX.XXX.XXXX.XXXXXXXX..XX..XXXXXX...XX.XX......................................XX..XX.....X.XXXXX....X..XX.....................
+X.....................................................................................XX.XX..X..XX..............XXXXXXX.X.....X..............................................................XXXX.XXXXXXXXX.XXXXXXXXX.XX.XX.XXXXXX................................................XXXXXXXXX.XXX.XXXXXXX.XXX.XX.XXXXXX.XXX.XX.XXXX.XXX.X..............XXXXXXXXXXXXXXXX..........XXXXXXXX.XXX.X.......
+X.....................................................................................X...X..X..X..................X..........X..............................................................XXXXXXXXXX.XXX.XX.XXXXXX.XXXXXXXXXXX.................................................XXXXX.XXX.XXX..XX.XXX.XX..X........................................X..XX.....X.XXXXX....X..XX.....................
+X............................................................................................X................................X..............................................................XXX..XXXXXXXX..XXXXXXXX...X.XX...XXXX................................................................................................................................X.................................
+X............................................................................................X................................X..............................................................XXX..XXXXXXXX..XXXXXXXX...X.XX...XXXX.............................................................................................................................X....................................
+X............................................................................................X................................X..............................................................XX.X.XXXXXX..X.XXXXXX..X.X..XX.XX.XXX..........................................................................................................................X.......................................
+X............................................................................................X................................X..............................................................XXXXX.X.XXX.X..XXXX..X...XXXXXXX.X.XX.....X............................................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.XXXXXX..X.XXXXXX..X.X..XX.XX.XXX........................................................................................................................X.........................................
+X............................................................................................X................................X..............................................................XXXXX.X.XXX.X..XXXX..X...XXXXXXX.X.XX.........................X........................................................................................................................................
+X.....................................................................................X...X..X..X..................X..........X..............................................................XXX..XXXXXXXX..XXXXXXXX...X.XX...XXXX................................................XXXXXXXX..XX..XXXXXX...XX.XX.......................................X..XX..........................................
+X............................................................................................X................................X..............................................................XXXXXXXX.X..XX.X..XXXX.X.XXXXXXXXXXX...................................................................................................................................................................
+X....................................................................................X......XXX.........X...............X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X.XXXXX..XXXX.X.X..X.X.XX.X..XX.XXXXX.XXX.X....X...................................................................X............................X.X................
+X......................................................................................X.X...X...X......X...............X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X......X.................X....................................................XXXX.X.XX..XX.XX.X.XXX.................XX..XXXXX.X.....X.XX..X..XX...................
+X............................................................................................X.....................X..........X..............................................................XXX..XXXXXXXX..XXXXXXXX...X.XX...XXXX.............................................................................................................................X..X.................................
+X............................................................................................X................................X..............................................................XX.X.X..XXX..X.XXX.X...X.X..XX.XX...X..........................................................................................................................X......................X................
+X............................................................................................X................................X..............................................................XXXXX...XXX....XXX.......XXXXXXX....X.....X..................X.........................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XXX..X.XXX.X...X.X..XX.XX...X..........................................................................................................................X....................X..................
+X............................................................................................X................................X..............................................................XXXXX...XXX....XXX.......XXXXXXX....X.....XX...........................................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XXX..X.XXX.X...X.X..XX.XX...X........................................................................................................................X........................X................
+X............................................................................................X................................X..............................................................XXXXX...XXX....XXX.......XXXXXXX....X........................XX........................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XXX..X.XXX.X...X.X..XX.XX...X........................................................................................................................X......................X..................
+X............................................................................................X................................X..............................................................XXXXX...XXX....XXX.......XXXXXXX....X......X..................X........................................................................................................................................
+X............................................................................................X..........................X.....X..............................................................XX.X.XXXXXX..X.XXXXXX..X.X..XX.XX.XXX........................................................................................................................X.X.......................................
+X............................................................................................X..........X.....................X..............................................................XXXXX.X.XXX.X..XXXX..X...XXXXXXX.X.XX.....X...................X........................................................................................................................................
+X....................................................................................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X.XXXXX..XXXX.X.X..X.X.XX.X..XX.XXXXX.XXX.X....X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XX...................
+X..................................................................................................................X..........X..............................................................X....................................................................................XX.XX..........XX.X...............................................X....X......X......X............................
+X..................................................................................................................X..........X..............................................................X......................................X.............................................XX.X............X.X...........X........................X...........X..XX..........................................
+X...................X....X.....................X..X.........X............................X.............X......................X.....XX................................X......................X....X.........X.........X......X..........X................X........X....X.....X.......X..............X.......XX..X......X...........X..............XXX...XX......X......X........X..........X........
+X...................XX.........................XXX...................................X..........................X.............X.....XXX......................................................XXXXX.................................XXXX...........................................XXXXXX.......................XXX.....................XXXX.........X..........................X.X....X.............
+X............................................................................................X.....X..........................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X........................X........................................................................................................................X................
+X............................................................................................X........X.......................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X........................X......................................................................................................................X..................
+X............................................................................................X........X.......................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X......X..........................................................................................................................................X................
+X............................................................................................X.....X..........................X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X......X........................................................................................................................................X..................
+X............................................................................................X................................X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX.....................................................................................................................................................X................
+X............................................................................................X................................X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX............................X.........................................................................................................................................
+X....................................................................................X......XXX.........X.....................X..............................................................XXXXXX..XXX....XXX.X.....XXXXXXX....X.XXXXX..XXX....X....X.XX.X.....XXX.X.X...X....X...................................................................X..............................X................
+X......................................................................................X.X...X...X......................X.....X..............................................................XXXX.X..XXX..X.XXX.X...X.XX.XX.XX...X........................X....................................................XXX..X..X..XX.XX...XX..................XX..XXXXX.X..............XX...................
+X............................................................................................X................................X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX...................................................................................................................................................X..................
+X............................................................................................X................................X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX..........X...........................................................................................................................................................
+X....................................................................................X......XXX.........X.....................X..............................................................XXXXXX..XXX....XXX.X.....XXXXXXX....X.XXXXX..XXX....X....X.XX.X.....XXX.X.X...X....X...................................................................X............................X..................
+X......................................................................................X.X...X...X......................X.....X..............................................................XXXX.X..XXX..X.XXX.X...X.XX.XX.XX...X......X......................................................................XXX..X..X..XX.XX...XX..................XX..XXXXX.X..............XX...................
+X............................................................................................X................................X..............................................................XXX..XX.XX.XX..XX.XX.XX...X.XX...X.X.................................................................................................................................X.................................
+X............................................................................................X................................X..............................................................XXX..XXXXX.X...XX.XXX.X...X.XX....XX..............................................................................................................................X....................................
+X............................................................................................X................................X..............................................................XXX..XXXXX.X...XX.XXX.X...X.XX....XX.................................................................................................................................X.................................
+X............................................................................................X................................X..............................................................XXX..XX.XX.XX..XX.XX.XX...X.XX...X.X..............................................................................................................................X....................................
+X............................................................................................X................................X..............................................................XX.X.XX.XX...X.XX.XX...X.X..XX.XX..X...........................................................................................................................X.......................................
+X............................................................................................X................................X..............................................................XXXXX.X.XX.....XX.X......XXXXXXX...X......X............................................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.XX.XX...X.XX.XX...X.X..XX.XX..X.........................................................................................................................X.........................................
+X............................................................................................X................................X..............................................................XXXXX.X.XX.....XX.X......XXXXXXX...X..........................X........................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XX.....XX..X.....X..XX.X.............................................................................................................................X.........................................
+X............................................................................................X................................X..............................................................XXXX....XX.....XX........XX.XX.X..............................X........................................................................................................................................
+X.............................................................................................................................X..............................................................X..............X........................................................................X..............X.......X......................X....................XX......X...............X...................
+X.............................................................................................................................X..............................................................XX....................................XXX............................................XXXXX.............................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XX...X.XX..X...X.X..XX.XX..............................................................................................................................X....................X..................
+X............................................................................................X................................X..............................................................XXXXX...XX.....XX........XXXXXXX..........XX...........................................................................................................................................................
+X............................................................................................X................................X..............................................................XXXXX...XX.....XX........XXXXXXX...........X..................X........................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XX...X.XX..X...X.X..XX.XX............................................................................................................................X......................X..................
+X...........X.......XX.X.X..XX.................XXXXX.X...X..X........................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXX.X.XXX.X.XXXXXXXXX.X..XX.XX.X.XX.X..............XXXXXXX.XXX..X.XXXXX...X.XXXXXXXX..XX.XXXXXX.XXX..X.X.XX.X.XXXX...X.XXX.XXXX..X..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.X...X..X........................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXX.X.XXXXXX.X..XXXXX..XXXXXX...XXX.XX.XX..............XXXXXXX.XXX..X.XXXXX...X.XXXXXXXX..XX.XXXXXX.XXX..X.X.XX.X.XXXX...X.XXX.XXXX..X..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.X...X..X........................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXX..XXXXXXX.X.XXXX.X.XXXXX.XX.XXXX...XX..............XXXXXXX.XXX..X.XXXXX...X.XXXXXXXX..XX.XXXXXX.XXX..X.X.XX.X.XXXX...X.XXX.XXXX..X..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.X...X..X........................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXX..XXXX..XXXXXXXXXX..XX..X.X.XXX.X..............XXXXXXX.XXX..X.XXXXX...X.XXXXXXXX..XX.XXXXXX.XXX..X.X.XX.X.XXXX...X.XXX.XXXX..X..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.X...X..X........................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXXX...XX.XXXXXXX..XXXX.X.XXXXXXXX...............XXXXXXX.XXX..X.XXXXX...X.XXXXXXXX..XX.XXXXXX.XXX..X.X.XX.X.XXXX...X.XXX.XXXX..X..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXX.XX..X..X...X....................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXXXX.XXX.XXXXXXXX.XXXXXX.XXXXXXXX...............XXXXXXX.XXXX.X.XXXXX..XX.XXXXXXXX..XX.XXXXXX.XXXX.X.X.XX.X.XXXX..XX.XXXXXXXXX.X..X.X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X.............X...................................................................................X...X...........X......X.XXXXXXXXX................................................................................................................................................................................................................................................................
+X............................................................................................X..........................X.....X..............................................................XX.X.X..XXX..X.XXX.X...X.X..XX.XX...X........................................................................................................................X.X....................X.X................
+X............................................................................................X..........X.....................X..............................................................XXXXX...XXX....XXX.......XXXXXXX....X.....XX.................XX........................................................................................................................................
+X.....................................................................................X...X..X..X..................X....X.....X..............................................................XXXXXXXXXX.XXX.XX.XXXXXX.XXXXXXXXXXX.................................................XXXXX.XXX.XXX..XX.XXX.XX..X........................................X..XX.....X.XXXXX....X..XX.....................
+X.....................................................................................X...X..X..X.......X..........X..........X..............................................................XXXXXXXXXX.XXX.XX.XXXXXX.XXXXXXXXXXX.................................................XXXXX.XXX.XXX..XX.XXX.XX..X........................................X..XX.....X.XXXXX....X..XX.....................
+X....................................................................................X......XXX.........X...............X.....X..............................................................XXXXXX..XXXX...XXX.X..X..XXXXXXX....X.XXXXX..XXXX...X....X.XX.X..X..XXXXX.X.X.X....X...................................................................X...............................................
+X......................................................................................X.X...X...X......X...............X.....X..............................................................XXXX.X..XXXX.X.XXX.X..XX.XX.XX.XX...X.............................................................................XXXX.X.XX..XX.XX.X.XXX.................XX..XXXXX.X..............XX...................
+X............................................................................................X....................X...........X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X....X...........................X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X....................................................................................X......XXX.........X.........X...........X..............................................................XXXXXXXXXXX....XXXXXX....XXXXXXX..XXX.XXXXXXXXXX....XXX..X.XXXXX....XXX.XXX..XX..X.X...................................................................X...............................................
+X......................................................................................X.X...X...XX.....................X.....X..............................................................XXXX.XX.XXX.XX.XXXXX.X.X.XX.XX.XXX.XX.............................................................................XXX.XX..XX.XX.XXX..XX..X...............XX..XXXXX.X..............XXXXXXX..............
+X............................................................................................X....................X........X..X..............................................................XXXX.XX.XX.XXX.XX.XX.XXX.XX.XX.XXX.X...................................................................................................................................................................
+X............................................................................................X....X......................X....X..............................................................XXXXXXXXXX.X...XX.XXX.X..XXXXXXX..XX...................................................................................................................................................................
+X....................................................................................X......XXX.........X.........X........X..X..............................................................XXXXXXXXXXX....XXXXXX....XXXXXXX..XXX.XXXXXXXXXX....XXX..X.XXXXX....XXX.XXX..XX..X.X...................................................................X...............................................
+X......................................................................................X.X...X...XX.....................XX....X..............................................................XXXX.XX.XXX.XX.XXXXX.X.X.XX.XX.XXX.XX.............................................................................XXX.XX..XX.XX.XXX..XX..X...............XX..XXXXX.X..............XXXXXXX..............
+X............................................................................................X..................X.............X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X.........X......................X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X.....................................................................................X...X..X..X.....X............X..........X..............................................................XXXX.XXXXX.XX..XX.XXXXX..XX.XX.X.XXX.................................................XXXXX.XX..XX...XX.XX...X..X........................................X..XX.....X.XXXX...............................
+X............................................................................................X.....X..........................X..............................................................XX.X.....X.....X.........X..XX.X.......................................................................................................................................................................
+X............................................................................................X.....X..........................X..............................................................XXXX.X..XX.X...XX..X..X..XX.XX.X.......................................................................................................................................................................
+X............................................................................................X.....X..........................X..............................................................XXXX.X..XX.....XX..X.....XX.XX.X...........X........................................................................................................................................X..................
+X............................................................................................X.....X..X.X...............X.....X..............................................................XXXXXX..XXXX.X.XXX.X..XX.XXXXXXXX...X......X.................X......................................................................................................................X.X................
+X............................................................................................X................................X..............................................................XX.X.X..XX...X.XX..X...X.X..XX.XX............................................................................................................................X........................X................
+X............................................................................................X................................X..............................................................XXXXX...XX.....XX........XXXXXXX.............................XX........................................................................................................................................
+X............................................................................................X................................X..............................................................XX.X.X..XX...X.XX..X...X.X..XX.XX..............................................................................................................................X......................X................
+X............................................................................................X................................X..............................................................XXXXX...XX.....XX........XXXXXXX..........X..................X.........................................................................................................................................
+X............................................................................................X..........................X.....X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX...................................................................................................................................................X.X................
+X............................................................................................X..........X.....................X..............................................................XXXXXX..XX.X.X.XX..X..XX.XXXXXXXX..........X.................X.........................................................................................................................................
+X....................................................................................X......XXX.........X...............X.....X..............................................................XXXXXX..XXX....XXX.X.....XXXXXXX....X.XXXXX..XXX....X....X.XX.X.....XXX.X.X...X....X...................................................................X............................X.X................
+X......................................................................................X.X...X...X......X...............X.....X..............................................................XXXX.X..XXX..X.XXX.X...X.XX.XX.XX...X......X.................X....................................................XXX..X..X..XX.XX...XX..................XX..XXXXX.X..............XX...................
+X............................................................................................X..........................X.....X..............................................................XX.X.XX.XX...X.XX.XX...X.X..XX.XX..X.........................................................................................................................X.X.......................................
+X............................................................................................X..........X.....................X..............................................................XXXXX.X.XX.....XX.X......XXXXXXX...X......X...................X........................................................................................................................................
+X............................................................................................X..........................X.....X..............................................................XX.X.X..XX...X.XX..X...X.X..XX.XX............................................................................................................................X.X....................X.X................
+X............................................................................................X..........X.....................X..............................................................XXXXX...XX.....XX........XXXXXXX..........XX.................XX........................................................................................................................................
+X............................................................................................X..........................X.....X..............................................................XXXXXX..XX.X...XX..X..X..XXXXXXX.............................X.........................................................................................................................................
+X............................................................................................X..........X.....................X..............................................................XXXX.X..XX.X.X.XX..X..XX.XX.XX.XX.....................................................................................................................................................X................
+X............................................................................................X..........................X.....X..............................................................XXXXXX..XX.X...XX..X..X..XXXXXXX...........X...........................................................................................................................................................
+X............................................................................................X..........X.....................X..............................................................XXXX.X..XX.X.X.XX..X..XX.XX.XX.XX...................................................................................................................................................X..................
+X............................................................................................X.....................X..........X..............................................................XXX..XX.XX.XX..XX.XX.XX...X.XX...X.X..............................................................................................................................X..X.................................
+X............................................................................................X.....................X..........X..............................................................XXX..XXXXX.X...XX.XXX.X...X.XX....XX..............................................................................................................................X..X.................................
+X............................................................................................X..................X.XX....X.....X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X....X....XX..........X..........X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X............................................................................................X..................X.XX....X..X..X..............................................................XXXX.XX.XX.XXX.XX.XX.XXX.XX.XX.XXX.X...................................................................................................................................................................
+X............................................................................................X....X....XX..........X.....X....X..............................................................XXXXXXXXXX.X...XX.XXX.X..XXXXXXX..XX...................................................................................................................................................................
+X.....................................................................................X...X..X..X.......X..........X....X.....X..............................................................XXXXXXXXXX.XXX.XX.XXXXXX.XXXXXXXXXXX.................................................XXXXX.XXX.XXX..XX.XXX.XX..X........................................X..XX.....X.XXXXX....X..XX.....................
+X............................................................................................X..........X...............X.....X..............................................................XXXX.X..XX.X.X.XX..X..XX.XX.XX.XX...................................................................................................................................................X.X................
+X............................................................................................X..........X...............X.....X..............................................................XXXXXX..XX.X...XX..X..X..XXXXXXX...........X.................X.........................................................................................................................................
+X............................................................................................X..........X.........X...........X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X....X.....................X.....X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X............................................................................................X..........X.......X.............X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X.........X................X.....X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X............................................................................................X..........X.......X.XX....X.....X..............................................................XXXXXXX.XX.XXX.XX.XX.XXX.XXXXXXXXX.X...................................................................................................................................................................
+X............................................................................................X....X....XX..........X....X.....X..............................................................XXXXXXXXXX.X.X.XX.XXX.XX.XXXXXXXX.XX...................................................................................................................................................................
+X............................................................................................X........X.......................X..............................................................XXX..XXX.X..X..X..XXXX....X.XX...XXX...................................................................................................................................................................
+X............................................................................................X........X.......................X..............................................................XXXX.X..XX.....XX..X.....XX.XX.X.............................X......................................................................................................................X..................
+X............................................................................................X........X.......................X..............................................................XXXX.X..XX.....XX..X.....XX.XX.X...........X..........................................................................................................................................X................
+X............................................................................................X........X......................XX..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X.....X..........................X..............................................................XXXX.X..XX.....XX..X.....XX.XX.X.............................X........................................................................................................................X................
+X............................................................................................X.....X..X.X...............X.....X..............................................................XXXX.X..XX.X...XX..X..X..XX.XX.X.......................................................................................................................................................................
+X............................................................................................X.....X..X.X...............X.....X..............................................................XXXX.X..XX.....XX..X.....XX.XX.X...........X.................X......................................................................................................................X.X................
+X............................................................................................X....X...X...........X...........X..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X....X...X...........X......X.XXXX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X............................................................................................X....X...X...........X..........XX..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X....X...X...........X.........X.X..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X....X...X...........X........X..X..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X....X...X...........X......X....X..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X............................................................................................X....X...X...........X......X.XXXX..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................
+X...........X.......XX.X.X..XX.................XXXXX.XXX.X.XXX..X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXX.XXXXXXXXX.XXXXXX.XXXXXXXX.XXXXXX.XX..............XXXXXXX.XXXXXX.XXXXX.XXX.XXXXXXXXX.XX.XXXXXX.XXXXXX.X.XXXX.XXXX.XXX.XXXXXXXXX.X.XXXX..............................XXXXXX.XXX.XX.XXXX.XXX.X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXXXXX..XX.X.X.X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXXXXX..XXXXXXXXXXXXXX..XXX.XXXXX..............XXXXXXXXXXXX.X.XXXXXX.XX.XXXXXXXX.XXX.XXXXXXXXXXX.X.XXXX.X.XXXXX.XX.XXXXXXXXXXX..X.X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X...........X.......XX.X.X..XX.................XXXXX.XX..X..X...X....................X.X.X..XXX..X.X.XX.X.XX..X....X....X.....X.....XXXXXXXXXXXXX.XXX.XXXXXXXX.XXXXXX.XXXXXXXX...............XXXXXXX.XXXX.X.XXXXX..XX.XXXXXXXX..XX.XXXXXX.XXXX.X.X.XX.X.XXXX..XX.XXXXXXXXX.X..X.X..............................XXXX.X.XX..XX.XX.X.XXX...............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...................X..........................X......................X.......................................................X.....X........................................................X.......................................................................................X..........................X...................................X...............................................
+X...........X.......XX.X.X..XX.................XXXXXXX.X.XXXXXX......................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXXXXX.XX.XXXXXXXXXXXXX.X.XXXXXXXXX..............XXXXXXXXXXX.XX.XXXXXXX.X.XXXXXXXXXXXX.XXXXXXXXXX.XX.XXXXXX.XXXXXX.X.XXX.XXXX.XX.XXXX..............................XXX.XX..XX.XX.XXX..XX..X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X...........X.......XX.X.X..XX.................XXXXX.X.X.X.XXX.......................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXX.XXXXX.XXXXXXXXXXX.XXX.XXXXXXX.X..............XXXXXXX.XXX.XX.XXXXX.X.X.XXXXXXXXX.XX.XXXXXX.XXX.XX.X.XXXX.XXXX.X.X.XXX.XXXX..X.XXXX..............................XXX.XX..XX.XX.XXX..XX..X.............X.XX..XXXXX.X.....X.XX..X..XXXXXXX..............
+X...........X.......XX.X.X..XX.................XXXXXXX...XX.X.X......................X.X.X..XXX..X.X.XX.X.XX..X.........X.....X.....XXXXXXXXXXXXXXX.X.XXXXXXXXXXXX.XX.XXXX.XXXX..............XXXXXXXXXXX..X.XXXXXX..X.XXXXXXXX.XXX.XXXXXXXXXX..X.XXXX.X.XXXXX..X.XXX.XXXX.XX..X.X..............................XXX..X..X..XX.XX...XX................X.XX..XXXXX.X.....X.XX..X..XXXXXXXX.XXX.X.......
+X.............X..............................................................................X....X...X...........X......X.XXXX..............................................................XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.................................................................................................................................................................
+X.............X..............................................................................X....X...X...........X......X.XXXX..............................................................XXXX.XX.XX.....XX.XX.....XX.XX.X...X...................................................................................................................................................................

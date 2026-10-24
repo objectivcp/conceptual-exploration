@@ -400,3 +400,16 @@ def test_the_simplified_premise_keeps_the_laws_every_object_satisfies():
     both = VampireExpert(initial_magmas=[], background=background, model_premise="both")
     assert both._model_premises(premise) == [premise, frozenset({associative, idempotent})]
     assert VampireExpert(initial_magmas=[], background=background)._model_premises(premise) == [premise]
+
+
+def test_a_truncated_free_semigroup_refutes_what_no_model_search_finds():
+    premise = ["x * (y * z) = (x * y) * z", "x * (x * x) = x * (x * (x * x))", "x * (x * x) = y * (x * (x * x))",
+               "x * (x * y) = y * (x * (y * y))"]
+    question = implication(premise, ["x * (x * x) = y * (y * (z * x))"])
+    expert = VampireExpert(initial_magmas=[], truncation_words=4000)
+    searches = scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    counterexample = expert.validate(question)
+    assert expert.last_status == "truncated free semigroup"
+    assert counterexample.object.size == 39 and counterexample.refutes(question)
+    # Found before the per-law model search, which never ran.
+    assert searches == [expert.quick_model_time_limit]

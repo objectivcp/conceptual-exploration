@@ -102,3 +102,25 @@ def test_implications_of_a_background_file_are_taken_as_background(tmp_path):
     )
     rules = json.loads((tmp_path / "out" / "implications.json").read_text())
     assert {"premise": [4], "conclusion": [3, "x = xyy"], "source": "background"} in rules
+
+
+def test_truncated_free_semigroups_need_associativity(tmp_path):
+    import pytest
+    from explorations.equational_theories.explore import run_magma_exploration
+
+    (tmp_path / "laws.json").write_text(json.dumps([{"id": 3, "equation": "x = (x * x)"}]))
+    with pytest.raises(ValueError, match="associativity"):
+        run_magma_exploration(tmp_path / "laws.json", use_duality_symmetry=False, expert_kind="vampire",
+                              truncation_words=100, report_interval=0, results_dir=tmp_path / "out")
+
+
+def test_a_law_named_by_its_words_is_written_once(tmp_path):
+    named = Equation.parse("x = x * (y * x)", name="x = xyx")
+    titled = Equation.parse("x = x * x", name="Idempotence")
+    laws = [named, titled, Equation.parse("x = y * x", id=5)]
+    base = ExplorationBase(attributes=laws)
+    base.accept(Implication([named], [titled]), ImplicationSource.CONFIRMED)
+    save_results(base, laws, tmp_path, "test", words=True)
+    assert (tmp_path / "simplified_implications.txt").read_text().splitlines()[-1] == (
+        "[1] x = xyx  =>  Idempotence: x = xx   (confirmed)"
+    )

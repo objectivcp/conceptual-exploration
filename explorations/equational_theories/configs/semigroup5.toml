@@ -1,0 +1,26 @@
+# The exploration of the semigroup laws of order at most five, one law of each
+# class of equivalent laws, for
+#   explore.py --config explorations/equational_theories/configs/semigroup5.toml
+# run from the repository's root. Its input was written by
+#   semigroup.py classes explorations/equational_theories/results/semigroup_order5_classes ...
+#   semigroup.py inputs explorations/equational_theories/results/semigroup_order5_classes/classes.json ...
+# (see semigroup.py): the laws are one of each of the 380 classes of the 3,284
+# semigroup laws of order at most five, closed under reversal; the background
+# is the theory of the semigroup laws of order at most four found by the
+# exploration of semigroup.toml; the seeds are the semigroups of at most four
+# elements, those it found, the monomial semigroups of at most 32 elements and
+# the Heisenberg groups over Z3 and Z5. Questions are refuted by truncated free
+# semigroups (free_semigroup.py) before the model search.
+
+equations = "explorations/equational_theories/equations_semigroup5.json"
+axiom = ["4512"]
+expert = "vampire"
+vampire-first-time-limit = 3
+vampire-row-time-limit = 0
+vampire-model-time-limit = 300
+mace4-time-limit = 600
+model-premise = "simplified"
+truncation-words = 20000
+eprover-time-limit = 2
+background = ["explorations/equational_theories/background_semigroup5.json"]
+seed-context = ["explorations/equational_theories/seeds_semigroup5.json"]

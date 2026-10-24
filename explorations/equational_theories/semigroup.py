@@ -586,6 +586,18 @@ def monomial_semigroups(max_size: int = 32) -> list[Magma]:
     return list(found.values())
 
 
+def heisenberg_group(p: int) -> Magma:
+    """The Heisenberg group over Z_p, the upper unitriangular 3 x 3 matrices,
+    of p^3 elements: for an odd prime p, a non-abelian group of exponent p,
+    the smallest there is. It satisfies x = y^p x but not xy = yx, which no
+    model search of p^3 = 125 elements finds for p = 5."""
+    elements = [(a, b, c) for a in range(p) for b in range(p) for c in range(p)]
+    index = {e: k for k, e in enumerate(elements)}
+    times = lambda u, v: ((u[0] + v[0]) % p, (u[1] + v[1]) % p, (u[2] + v[2] + u[0] * v[1]) % p)
+    table = tuple(tuple(index[times(u, v)] for v in elements) for u in elements)
+    return Magma(len(elements), table, name=f"Heisenberg group over Z{p}")
+
+
 def commutative_inputs(
         max_order: int,
         order4_laws: Sequence[dict],
@@ -669,10 +681,14 @@ def write_inputs(args: argparse.Namespace) -> None:
     write = lambda kind, value: (args.directory / f"{kind}_{args.prefix}.json").write_text(
         "[\n" + ",\n".join(json.dumps(item) for item in value) + "\n]\n"
     )
+    constructed = monomial_semigroups(args.monomial_size) + [heisenberg_group(p) for p in args.heisenberg]
+    seeds = data["semigroups"] + [
+        {"name": m.name, "size": m.size, "table": [list(row) for row in m.table]} for m in constructed
+    ]
     write("equations", entries)
     write("background", background)
-    write("seeds", data["semigroups"])
-    print(f"{len(entries)} laws, {len(background)} background implications, {len(data['semigroups'])} seeds")
+    write("seeds", seeds)
+    print(f"{len(entries)} laws, {len(background)} background implications, {len(seeds)} seeds")
 
 
 def write_commutative_inputs(args: argparse.Namespace) -> None:
@@ -701,6 +717,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     inputs = commands.add_parser("inputs", help="Write the input of an exploration of the classes.")
     inputs.add_argument("classes", type=Path)
     inputs.add_argument("--order4", type=Path, help="An exploration's implications.json on laws of order 4.")
+    inputs.add_argument(
+        "--monomial-size", type=int, default=32, help="Seed with the monomial semigroups up to this size."
+    )
+    inputs.add_argument(
+        "--heisenberg", type=int, nargs="*", default=[3, 5], help="Seed with the Heisenberg groups over these Z_p."
+    )
     inputs.add_argument("--prefix", default="semigroup5")
     inputs.add_argument("--directory", type=Path, default=Path(__file__).parent)
     commutative = commands.add_parser(

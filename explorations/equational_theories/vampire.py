@@ -38,6 +38,7 @@ from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Undecided
+from explorations.equational_theories.free_semigroup import truncated_countermodels
 from explorations.equational_theories.magma import Equation, Magma, MagmaExpert, Op, Term, Var
 
 
@@ -174,8 +175,14 @@ class VampireExpert(MagmaExpert):
        CounterSatisfiable and a single law of the conclusion is left, that
        law fails in the free magma, which refutes the implication, after
        another brief search for a finite model violating it.
-    6. Otherwise finite models are searched for, of the premise and violating
-       a law of the conclusion not proved, one law at a time, on all cores:
+    6. Otherwise, for semigroups, if `truncation_words` is positive, the
+       truncated free semigroups of the premise's variety are tried first
+       (see free_semigroup.py), with at most that many words: a law of the
+       conclusion with up to four variables that fails in one of them at the
+       generators gives a checked countermodel, which can be far larger than
+       any model search reaches. Then finite models are searched for, of the
+       premise and violating a law of the conclusion not proved, one law at
+       a time, on all cores:
        by Vampire's model builder (`model_time_limit` seconds per law) and,
        if `mace4_time_limit` is positive, by Mace4, which sweeps the sizes in
        parallel: each of its searches is for one law at one size, and a core
@@ -227,6 +234,7 @@ class VampireExpert(MagmaExpert):
         eprover: str = "eprover",
         first_time_limit: int | None = None,
         model_premise: str = "full",
+        truncation_words: int = 0,
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -253,6 +261,8 @@ class VampireExpert(MagmaExpert):
         if model_premise not in ("full", "simplified", "both"):
             raise ValueError(f"model_premise must be full, simplified or both, not {model_premise!r}")
         self.model_premise = model_premise
+        # For semigroups only: laws are read as words.
+        self.truncation_words = truncation_words
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
@@ -261,8 +271,10 @@ class VampireExpert(MagmaExpert):
         # premise satisfies a law without asking Vampire.
         self._known = ImplicationTheory[Equation](background)
         self._undecided: dict[Implication[Equation], Undecided] = {}
-        # Premises and laws whose model search in step 6 ran out of time.
+        # Premises and laws whose model search in step 6 ran out of time, and
+        # those that no truncated free semigroup refuted.
         self._searched: set[tuple[frozenset[Equation], Equation]] = set()
+        self._truncated: set[tuple[frozenset[Equation], Equation]] = set()
 
     def validate(
         self,
@@ -339,6 +351,12 @@ class VampireExpert(MagmaExpert):
                 return self._refute(magma, eval_attrs, implication)
             self.last_status = "free magma"
             return self._completed(premise, set(free.positive), set(free.negative) | set(rest), attributes)
+        models = self._truncated_models(implication, rest) if self.truncation_words > 0 else []
+        if models:
+            self.cached_magmas.extend(models[1:])
+            counterexample = self._refute(models[0], eval_attrs, implication)
+            self.last_status = "truncated free semigroup"
+            return counterexample
         models = self._search_models(implication, rest)
         if models:
             # The pool answers the next questions about the same premise.
@@ -446,6 +464,27 @@ class VampireExpert(MagmaExpert):
         self._searched.update((premise, law) for law in laws if not violated[law].is_set())
         # Searches at several sizes run at once, so a larger model may come first.
         return sorted(found, key=lambda magma: magma.size)
+
+    def _truncated_models(
+        self,
+        implication: Implication[Equation],
+        laws: Iterable[Equation],
+    ) -> list[Magma]:
+        """Step 6, first for semigroups: countermodels from the truncated free
+        semigroups of the variety of the (simplified) premise, each checked
+        against the whole premise, the smallest first."""
+        premise = frozenset(implication.premise)
+        laws = sorted(law for law in laws if (premise, law) not in self._truncated)
+        found = truncated_countermodels(sorted(self._model_premises(premise)[-1]), laws, self.truncation_words)
+        models = [
+            self._checked_model(implication, magma.table, "Truncated-Free-Semigroup")
+            for magma in found
+            if all(magma.holds(eq) for eq in premise)
+        ]
+        self._truncated.update(
+            (premise, law) for law in laws if all(magma.holds(law) for magma in models)
+        )
+        return sorted(models, key=lambda magma: magma.size)
 
     def _model_premises(self, premise: frozenset[Equation]) -> list[frozenset[Equation]]:
         """The premises the model searches use, by `model_premise`."""

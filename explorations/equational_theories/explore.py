@@ -121,9 +121,9 @@ def save_results(
     def law(eq: Equation) -> str:
         sides = "".join(eq.lhs.factors()), "".join(eq.rhs.factors())
         # Associativity itself has the same words on both sides.
-        if words and sides[0] != sides[1]:
-            return f"{label(eq)}: {sides[0]} = {sides[1]}"
-        return f"{label(eq)}: {eq.lhs} = {eq.rhs}"
+        written = f"{sides[0]} = {sides[1]}" if words and sides[0] != sides[1] else f"{eq.lhs} = {eq.rhs}"
+        # A law named by its own text is written once.
+        return written if label(eq) == written else f"{label(eq)}: {written}"
     laws = lambda eqs: ", ".join(law(eq) for eq in sorted(eqs, key=order)) or "∅"
     # The background, simplified the same way into a cover of its own.
     background = ExplorationBase(attributes=base.attributes, mappings=base.mappings)
@@ -322,6 +322,7 @@ def run_magma_exploration(
     vampire_row_time_limit: int | None = None,
     mace4_time_limit: int = 0,
     model_premise: str = "full",
+    truncation_words: int = 0,
     eprover_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
@@ -339,6 +340,7 @@ def run_magma_exploration(
         else f", {vampire_row_time_limit} s per other law of a free magma"
     ) + (f", Mace4 {mace4_time_limit} s for models" if mace4_time_limit > 0 else ""
     ) + (f", {model_premise} premises for models" if model_premise != "full" else ""
+    ) + (f", truncated free semigroups of up to {truncation_words} words" if truncation_words > 0 else ""
     ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else "")
     first_setting = (
         "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
@@ -430,6 +432,8 @@ def run_magma_exploration(
     # compared up to associativity.
     associativity = Equation.parse("x * (y * z) = (x * y) * z")
     associative = any(eq.is_equivalent_to(associativity) for eq in assumed)
+    if truncation_words > 0 and not associative:
+        raise ValueError("Truncated free semigroups need associativity among the axioms")
     mappings = []
     if use_duality_symmetry:
         mappings.append(ETP.get_duality_mapping(equations, associative=associative))
@@ -445,6 +449,7 @@ def run_magma_exploration(
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
             model_premise=model_premise,
+            truncation_words=truncation_words,
             eprover_time_limit=eprover_time_limit,
         )
 
@@ -738,6 +743,17 @@ def build_parser() -> argparse.ArgumentParser:
             "question's, a subset whose closure under the background and the "
             "implications proved is the question's, or both (default: full). "
             "A model is checked against the question's premise in any case."
+        ),
+    )
+    parser.add_argument(
+        "--truncation-words",
+        type=int,
+        default=0,
+        metavar="W",
+        help=(
+            "With associativity among the axioms, refute questions with the "
+            "truncated free semigroups of the premise's variety, of at most W "
+            "words, before the per-law model search (default: 0, not used)."
         ),
     )
     parser.add_argument(
@@ -1070,6 +1086,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 vampire_row_time_limit=args.vampire_row_time_limit,
                 mace4_time_limit=args.mace4_time_limit,
                 model_premise=args.model_premise,
+                truncation_words=args.truncation_words,
                 eprover_time_limit=args.eprover_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
