@@ -166,7 +166,11 @@ class VampireExpert(MagmaExpert):
        it unknown. If `eprover_time_limit` is positive, the E prover is asked
        about each law of the conclusion first, for that many seconds (2 is
        enough: when E decides a law, it nearly always does so within a
-       fraction of a second), and Vampire only about the laws E leaves. The row is then completed with the
+       fraction of a second), and Vampire only about the laws E leaves. If
+       `prover9_time_limit` is positive, Prover9 then tries to prove each law
+       of the conclusion that E left, for that many seconds; it finds some
+       proofs at once that Vampire needs far longer for. Only its proofs
+       count, since its search failing does not show a law false. The row is then completed with the
        known implications: what the laws proved imply is proved too, and a
        law that would imply a law on the negative side is on the negative
        side. If a law of the conclusion is on the negative side, the free
@@ -232,6 +236,8 @@ class VampireExpert(MagmaExpert):
         mace4: str = "mace4",
         eprover_time_limit: int = 0,
         eprover: str = "eprover",
+        prover9_time_limit: int = 0,
+        prover9: str = "prover9",
         first_time_limit: int | None = None,
         model_premise: str = "full",
         truncation_words: int = 0,
@@ -252,6 +258,12 @@ class VampireExpert(MagmaExpert):
             self.mace4 = shutil.which(mace4)
             if self.mace4 is None:
                 raise FileNotFoundError(f"Mace4 executable {mace4!r} not found")
+        self.prover9_time_limit = prover9_time_limit
+        self.prover9 = None
+        if prover9_time_limit > 0:
+            self.prover9 = shutil.which(prover9)
+            if self.prover9 is None:
+                raise FileNotFoundError(f"Prover9 executable {prover9!r} not found")
         self.eprover_time_limit = eprover_time_limit
         self.eprover = None
         if eprover_time_limit > 0:
@@ -539,6 +551,11 @@ class VampireExpert(MagmaExpert):
             with ThreadPoolExecutor(self.workers) as pool:
                 problems = [tptp_problem(premise, [law]) for law in conclusion]
                 verdicts.update(zip(conclusion, pool.map(self._run_eprover, problems)))
+        if self.prover9 is not None:
+            left = [law for law in conclusion if verdicts.get(law) not in DECISIVE]
+            with ThreadPoolExecutor(self.workers) as pool:
+                proofs = pool.map(lambda law: self._run_prover9(premise, law), left)
+                verdicts.update((law, "Theorem") for law, proved in zip(left, proofs) if proved)
         # Vampire on the laws of the conclusion that E left, which start first,
         # and on the others.
         laws = [law for law in conclusion if verdicts.get(law) not in DECISIVE]
@@ -577,6 +594,13 @@ class VampireExpert(MagmaExpert):
                     negative.add(law)
                     changed = True
         return PartialObject(FreeMagma(premise), positive, negative)
+
+    def _run_prover9(self, premise: Iterable[Equation], law: Equation) -> bool:
+        """Whether Prover9 proves the law from the premise within
+        `prover9_time_limit` seconds."""
+        problem = f"assign(max_seconds, {self.prover9_time_limit}).\n" + ladr_problem(premise, law)
+        output = self._execute([self.prover9], problem, self.prover9_time_limit + 30, None)
+        return "THEOREM PROVED" in output
 
     def _run_eprover(self, problem: str) -> str:
         """The SZS status of the E prover on the problem, within

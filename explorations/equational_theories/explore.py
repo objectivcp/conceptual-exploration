@@ -324,6 +324,7 @@ def run_magma_exploration(
     model_premise: str = "full",
     truncation_words: int = 0,
     eprover_time_limit: int = 0,
+    prover9_time_limit: int = 0,
     etp_graph: str | Path | None = None,
     etp_equations: str | Path | None = None,
     etp_refutations: bool = False,
@@ -341,7 +342,8 @@ def run_magma_exploration(
     ) + (f", Mace4 {mace4_time_limit} s for models" if mace4_time_limit > 0 else ""
     ) + (f", {model_premise} premises for models" if model_premise != "full" else ""
     ) + (f", truncated free semigroups of up to {truncation_words} words" if truncation_words > 0 else ""
-    ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else "")
+    ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else ""
+    ) + (f", Prover9 {prover9_time_limit} s per law" if prover9_time_limit > 0 else "")
     first_setting = (
         "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
     )
@@ -451,6 +453,7 @@ def run_magma_exploration(
             model_premise=model_premise,
             truncation_words=truncation_words,
             eprover_time_limit=eprover_time_limit,
+            prover9_time_limit=prover9_time_limit,
         )
 
     if expert_kind == "vampire":
@@ -754,6 +757,17 @@ def build_parser() -> argparse.ArgumentParser:
             "With associativity among the axioms, refute questions with the "
             "truncated free semigroups of the premise's variety, of at most W "
             "words, before the per-law model search (default: 0, not used)."
+        ),
+    )
+    parser.add_argument(
+        "--prover9-time-limit",
+        type=int,
+        default=0,
+        metavar="S",
+        help=(
+            "With the Vampire expert, let Prover9 try to prove each law of the "
+            "conclusion that E leaves in the free magma's row, for S seconds, "
+            "before Vampire (default: 0, not used)."
         ),
     )
     parser.add_argument(
@@ -1088,6 +1102,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 model_premise=args.model_premise,
                 truncation_words=args.truncation_words,
                 eprover_time_limit=args.eprover_time_limit,
+                prover9_time_limit=args.prover9_time_limit,
                 etp_graph=args.etp_graph,
                 etp_equations=args.etp_equations,
                 etp_refutations=args.etp_refutations,

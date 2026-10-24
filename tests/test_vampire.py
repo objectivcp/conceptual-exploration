@@ -413,3 +413,16 @@ def test_a_truncated_free_semigroup_refutes_what_no_model_search_finds():
     assert counterexample.object.size == 39 and counterexample.refutes(question)
     # Found before the per-law model search, which never ran.
     assert searches == [expert.quick_model_time_limit]
+
+
+@pytest.mark.skipif(shutil.which("prover9") is None, reason="Prover9 not installed")
+def test_prover9_proves_what_vampire_does_not_in_time():
+    # Question 324 of the semigroup exploration of order five: Prover9 proves
+    # it in seconds, Vampire needed 16 seconds on four cores.
+    premise = ["x * (y * z) = (x * y) * z", "x * (x * x) = x * (x * (x * x))", "x * (x * x) = x * (x * (y * x))",
+               "x * (x * x) = x * (y * (y * x))", "x * (x * x) = y * (x * (x * x))", "x * (x * x) = y * (y * (x * x))",
+               "x * (x * x) = y * (y * (y * x))", "x * (x * y) = x * (y * (x * y))", "x * (x * y) = y * (x * (y * y))"]
+    question = implication(premise, ["x * (x * x) = y * (y * (z * x))"])
+    expert = VampireExpert(initial_magmas=[], prover9_time_limit=20)
+    scripted(expert, lambda conjecture, options: ("Timeout", ""))
+    assert expert.validate(question) is None and expert.last_status == "proved"

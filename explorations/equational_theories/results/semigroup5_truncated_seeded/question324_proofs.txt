@@ -1,0 +1,127 @@
+Question 324 of exploration.log, accepted there as unconfirmed, and its proofs.
+Twee 2.6.1 and Prover9 (LADR 2009-11A) each proved it in about 2 seconds,
+Vampire 5.1.0 (--mode casc --cores 4) in 16 seconds; the dual implication,
+both words of every law reversed, follows by symmetry.
+
+Problem (TPTP):
+fof(premise0, axiom, ![Vx]: m(Vx,m(Vx,Vx)) = m(Vx,m(Vx,m(Vx,Vx)))).
+fof(premise1, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vx)) = m(Vx,m(Vx,m(Vy,Vx)))).
+fof(premise2, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vx)) = m(Vx,m(Vy,m(Vy,Vx)))).
+fof(premise3, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vx)) = m(Vy,m(Vx,m(Vx,Vx)))).
+fof(premise4, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vx)) = m(Vy,m(Vy,m(Vx,Vx)))).
+fof(premise5, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vx)) = m(Vy,m(Vy,m(Vy,Vx)))).
+fof(premise6, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vy)) = m(Vx,m(Vy,m(Vx,Vy)))).
+fof(premise7, axiom, ![Vx,Vy]: m(Vx,m(Vx,Vy)) = m(Vy,m(Vx,m(Vy,Vy)))).
+fof(premise8, axiom, ![Vx]: Vx = Vx).
+fof(premise9, axiom, ![Vx,Vy,Vz]: m(Vx,m(Vy,Vz)) = m(m(Vx,Vy),Vz)).
+fof(conclusion, conjecture, (![Vx,Vy,Vz]: m(Vx,m(Vx,Vx)) = m(Vy,m(Vy,m(Vz,Vx))))).
+
+Twee:
+Proof:
+  m(X, m(m(Y, X), X))
+= { by axiom 1 (premise9) R->L }
+  m(X, m(Y, m(X, X)))
+= { by axiom 3 (premise7) R->L }
+  m(Y, m(Y, X))
+
+Goal 1 (conclusion): m(vx, m(vx, vx)) = m(vy, m(vy, m(vz, vx))).
+Proof:
+  m(vx, m(vx, vx))
+= { by axiom 5 (premise3) }
+  m(m(vz, vx), m(vx, m(vx, vx)))
+= { by axiom 5 (premise3) }
+  m(m(vz, vx), m(m(vz, vx), m(vx, m(vx, vx))))
+= { by axiom 2 (premise1) }
+  m(m(vz, vx), m(m(vz, vx), m(vx, m(vx, m(vz, vx)))))
+= { by axiom 1 (premise9) }
+  m(m(vz, vx), m(m(vz, vx), m(m(vx, vx), m(vz, vx))))
+= { by axiom 2 (premise1) R->L }
+  m(m(vz, vx), m(m(vz, vx), m(vz, vx)))
+= { by axiom 2 (premise1) }
+  m(m(vz, vx), m(m(vz, vx), m(m(m(vy, vx), m(vz, vx)), m(vz, vx))))
+= { by axiom 4 (premise6) }
+  m(m(vz, vx), m(m(m(m(vy, vx), m(vz, vx)), m(vz, vx)), m(m(vz, vx), m(m(m(vy, vx), m(vz, vx)), m(vz, vx)))))
+= { by axiom 1 (premise9) R->L }
+  m(vz, m(vx, m(m(m(m(vy, vx), m(vz, vx)), m(vz, vx)), m(m(vz, vx), m(m(m(vy, vx), m(vz, vx)), m(vz, vx))))))
+= { by axiom 1 (premise9) }
+  m(vz, m(m(vx, m(m(m(vy, vx), m(vz, vx)), m(vz, vx))), m(m(vz, vx), m(m(m(vy, vx), m(vz, vx)), m(vz, vx)))))
+= { by axiom 1 (premise9) R->L }
+  m(vz, m(m(vx, m(m(m(vy, vx), m(vz, vx)), m(vz, vx))), m(vz, m(vx, m(m(m(vy, vx), m(vz, vx)), m(vz, vx))))))
+= { by axiom 4 (premise6) R->L }
+  m(vz, m(vz, m(vx, m(m(m(vy, vx), m(vz, vx)), m(vz, vx)))))
+= { by axiom 1 (premise9) }
+  m(vz, m(m(vz, vx), m(m(m(vy, vx), m(vz, vx)), m(vz, vx))))
+= { by lemma 6 }
+  m(vz, m(m(vy, vx), m(m(vy, vx), m(vz, vx))))
+= { by axiom 1 (premise9) }
+  m(vz, m(m(vy, vx), m(m(m(vy, vx), vz), vx)))
+= { by axiom 1 (premise9) }
+  m(vz, m(m(m(vy, vx), m(m(vy, vx), vz)), vx))
+= { by axiom 4 (premise6) }
+  m(vz, m(m(m(vy, vx), m(vz, m(m(vy, vx), vz))), vx))
+= { by axiom 1 (premise9) R->L }
+  m(vz, m(m(vy, vx), m(m(vz, m(m(vy, vx), vz)), vx)))
+= { by axiom 1 (premise9) R->L }
+  m(vz, m(m(vy, vx), m(vz, m(m(m(vy, vx), vz), vx))))
+= { by axiom 1 (premise9) }
+  m(vz, m(m(m(vy, vx), vz), m(m(m(vy, vx), vz), vx)))
+= { by axiom 3 (premise7) }
+  m(vz, m(vx, m(m(m(vy, vx), vz), m(vx, vx))))
+= { by axiom 1 (premise9) R->L }
+  m(vz, m(vx, m(m(vy, vx), m(vz, m(vx, vx)))))
+= { by axiom 1 (premise9) }
+  m(vz, m(vx, m(m(vy, vx), m(m(vz, vx), vx))))
+= { by axiom 1 (premise9) }
+  m(m(vz, vx), m(m(vy, vx), m(m(vz, vx), vx)))
+= { by axiom 1 (premise9) R->L }
+  m(m(vz, vx), m(vy, m(vx, m(m(vz, vx), vx))))
+= { by axiom 1 (premise9) R->L }
+  m(m(vz, vx), m(vy, m(vx, m(vz, m(vx, vx)))))
+= { by axiom 3 (premise7) R->L }
+  m(m(vz, vx), m(vy, m(vz, m(vz, vx))))
+= { by axiom 4 (premise6) }
+  m(m(vz, vx), m(vy, m(vz, m(vx, m(vz, vx)))))
+= { by axiom 1 (premise9) }
+  m(m(vz, vx), m(vy, m(m(vz, vx), m(vz, vx))))
+= { by axiom 1 (premise9) }
+  m(m(vz, vx), m(m(vy, m(vz, vx)), m(vz, vx)))
+= { by lemma 6 }
+  m(vy, m(vy, m(vz, vx)))
+
+RESULT: Theorem (the conjecture is true).
+
+Prover9:
+============================== PROOF =================================
+
+% Proof 1 at 1.50 (+ 0.08) seconds.
+% Length of proof is 22.
+% Level of proof is 7.
+% Maximum clause weight is 21.000.
+% Given clauses 135.
+
+1 xx * (xx * xx) = xy * (xy * (xz * xx)) # label(non_clause) # label(goal).  [goal].
+6 x * (x * x) = x * (y * (y * x)).  [assumption].
+7 x * (y * (y * x)) = x * (x * x).  [copy(6),flip(a)].
+12 x * (x * x) = y * (y * (y * x)).  [assumption].
+13 x * (x * (x * y)) = y * (y * y).  [copy(12),flip(a)].
+14 x * (x * y) = x * (y * (x * y)).  [assumption].
+15 x * (y * (x * y)) = x * (x * y).  [copy(14),flip(a)].
+16 x * (x * y) = y * (x * (y * y)).  [assumption].
+17 x * (y * (x * x)) = y * (y * x).  [copy(16),flip(a)].
+18 x * (y * z) = (x * y) * z.  [assumption].
+19 (x * y) * z = x * (y * z).  [copy(18),flip(a)].
+20 c2 * (c2 * (c3 * c1)) != c1 * (c1 * c1).  [deny(1)].
+65 x * (y * (y * (x * z))) = x * (x * (x * z)).  [para(7(a,1),19(a,1,1)),rewrite([19(3),19(2),19(6),19(5)]),flip(a)].
+74 x * (y * (z * (x * (y * z)))) = x * (y * (x * (y * z))).  [para(19(a,1),15(a,1,2,2)),rewrite([19(5),19(8),19(9)])].
+75 x * (y * (x * (y * z))) = x * (x * (y * z)).  [para(19(a,1),15(a,1,2)),rewrite([74(5)])].
+77 x * (y * (z * (x * x))) = y * (y * (z * x)).  [para(19(a,1),17(a,1,2)),rewrite([19(7),19(8),75(8)])].
+88 c3 * (c1 * (c2 * (c3 * (c3 * c1)))) != c1 * (c1 * c1).  [para(17(a,2),20(a,1)),rewrite([19(11),15(11),19(11)])].
+108 c3 * (c1 * (c2 * (c1 * (c3 * (c1 * c1))))) != c1 * (c1 * c1).  [para(17(a,2),88(a,1,2,2,2))].
+438 x * (y * (y * (x * z))) = z * (z * z).  [para(65(a,2),13(a,1))].
+666 x * (y * (z * (x * (y * y)))) = y * (y * y).  [para(77(a,2),438(a,1,2))].
+4731 x * (y * (z * (u * (x * (y * y))))) = y * (y * y).  [para(19(a,1),666(a,1,2,2))].
+4732 $F.  [resolve(4731,a,108,a)].
+
+============================== end of proof ==========================
+
+Vampire: SZS status Theorem

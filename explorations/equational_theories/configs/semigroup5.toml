@@ -22,5 +22,6 @@ mace4-time-limit = 600
 model-premise = "simplified"
 truncation-words = 20000
 eprover-time-limit = 2
+prover9-time-limit = 5
 background = ["explorations/equational_theories/background_semigroup5.json"]
 seed-context = ["explorations/equational_theories/seeds_semigroup5.json"]
