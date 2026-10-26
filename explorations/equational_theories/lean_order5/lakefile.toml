@@ -1,0 +1,15 @@
+name = "order5"
+defaultTargets = ["Order5"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+relaxedAutoImplicit = false
+
+[[require]]
+name = "equational_theories"
+git = "https://github.com/teorth/equational_theories"
+rev = "1aec8a7acf223b7c56e4830977b6e90d4ef1924b"
+
+[[lean_lib]]
+name = "Order5"

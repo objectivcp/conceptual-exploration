@@ -793,6 +793,30 @@ The third check compares two closure systems on the laws. Each object intent is 
 
 Together, the checks establish the result of this section without the provers: every certified implication holds in all semigroups, every intent of the context is that of a semigroup, and since the closed sets coincide, every implication between conjunctions of the laws that holds in the 240 semigroups, and so every one that holds in all semigroups, follows from the certified implications, and every other fails in one of the 240. The 388 columns of the checked context are 380 distinct ones, so the 380 classes are distinct. The background of order four, certified with the rest, is checked too, as is the implication of question~324.
 
+\subsection{Lean}\label{sec:lean5}
+
+The result is also proved in Lean, in the form in which the ETP states its own results, and against the ETP's library, which the Lean project (\path{lean_order5/}) requires at a fixed commit. \code{lean\_etp.py} writes the Lean files from the results and the certificates:
+\begin{itemize}
+  \item The laws are the ETP's \code{EquationN}. The 2,630 laws of order five used that the ETP does not declare are declared with its \code{equation} command and numbered by its scheme, which extends past its 4,694 laws of order at most four.
+  \item Each certificate is a theorem in the form of the ETP's, such as
+\begin{center}
+\code{theorem Equation3\_4512\_implies\_Equation8 (G : Type*) [Magma G]}\\
+\code{(h3 : Equation3 G) (h4512 : Equation4512 G) : Equation8 G},
+\end{center}
+with the laws of the premise that its chain uses as hypotheses. A lemma becomes a \code{have}, and a step a \code{conv} that goes to the subterm and rewrites it with the instance, written out. Certificates of the same implication from the same laws give one theorem: 10,613 theorems, of which the 4,172 with a single hypothesis are \code{@[equational\_result]}s, as the ETP's attribute accepts only those.
+  \item Each of the 240 semigroups is a \code{finOpTable}, with an \code{@[equational\_result]} theorem \code{\ensuremath{\exists} (G : Type) (\_ : Magma G) (\_: Finite G), Facts G [...] [...]}, as in the ETP's tables of size at most four. The refuted laws are all those of the exploration that it refutes, 76,361 in all. The satisfied ones are, as in the ETP, a few from which the others of its row follow by the implications proved, associativity among them, chosen to be cheap to decide.
+\end{itemize}
+A satisfied law is decided by the ETP's \code{decideFin!}, which evaluates it in the kernel at all values of its variables. Above about $10^6$ evaluations the kernel slows out of proportion, so a law that needs more than $10^5$ is decided in parts, with its first variables fixed, and the parts are put together by cases on their values: 1,495 parts, for 15 laws in 13 semigroups. A refuted law is decided by \code{decideFin!} at a counterexample, which \code{lean\_etp.py} finds; searching for the first one would take $3 \cdot 10^8$ evaluations in all.
+
+The build takes about 12 hours of CPU time, three quarters of it for the parts. Every theorem is accepted. The implications depend on no axioms, and the \code{Facts} on \code{propext}, \code{Classical.choice} and \code{Quot.sound}, the ones the ETP accepts. Lean checks the proofs; \code{verify.py -{}-lean} checks that their statements are the result, reading the declarations of the laws, the ETP's included, the hypotheses and conclusions of the theorems, and the \code{Facts}:
+\begin{enumerate}
+  \item each law is declared once;
+  \item the \code{Facts} of each semigroup include the axioms, and the implications stated give its row from them: the closure of its satisfied laws is disjoint from its refuted ones and together with them covers all laws;
+  \item the sets closed under the implications stated are exactly the intents of the semigroups;
+  \item and, with \code{-{}-classes}, as for the certificates.
+\end{enumerate}
+It does so in 2 minutes, without reading the Lean proofs. The theory of Section~\ref{sec:certificates} thus holds in Lean, on the ETP's definitions, with $x = x$, which no \code{Facts} lists, as the only law not stated.
+
 %======================================================================
 \section{User's guide}\label{sec:guide}
 %======================================================================
@@ -978,7 +1002,7 @@ print(result.base.open_questions, expert.answers)
   \item \textbf{Long runs.} Keep the terminal open. Putting the machine to sleep is harmless in principle, but a Vampire run in progress at that moment may time out on waking, since the time limits are wall-clock times; this can at worst turn a refutation into an undecided answer, which the summary reports.
   \item \textbf{Reproducibility.} Equations are sorted before they are given to the solvers, so a Z3 exploration is reproducible. Vampire's time limits make a Vampire exploration depend on the machine's speed: a different run may find different counterexamples and ask a different number of questions, but the theory is the same unless a question is left undecided.
   \item \textbf{Machine load.} For the same reason, other work on the machine can turn a refutation into an unconfirmed answer: in an order-3 exploration run alongside other provers, a counterexample of size 15 that Vampire had found in three earlier explorations was missed, and the false implication was refuted only 22 questions later. Run explorations on an otherwise idle machine.
-  \item \textbf{Trust.} Finite counterexamples are checked by the library. Proofs and saturation-based CounterSatisfiable verdicts are Vampire's; independent confirmation requires checking Vampire's proofs, as \code{lean\_proofs.py} does for the rules of order at most two, or the free magmas' negative entries, as \code{completion.py} does when Knuth--Bendix completion of their premises succeeds, or certificates, which \code{certify.py} builds and \code{verify.py} checks (Section~\ref{sec:certificates}).
+  \item \textbf{Trust.} Finite counterexamples are checked by the library. Proofs and saturation-based CounterSatisfiable verdicts are Vampire's; independent confirmation requires checking Vampire's proofs, as \code{lean\_proofs.py} does for the rules of order at most two, or the free magmas' negative entries, as \code{completion.py} does when Knuth--Bendix completion of their premises succeeds, or certificates, which \code{certify.py} builds and \code{verify.py} checks (Section~\ref{sec:certificates}), and from which \code{lean\_etp.py} writes Lean proofs in the ETP's form (Section~\ref{sec:lean5}).
 \end{itemize}
 
 \begin{thebibliography}{ETP25}

@@ -1,6 +1,7 @@
 """Check the result of an exploration of laws from its evidence.
 
 usage: verify.py RESULTS_DIR CERTIFICATES [--classes]
+       verify.py RESULTS_DIR --lean LEAN_DIR --etp ETP_DIR [--classes]
 
 RESULTS_DIR is an exploration's output (settings.toml, context.cxt,
 magmas.json) and CERTIFICATES a file of proof certificates (certificates.py),
@@ -28,6 +29,15 @@ None of this uses the code of the exploration: certificates.py checks the
 proofs, the evaluation here the tables, and the library's verification
 module the closure systems. Prints what it checked; exits with an error at
 the first discrepancy.
+
+With --lean, the evidence is instead the statements of Lean files in the
+ETP's form (lean_etp.py), once Lean has checked their proofs: the laws are
+read from their `equation` declarations and the ETP's, the implications
+from the signatures of the theorems `(G : Type*) [Magma G] (h3 : Equation3
+G) ... : EquationN G`, and the rows from the `Facts G [satisfied]
+[refuted]` of the semigroups: each row is the closure of its satisfied laws
+under the implications, which must give every law of the exploration but
+the refuted ones. Checks 3 and 4 then run on these.
 """
 
 from __future__ import annotations
@@ -38,6 +48,7 @@ import json
 import lzma
 import os
 import random
+import re
 import sys
 import time
 import tomllib
@@ -188,18 +199,56 @@ def read_certificates(path: Path) -> list[dict]:
         return [json.loads(line) for line in file if line.strip()]
 
 
-def verify(results: Path, certificates_path: Path, classes: bool, root: Path) -> None:
-    started = time.monotonic()
+def _setting(results: Path, root: Path):
+    """The laws of an exploration, by attribute name, its axioms, and
+    whether associativity is among them."""
     settings = tomllib.loads((results / "settings.toml").read_text(encoding="utf-8"))
     equations = json.loads((root / settings["equations"]).read_text(encoding="utf-8"))
     axiom_ids = {str(a) for a in settings.get("axiom", [])}
-    laws = {}  # attribute name: law
+    laws = {}
     for entry in equations:
         name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
         laws[name] = parse_law(entry["equation"])
     axioms = [name for name in laws if name[2:] in axiom_ids and name.startswith("Eq")]
     associative = any(law_key(laws[a], False) == law_key(parse_law("(x * y) * z = x * (y * z)"), False)
                       for a in axioms)
+    return equations, laws, axioms, associative
+
+
+def check_classes(equations: list[dict], laws: dict, attributes: Sequence[str], key_of: dict,
+                  single: set) -> None:
+    """Check 4: `single` holds the (premise, conclusion) keys of the proved
+    implications with one law besides the axioms."""
+    members: dict = {}  # law: the laws of the equations file in whose class it is
+    classes_of: dict = {}
+    for entry in equations:
+        name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
+        classes_of[name] = {law_key(word_law(word), True) for word in entry["class"]}
+        for key in classes_of[name]:
+            members.setdefault(key, set()).add(name)
+    max_order = max(len(_leaves(laws[a][0])) + len(_leaves(laws[a][1])) - 2 for a in attributes)
+    # The trivial laws are one class, which the equations file may list by
+    # x = x alone.
+    nontrivial = lambda keys: {key for key in keys if key[0] != key[1]}
+    expected, listed = nontrivial(semigroup_laws(max_order)), set(members)
+    if nontrivial(listed) != expected:
+        raise VerificationError(f"The classes do not list the semigroup laws of order at most {max_order}: "
+                                f"{len(expected - listed)} missing, {len(nontrivial(listed) - expected)} extra")
+    for key, names in members.items():
+        if len({tuple(sorted(map(str, classes_of[name]))) for name in names}) != 1:
+            raise VerificationError(f"The law {key} is in two classes")
+        for name in names:
+            own = key_of[name]
+            if key != own and not ((own, key) in single and (key, own) in single):
+                raise VerificationError(f"No proofs of the equivalence of {name} and {key}")
+    found = {frozenset(n) for n in members.values()}
+    print(f"{len(listed)} semigroup laws of order at most {max_order}, each in one class: "
+          f"{len(found)} classes, each law proved equivalent to its class's", flush=True)
+
+
+def verify(results: Path, certificates_path: Path, classes: bool, root: Path) -> None:
+    started = time.monotonic()
+    equations, laws, axioms, associative = _setting(results, root)
     objects, attributes, rows = read_context(results / "context.cxt")
     if sorted(attributes) != sorted(laws):
         raise VerificationError("The context's attributes are not the laws of the equations file")
@@ -256,45 +305,120 @@ def verify(results: Path, certificates_path: Path, classes: bool, root: Path) ->
     if classes:
         if not associative:
             raise VerificationError("Classes are checked for semigroup laws only")
-        members: dict = {}  # law: the laws of the equations file in whose class it is
-        classes_of: dict = {}
-        for entry in equations:
-            name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
-            classes_of[name] = {law_key(word_law(word), True) for word in entry["class"]}
-            for key in classes_of[name]:
-                members.setdefault(key, set()).add(name)
-        max_order = max(len(_leaves(laws[a][0])) + len(_leaves(laws[a][1])) - 2 for a in attributes)
-        # The trivial laws are one class, which the equations file may list
-        # by x = x alone.
-        nontrivial = lambda keys: {key for key in keys if key[0] != key[1]}
-        expected, listed = nontrivial(semigroup_laws(max_order)), set(members)
-        if nontrivial(listed) != expected:
-            raise VerificationError(f"The classes do not list the semigroup laws of order at most {max_order}: "
-                                    f"{len(expected - listed)} missing, {len(nontrivial(listed) - expected)} extra")
-        for key, names in members.items():
-            if len({tuple(sorted(map(str, classes_of[name]))) for name in names}) != 1:
-                raise VerificationError(f"The law {key} is in two classes")
-            for name in names:
-                own = key_of[name]
-                if key != own and not ((own, key) in single and (key, own) in single):
-                    raise VerificationError(f"No certificates of the equivalence of {name} and {key}")
-        found = {frozenset(n) for n in members.values()}
-        print(f"{len(listed)} semigroup laws of order at most {max_order}, each in one class: "
-              f"{len(found)} classes, each law certified equivalent to its class's", flush=True)
+        check_classes(equations, laws, attributes, key_of, single)
+    print(f"Checked in {time.monotonic() - started:.0f} s")
+
+
+_EQUATION = re.compile(r"^\s*equation (\d+)\s*:=\s*(.*?)\s*$", re.M)
+_THEOREM = re.compile(r"^theorem \S+ \(G : Type\*\) \[Magma G\]((?: \(h\d+ : Equation\d+ G\))*) : "
+                      r"Equation(\d+) G := by$", re.M)
+_HYPOTHESIS = re.compile(r"\(h\d+ : Equation(\d+) G\)")
+_FACTS = re.compile(r"^@\[equational_result\]\ntheorem «Facts from ([^»]*)» :\n"
+                    r"  ∃ \(G : Type\) \(_ : Magma G\) \(_: Finite G\), Facts G \[([\d, ]*)\] \[([\d, ]*)\] :=", re.M)
+
+
+def verify_lean(results: Path, lean: Path, etp: Path, classes: bool, root: Path) -> None:
+    started = time.monotonic()
+    equations, laws, axioms, associative = _setting(results, root)
+    attributes = list(laws)
+    index = {name: i for i, name in enumerate(attributes)}
+    key_of = {name: law_key(laws[name], associative) for name in attributes}
+    by_key: dict = {}
+    for name, key in key_of.items():
+        by_key.setdefault(key, name)
+    sources = sorted(lean.glob("*.lean"))
+    texts = [path.read_text(encoding="utf-8") for path in sources]
+    numbered: dict[int, tuple] = {}
+    for text in texts + [path.read_text(encoding="utf-8")
+                         for path in sorted((etp / "equational_theories" / "Equations").glob("*.lean"))]:
+        for number, law in _EQUATION.findall(text):
+            if int(number) in numbered:
+                raise VerificationError(f"Equation{number} is declared twice")
+            numbered[int(number)] = parse_law(law.replace("◇", "*"))
+
+    def key(number: str):
+        if int(number) not in numbered:
+            raise VerificationError(f"Equation{number} is not declared")
+        return law_key(numbered[int(number)], associative)
+
+    # The implications.
+    implications, single, count = [], set(), 0
+    axiom_keys = {key_of[a] for a in axioms}
+    for text in texts:
+        for hypotheses, conclusion in _THEOREM.findall(text):
+            count += 1
+            keys = {key(n) for n in _HYPOTHESIS.findall(hypotheses)}
+            target = key(conclusion)
+            if all(k in by_key for k in keys | {target}):
+                implications.append((sum(1 << index[by_key[k]] for k in keys), 1 << index[by_key[target]]))
+            if len(keys - axiom_keys) == 1:
+                single.add((next(iter(keys - axiom_keys)), target))
+    print(f"{count} implications stated, {len(implications)} of them between the laws", flush=True)
+
+    # The rows.
+    always = sum(1 << index[a] for a in axioms) | sum(
+        1 << index[a] for a in attributes if laws[a][0] == laws[a][1])
+    rules = implications + [(0, always)]
+
+    def closure(mask: int) -> int:
+        changed = True
+        while changed:
+            changed = False
+            for premise, conclusion in rules:
+                if premise & ~mask == 0 and conclusion & ~mask:
+                    mask |= conclusion
+                    changed = True
+        return mask
+
+    full, intents = (1 << len(attributes)) - 1, []
+    for text in texts:
+        for name, satisfied, refuted in _FACTS.findall(text):
+            masks = []
+            for numbers in (satisfied, refuted):
+                mask = 0
+                for n in filter(None, (s.strip() for s in numbers.split(","))):
+                    if key(n) not in by_key:
+                        raise VerificationError(f"{name}: Equation{n} is not a law of the exploration")
+                    mask |= 1 << index[by_key[key(n)]]
+                masks.append(mask)
+            # The table satisfies the axioms, such as associativity, by its facts.
+            if any(not masks[0] >> index[a] & 1 for a in axioms):
+                raise VerificationError(f"{name}: its facts do not include the axioms")
+            intent = closure(masks[0])
+            if intent & masks[1] or intent | masks[1] != full:
+                raise VerificationError(f"{name}: the implications do not give its row from its facts")
+            intents.append(intent)
+    print(f"{len(intents)} semigroups: their facts give their rows", flush=True)
+
+    count = check_closure_systems(len(attributes), intents, rules, os.cpu_count() or 1)
+    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the semigroups",
+          flush=True)
+    if classes:
+        if not associative:
+            raise VerificationError("Classes are checked for semigroup laws only")
+        check_classes(equations, laws, attributes, key_of, single)
     print(f"Checked in {time.monotonic() - started:.0f} s")
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Check the result of an exploration of laws from its evidence.")
     parser.add_argument("results", type=Path, metavar="RESULTS_DIR")
-    parser.add_argument("certificates", type=Path, metavar="CERTIFICATES")
+    parser.add_argument("certificates", type=Path, metavar="CERTIFICATES", nargs="?")
+    parser.add_argument("--lean", type=Path, metavar="LEAN_DIR",
+                        help="check the statements of these Lean files in the ETP's form instead")
+    parser.add_argument("--etp", type=Path, metavar="ETP_DIR", help="with --lean, a checkout of the ETP")
     parser.add_argument("--classes", action="store_true",
                         help="also check the classes of semigroup laws listed in the equations file")
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
     args = parser.parse_args(argv)
+    if (args.certificates is None) == (args.lean is None) or (args.lean is None) != (args.etp is None):
+        parser.error("give CERTIFICATES, or --lean and --etp")
     try:
-        verify(args.results, args.certificates, args.classes, args.root)
+        if args.lean is not None:
+            verify_lean(args.results, args.lean, args.etp, args.classes, args.root)
+        else:
+            verify(args.results, args.certificates, args.classes, args.root)
     except (VerificationError, CertificateError) as error:
         sys.exit(f"verify.py: {error}")
 

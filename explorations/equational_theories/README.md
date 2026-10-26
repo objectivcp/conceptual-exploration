@@ -98,6 +98,8 @@ The rules found for the laws of order at most two are proved in Lean in [`lean/`
 python explorations/equational_theories/verify.py explorations/equational_theories/results/semigroup5_truncated_seeded explorations/equational_theories/results/semigroup5_truncated_seeded/certificates.jsonl.xz --classes
 ```
 
+The same result is proved in Lean, in the ETP's form and against its library, in [`lean_order5/`](lean_order5/README.md).
+
 Magmas found earlier, such as the `magmas.json` of saved results, can be reused. Files of the ETP with one table per line, such as those in its `equational_theories/Generated/All4x4Tables/data`, are read as well. `--seed-magmas PATH...` adds them to the expert's pool, which is checked for a counterexample before the solver searches. `--seed-context PATH...` instead evaluates them on every equation and adds them to the context before the exploration starts, dropping those whose rows the others account for, so that no question they refute is asked. `--background PATH...` adds the implications of files in the format of `implications.json` to the background:
 
 ```bash
