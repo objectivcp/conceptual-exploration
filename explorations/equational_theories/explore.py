@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import lzma
 import shutil
 import subprocess
 import sys
@@ -85,6 +86,7 @@ def save_results(
     settings: str,
     refuted: Sequence[Implication[Equation]] = (),
     words: bool = False,
+    proofs: Sequence[dict] = (),
 ) -> None:
     """Write the implications found and the context of an exploration.
 
@@ -104,7 +106,8 @@ def save_results(
     (Burmeister format) holds every object whose row is complete, and
     partial_context.cxt every object, in the same format with ? where it is
     not known whether the object satisfies the equation. A dual image is
-    named after its original with ^op.
+    named after its original with ^op. proofs.jsonl.xz holds the expert's
+    `proofs`, if any, one JSON object a line.
     """
     directory.mkdir(parents=True, exist_ok=True)
     # Equations are identified by their id, or else by their name or text,
@@ -242,6 +245,9 @@ def save_results(
         (directory / filename).write_text(
             "[\n" + ",\n".join("  " + json.dumps(e) for e in entries) + "\n]\n", encoding="utf-8"
         )
+    if proofs:
+        with lzma.open(directory / "proofs.jsonl.xz", "wt", encoding="utf-8") as file:
+            file.writelines(json.dumps(proof) + "\n" for proof in proofs)
 
     records, lines = [], []
     for idx, implication in enumerate(base.implications, start=1):
@@ -622,7 +628,9 @@ def run_magma_exploration(
                 f"{background_transient_order or background_order}, premise size "
                 f"{background_premise_size or 'any'}"
             )
-        save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted], words=associative)
+        prover = expert.fallback if isinstance(expert, CompletionExpert) else expert
+        save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted], words=associative,
+                     proofs=getattr(prover, "proofs", ()))
         print(f"\nResults saved to {results_dir}.")
 
     return state, base

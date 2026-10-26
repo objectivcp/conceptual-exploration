@@ -1,6 +1,7 @@
 """Unit tests for the files a magma exploration saves."""
 
 import json
+import lzma
 
 from conceptual_exploration import Implication, PartialObject
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
@@ -124,3 +125,14 @@ def test_a_law_named_by_its_words_is_written_once(tmp_path):
     assert (tmp_path / "simplified_implications.txt").read_text().splitlines()[-1] == (
         "[1] x = xyx  =>  Idempotence: x = xx   (confirmed)"
     )
+
+
+def test_the_expert_proofs_are_saved(tmp_path):
+    idempotent = Equation.parse("x = x * x", id=3)
+    equations = [idempotent]
+    proof = {"premise": ["x = (x * x)"], "conclusion": ["x = (x * (x * x))"], "prover": "vampire", "proof": "..."}
+    save_results(ExplorationBase(attributes=equations), equations, tmp_path, "test", proofs=[proof])
+    with lzma.open(tmp_path / "proofs.jsonl.xz", "rt", encoding="utf-8") as file:
+        assert [json.loads(line) for line in file] == [proof]
+    save_results(ExplorationBase(attributes=equations), equations, tmp_path / "none", "test")
+    assert not (tmp_path / "none" / "proofs.jsonl.xz").exists()

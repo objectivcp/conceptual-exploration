@@ -1,8 +1,11 @@
 """Unit tests for proof certificates, their checker and their reconstruction
 from Vampire's proofs."""
 
+import json
+import lzma
 import re
 import shutil
+import subprocess
 
 import pytest
 
@@ -15,7 +18,15 @@ from explorations.equational_theories.certificates import (
     show,
     word_law,
 )
-from explorations.equational_theories.certify import certificate_from_tstp, certify, cover, tptp_problem
+from explorations.equational_theories.certify import (
+    SavedProofs,
+    certificate_from_tstp,
+    certificates_from_tstp,
+    certify,
+    cover,
+    mirrored,
+    tptp_problem,
+)
 
 ASSOCIATIVITY = "(x * (y * z)) = ((x * y) * z)"
 
@@ -174,3 +185,179 @@ def test_the_cover_takes_the_strongest_laws_first(tmp_path):
     # Eq3 holds in fewer objects than Eq43, so it is taken first, and with
     # Eq3 => Eq43, Eq2 => Eq43 follows.
     assert cover(tmp_path, equations, []) == [([3], 43), ([2], 3)]
+
+
+def test_a_mirrored_certificate_proves_the_dual():
+    certificate = mirrored(certificate_from_tstp(["x = x * x"], "x = x * (x * x)", PROOF))
+    assert certificate["conclusion"] == "x = ((x * x) * x)"
+    check_certificate(certificate)
+
+
+def test_saved_proofs_certify_larger_premises_and_duals(tmp_path):
+    path = tmp_path / "proofs.jsonl.xz"
+    with lzma.open(path, "wt", encoding="utf-8") as file:
+        file.write(json.dumps({"premise": ["x = x * x"], "conclusion": ["x = x * (x * x)"],
+                               "prover": "vampire", "proof": PROOF}) + "\n")
+    saved = SavedProofs(path, associative=False, processes=1)
+    assert saved.certificate(["x * y = y * x", "x = x * x"], "y = y * (y * y)")["premise"] == ["x = x * x"]
+    assert saved.certificate(["x = x * x"], "x = (x * x) * x")["conclusion"] == "x = ((x * x) * x)"
+    assert saved.certificate(["x * y = y * x"], "x = x * (x * x)") is None
+
+
+@pytest.mark.skipif(shutil.which("vampire") is None, reason="Vampire not installed")
+def test_each_law_of_a_conjunction_gets_its_certificate(tmp_path):
+    # As the expert asks: AVATAR splits the negated conjunction into a
+    # branch for each law.
+    premise = ["x * y = y * x", ASSOCIATIVITY, "x * x = x"]
+    conclusion = ["x * (y * x) = x * y", "x * (y * z) = z * (y * x)", "(x * y) * (x * y) = y * x"]
+    problem = tptp_problem(premise, "x = x").splitlines()[:-1]
+    goal = " & ".join(f"({line.split('conjecture, ')[1][:-2]})"
+                      for law in conclusion for line in tptp_problem([], law).splitlines())
+    (tmp_path / "t.p").write_text("\n".join(problem + [f"fof(goal, conjecture, {goal})."]) + "\n")
+    output = subprocess.run(["vampire", "--mode", "casc", "--time_limit", "10", str(tmp_path / "t.p")],
+                            capture_output=True, text=True).stdout
+    certificates = certificates_from_tstp(premise, conclusion, output)
+    assert sorted(c["conclusion"] for c in certificates) == sorted(conclusion)
+
+
+# Vampire's proof without AVATAR of a conclusion of two laws, as the expert
+# asks: the first law's literal is removed by subsumption resolution, and
+# the second refuted on its own.
+TWO_LAWS = """% SZS output start Proof for t
+fof(f2,axiom,(
+  ! [X0,X1] : m(X0,m(X1,X0)) = m(X0,m(X1,X1))),
+  file('t.p','premise1')).
+fof(f3,axiom,(
+  ! [X0,X1] : m(X0,m(X1,X1)) = m(X1,m(X0,X0))),
+  file('t.p','premise2')).
+fof(f5,conjecture,(
+  ! [X0,X1] : m(X0,m(X1,X0)) = m(X1,m(X0,X0)) & ! [X0,X1] : m(X0,m(X1,X0)) = m(X1,m(X0,X1))),
+  file('t.p','conclusion')).
+fof(f6,negated_conjecture,(
+  ~(! [X0,X1] : m(X0,m(X1,X0)) = m(X1,m(X0,X0)) & ! [X0,X1] : m(X0,m(X1,X0)) = m(X1,m(X0,X1)))),
+  inference(negated_conjecture,[status(cth)],[f5])).
+fof(f7,plain,(
+  ~(! [X0,X1] : m(X0,m(X1,X0)) = m(X1,m(X0,X0)) & ! [X2,X3] : m(X2,m(X3,X2)) = m(X3,m(X2,X3)))),
+  inference(rectify,[],[f6])).
+fof(f8,plain,(
+  ? [X0,X1] : m(X0,m(X1,X0)) != m(X1,m(X0,X0)) | ? [X2,X3] : m(X2,m(X3,X2)) != m(X3,m(X2,X3))),
+  inference(ennf_transformation,[],[f7])).
+fof(f9,plain,(
+  m(sK0,m(sK1,sK0)) != m(sK1,m(sK0,sK0)) | m(sK2,m(sK3,sK2)) != m(sK3,m(sK2,sK3))),
+  inference(skolemize,[status(esa),new_symbols(skolem,[sK0,sK1,sK2,sK3]),skolemize(X0,sK0),skolemize(X1,sK1),skolemize(X2,sK2),skolemize(X3,sK3)],[f8])).
+fof(f10,plain,(
+  m(sK0,m(sK1,sK0)) != m(sK1,m(sK0,sK0)) | m(sK2,m(sK3,sK2)) != m(sK3,m(sK2,sK3))),
+  inference(cnf_transformation,[],[f9])).
+fof(f13,plain,(
+  ( ! [X0,X1] : (m(X0,m(X1,X1)) = m(X1,m(X0,X0))) )),
+  inference(cnf_transformation,[],[f3])).
+fof(f14,plain,(
+  ( ! [X0,X1] : (m(X0,m(X1,X0)) = m(X0,m(X1,X1))) )),
+  inference(cnf_transformation,[],[f2])).
+fof(f15,plain,(
+  m(sK0,m(sK1,sK0)) != m(sK0,m(sK1,sK1)) | m(sK2,m(sK3,sK2)) != m(sK3,m(sK2,sK3))),
+  inference(forward_demodulation,[],[f10,f13])).
+fof(f16,plain,(
+  m(sK2,m(sK3,sK2)) != m(sK3,m(sK2,sK3))),
+  inference(forward_subsumption_resolution,[],[f15,f14])).
+fof(f17,plain,(
+  m(sK2,m(sK3,sK2)) != m(sK3,m(sK2,sK2))),
+  inference(forward_demodulation,[],[f16,f14])).
+fof(f18,plain,(
+  m(sK2,m(sK3,sK2)) != m(sK2,m(sK3,sK3))),
+  inference(forward_demodulation,[],[f17,f13])).
+fof(f19,plain,(
+  $false),
+  inference(forward_subsumption_resolution,[],[f18,f14])).
+% SZS output end Proof for t"""
+
+
+def test_each_law_of_a_clause_of_several_literals_gets_its_certificate():
+    premise = ["x = x", "(x * (y * x)) = (x * (y * y))", "(x * (y * y)) = (y * (x * x))", ASSOCIATIVITY]
+    conclusion = ["(x * (y * x)) = (y * (x * x))", "(x * (y * x)) = (y * (x * y))"]
+    certificates = certificates_from_tstp(premise, conclusion, TWO_LAWS)
+    assert sorted(c["conclusion"] for c in certificates) == conclusion
+
+
+# A proof with inequality splitting: the negated conclusion s != t becomes
+# ~sP1(s) and sP1(t), whose arguments are rewritten until they meet.
+SPLIT = """% SZS output start Proof for t
+fof(f1,axiom,(
+  ! [X0] : m(X0,X0) = m(m(m(X0,X0),X0),X0)),
+  file('t.p','premise0')).
+fof(f2,axiom,(
+  ! [X0] : X0 = m(m(X0,X0),m(X0,X0))),
+  file('t.p','premise1')).
+fof(f3,conjecture,(
+  ! [X0] : X0 = m(m(X0,m(X0,X0)),m(X0,X0))),
+  file('t.p','conclusion')).
+fof(f4,negated_conjecture,(
+  ~ ! [X0] : X0 = m(m(X0,m(X0,X0)),m(X0,X0))),
+  inference(negated_conjecture,[status(cth)],[f3])).
+fof(f5,plain,(
+  ? [X0] : m(m(X0,m(X0,X0)),m(X0,X0)) != X0),
+  inference(ennf_transformation,[],[f4])).
+fof(f6,plain,(
+  sK0 != m(m(sK0,m(sK0,sK0)),m(sK0,sK0))),
+  inference(skolemize,[status(esa),new_symbols(skolem,[sK0]),skolemize(X0,sK0)],[f5])).
+fof(f7,plain,(
+  ( ! [X0] : (m(X0,X0) = m(m(m(X0,X0),X0),X0)) )),
+  inference(cnf_transformation,[],[f1])).
+fof(f8,plain,(
+  ( ! [X0] : (m(m(X0,X0),m(X0,X0)) = X0) )),
+  inference(cnf_transformation,[],[f2])).
+fof(f9,plain,(
+  sK0 != m(m(sK0,m(sK0,sK0)),m(sK0,sK0))),
+  inference(cnf_transformation,[],[f6])).
+fof(f10,definition,(
+  ~sP1(sK0)),
+  introduced(definition,[new_symbols(definition,[sP1])],[inequality_splitting_name_introduction])).
+fof(f11,plain,(
+  sP1(m(m(sK0,m(sK0,sK0)),m(sK0,sK0)))),
+  inference(inequality_splitting,[],[f9,f10])).
+fof(f12,definition,(
+  sF2 = m(sK0,sK0)),
+  introduced(definition,[new_symbols(definition,[sF2])],[function_definition])).
+fof(f13,plain,(
+  m(sK0,sK0) = sF2),
+  inference(reorient_equations,[],[f12])).
+fof(f14,definition,(
+  sF3 = m(sK0,sF2)),
+  introduced(definition,[new_symbols(definition,[sF3])],[function_definition])).
+fof(f15,plain,(
+  m(sK0,sF2) = sF3),
+  inference(reorient_equations,[],[f14])).
+fof(f16,definition,(
+  sF4 = m(sF3,sF2)),
+  introduced(definition,[new_symbols(definition,[sF4])],[function_definition])).
+fof(f17,plain,(
+  m(sF3,sF2) = sF4),
+  inference(reorient_equations,[],[f16])).
+fof(f18,plain,(
+  sP1(sF4)),
+  inference(definition_folding,[],[f11,f17,f13,f15,f13])).
+fof(f19,plain,(
+  sK0 = m(sF2,sF2)),
+  inference(superposition,[],[f8,f13])).
+fof(f23,plain,(
+  sK0 = m(m(sK0,sF2),sF2)),
+  inference(superposition,[],[f7,f19])).
+fof(f24,plain,(
+  sK0 = m(sF3,sF2)),
+  inference(forward_demodulation,[],[f23,f15])).
+fof(f25,plain,(
+  sK0 = sF4),
+  inference(forward_demodulation,[],[f24,f17])).
+fof(f28,plain,(
+  ~sP1(sF4)),
+  inference(superposition,[],[f10,f25])).
+fof(f29,plain,(
+  $false),
+  inference(forward_subsumption_resolution,[],[f28,f18])).
+% SZS output end Proof for t"""
+
+
+def test_the_halves_of_a_split_inequality_meet_in_a_certificate():
+    premise = ["(x * x) = (((x * x) * x) * x)", "x = ((x * x) * (x * x))"]
+    (certificate,) = certificates_from_tstp(premise, ["x = ((x * (x * x)) * (x * x))"], SPLIT)
+    assert certificate["terms"][0] == "x"

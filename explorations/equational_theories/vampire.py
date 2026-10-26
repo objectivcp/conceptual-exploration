@@ -214,6 +214,11 @@ class VampireExpert(MagmaExpert):
     unlike a finite model, cannot be checked here. `last_status` names the
     kind of the latest answer, and `answers` counts them.
 
+    The proofs found are kept in `proofs`, each with the premise in the
+    order of the problem's axioms (premise0, premise1, ...), the conclusion,
+    the prover and its proof as printed: Vampire's in TSTP, E's proof object
+    and Prover9's proof. certify.py turns Vampire's into certificates.
+
     Proofs, rejections and unconfirmed answers are remembered, so that a resumed
     exploration asking the same questions again does not run Vampire again;
     refutations are remembered by the pool and the context. So is each law
@@ -278,6 +283,7 @@ class VampireExpert(MagmaExpert):
         self.workers = workers or os.cpu_count() or 1
         self.last_status: str | None = None
         self.answers: Counter[str] = Counter()
+        self.proofs: list[dict] = []
         self._proved: list[Implication[Equation]] = []
         # Background and proved implications, by which the free magma over a
         # premise satisfies a law without asking Vampire.
@@ -329,6 +335,7 @@ class VampireExpert(MagmaExpert):
         # Alone at this point, so on every core.
         status, output = self._run(problem, ["--mode", "casc", "--cores", str(self.workers)], self.first_time_limit)
         if status == "Theorem":
+            self._record(implication.premise, implication.conclusion, "vampire", output)
             return self._prove(implication)
         magma = self._model(implication, output)
         if magma is None:
@@ -549,8 +556,7 @@ class VampireExpert(MagmaExpert):
             # E first, briefly: when it decides a law, it nearly always does
             # so within a fraction of a second.
             with ThreadPoolExecutor(self.workers) as pool:
-                problems = [tptp_problem(premise, [law]) for law in conclusion]
-                verdicts.update(zip(conclusion, pool.map(self._run_eprover, problems)))
+                verdicts.update(zip(conclusion, pool.map(lambda law: self._run_eprover(premise, law), conclusion)))
         if self.prover9 is not None:
             left = [law for law in conclusion if verdicts.get(law) not in DECISIVE]
             with ThreadPoolExecutor(self.workers) as pool:
@@ -564,7 +570,10 @@ class VampireExpert(MagmaExpert):
 
         def decide(law: Equation) -> str:
             limit = self.prove_time_limit if law in implication.conclusion else self.row_time_limit
-            return self._run(tptp_problem(premise, [law]), ["--mode", "casc"], limit)[0]
+            status, output = self._run(tptp_problem(premise, [law]), ["--mode", "casc"], limit)
+            if status == "Theorem":
+                self._record(premise, [law], "vampire", output)
+            return status
 
         with ThreadPoolExecutor(self.workers) as pool:
             verdicts.update(zip(laws, pool.map(decide, laws)))
@@ -600,17 +609,20 @@ class VampireExpert(MagmaExpert):
         `prover9_time_limit` seconds."""
         problem = f"assign(max_seconds, {self.prover9_time_limit}).\n" + ladr_problem(premise, law)
         output = self._execute([self.prover9], problem, self.prover9_time_limit + 30, None)
-        return "THEOREM PROVED" in output
+        if "THEOREM PROVED" not in output:
+            return False
+        self._record(premise, [law], "prover9", output)
+        return True
 
-    def _run_eprover(self, problem: str) -> str:
-        """The SZS status of the E prover on the problem, within
-        `eprover_time_limit` seconds."""
+    def _run_eprover(self, premise: Iterable[Equation], law: Equation) -> str:
+        """The SZS status of the E prover on the law from the premise,
+        within `eprover_time_limit` seconds."""
         with tempfile.NamedTemporaryFile("w", suffix=".p", delete=False) as file:
-            file.write(problem)
+            file.write(tptp_problem(premise, [law]))
             path = Path(file.name)
         try:
             run = subprocess.run(
-                [self.eprover, "--auto", f"--cpu-limit={self.eprover_time_limit}", "-s", str(path)],
+                [self.eprover, "--auto", f"--cpu-limit={self.eprover_time_limit}", "-s", "--proof-object", str(path)],
                 capture_output=True,
                 text=True,
                 timeout=self.eprover_time_limit + 30,
@@ -620,7 +632,25 @@ class VampireExpert(MagmaExpert):
         finally:
             path.unlink(missing_ok=True)
         status = re.search(r"SZS status (\w+)", run.stdout)
+        if status and status.group(1) == "Theorem":
+            self._record(premise, [law], "eprover", run.stdout)
         return status.group(1) if status else "Unknown"
+
+    _PROOF = {
+        "vampire": re.compile(r"^% SZS output start Proof.*?^% SZS output end Proof.*?$", re.S | re.M),
+        "eprover": re.compile(r"^# SZS output start CNFRefutation.*?^# SZS output end CNFRefutation$", re.S | re.M),
+        "prover9": re.compile(r"^=+ PROOF =+$.*?^=+ end of proof =+$", re.S | re.M),
+    }
+
+    def _record(self, premise: Iterable[Equation], conclusion: Iterable[Equation], prover: str, output: str) -> None:
+        """Keeps a proof of the conclusion from the premise, as the prover
+        printed it, if it did."""
+        proof = self._PROOF[prover].search(output)
+        if proof is not None:
+            law = lambda eq: f"{eq.lhs} = {eq.rhs}"
+            self.proofs.append({"premise": [law(eq) for eq in sorted(premise)],
+                                "conclusion": [law(eq) for eq in sorted(conclusion)],
+                                "prover": prover, "proof": proof.group(0)})
 
     def _run(
         self,

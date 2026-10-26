@@ -70,6 +70,12 @@ def test_proves_a_valid_implication():
     assert expert.validate(question) is None
     assert expert.is_conclusive()
     assert expert.last_status == "proved"
+    # Its proof is kept.
+    (proof,) = expert.proofs
+    # In the order of the problem's axioms.
+    assert proof["premise"] == ["(x * x) = (((x * x) * x) * x)", "x = ((x * x) * (x * x))"]
+    assert proof["conclusion"] == ["x = ((x * (x * x)) * (x * x))"]
+    assert proof["prover"] == "vampire" and proof["proof"].startswith("% SZS output start Proof")
 
 
 def test_refutes_with_a_checked_model_that_joins_the_pool():
@@ -426,3 +432,5 @@ def test_prover9_proves_what_vampire_does_not_in_time():
     expert = VampireExpert(initial_magmas=[], prover9_time_limit=20)
     scripted(expert, lambda conjecture, options: ("Timeout", ""))
     assert expert.validate(question) is None and expert.last_status == "proved"
+    (proof,) = expert.proofs
+    assert proof["prover"] == "prover9" and "end of proof" in proof["proof"]

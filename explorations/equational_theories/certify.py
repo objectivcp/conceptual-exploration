@@ -7,19 +7,27 @@ the terms the checker needs: an equation inferred by superposition becomes a
 lemma proved by a chain of two steps through the overlapping term, found
 again by unification; one inferred by demodulation, a chain of one step; and
 the negated conclusion, rewritten until its two sides are equal or an
-instance of an equation, becomes the chain of the conclusion. The constants
+instance of an equation, becomes the chain of the conclusion. A conclusion
+of several laws gives a certificate for each: AVATAR splits its negation
+into a branch for each law, refuted separately, and without AVATAR a law's
+literal is removed from the negated conclusion when it is refuted. Inequality
+splitting, which turns s != t into ~sP(s) and sP(t), is followed as well:
+the chains of s and t end where the two meet. The constants
 of the definitions casc mode introduces are expanded at the end, and the Skolem
 constants of the conclusion turned back into its variables.
 
 The prover is not trusted: a certificate is checked by certificates.py, and
 one that cannot be reconstructed or checked is no evidence.
 
-usage: certify.py RESULTS_DIR -o CERTIFICATES [--classes]
+usage: certify.py RESULTS_DIR -o CERTIFICATES [--classes] [--proofs PROOFS]
 
 certifies single-law implications that, with the exploration's axioms,
 entail every implication of RESULTS_DIR/implications.json (see `cover`), and
 with --classes the equivalence of each law of the equations file with the
-other laws of its class; verify.py checks the result with them.
+other laws of its class; verify.py checks the result with them. The proofs
+the exploration saved (RESULTS_DIR/proofs.jsonl.xz, or PROOFS) are used
+first, an implication being certified by a proof from fewer premise laws or
+by the mirror image of a proof of its dual; Vampire is run for the rest.
 """
 
 from __future__ import annotations
@@ -35,7 +43,7 @@ import tempfile
 import time
 import tomllib
 from collections.abc import Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
 if __package__ in (None, ""):
@@ -44,8 +52,9 @@ if __package__ in (None, ""):
     sys.path[:0] = [str(_ROOT / "src"), str(_ROOT)]
 
 from explorations.equational_theories.certificates import (
-    CertificateError, check_certificate, parse_law, show, word_law,
+    CertificateError, check_certificate, parse_law, parse_term, show, word_law,
 )
+from explorations.equational_theories.verify import law_key
 
 
 class ReconstructionError(ValueError):
@@ -91,6 +100,8 @@ def _parse_formula(text: str):
 
     def take(expected=None):
         nonlocal position
+        if position == len(tokens):
+            raise ReconstructionError(f"Unexpected end of {text!r}")
         token = tokens[position]
         if expected is not None and token != expected:
             raise ReconstructionError(f"Expected {expected} in {text!r}")
@@ -132,6 +143,13 @@ def _parse_formula(text: str):
         if token == "$false":
             take()
             return ("false",)
+        if re.fullmatch(r"sP\d+", token or "") and position + 1 < len(tokens) and tokens[position + 1] == "(":
+            # sP(t), of Vampire's inequality splitting
+            name = take()
+            take("(")
+            argument = term()
+            take(")")
+            return ("pred", name, argument)
         left = term()
         relation = take()
         right = term()
@@ -294,16 +312,52 @@ def _rewrites(source, pair, unify: bool):
                     yield substitution, every
 
 
+def _literals(text: str) -> list[str]:
+    """The disjuncts of a formula, split at its outermost |."""
+    text = text.strip()
+    while text.startswith("(") and text.endswith(")"):
+        depth = 0
+        for i, char in enumerate(text):
+            depth += char == "("
+            depth -= char == ")"
+            if depth == 0:
+                break
+        if i != len(text) - 1:
+            break
+        text = text[1:-1].strip()
+    parts, depth, start = [], 0, 0
+    for i, char in enumerate(text):
+        depth += char in "(["
+        depth -= char in ")]"
+        if char == "|" and depth == 0:
+            parts.append(text[start:i])
+            start = i + 1
+    return parts + [text[start:]]
+
+
+# The AVATAR labels of the clauses of a branch, `| spl7_1`, and the
+# inferences that only combine branches.
+_LABEL = re.compile(r"\s*\|\s*~?spl\d+_\d+(?=\s*\)*\s*$)")
+_AVATAR = ("avatar_split_clause", "avatar_contradiction_clause", "sat_conversion", "rat")
+
+
 class _Proof:
-    def __init__(self, premise: Sequence[str], law: str, output: str):
+    def __init__(self, premise: Sequence[str], conclusion: Sequence[str], output: str):
         self.premise = [parse_law(p) for p in premise]
-        self.law = parse_law(law)
+        self.laws = {law: parse_law(law) for law in conclusion}
         self.lemmas: list[dict] = []
         self.lemma_pairs: list[tuple] = []
         self.equations: dict[str, tuple[tuple, str]] = {}  # name: (pair, citation)
-        self.negatives: dict[str, tuple] = {}  # name: (pair, left chain, right chain)
+        # name: (pair, left chain, right chain, the negated conclusion law it comes from)
+        self.negatives: dict[str, tuple] = {}
+        # Inequality splitting turns a literal s != t into ~sP(s) and sP(t):
+        # name: (predicate, positive, chain from its side of the root, root),
+        # and the definitions ~sP(s) until the splitting says which side.
+        self.halves: dict[str, tuple] = {}
+        self.split_names: dict[str, tuple] = {}
         self.definitions: dict[str, object] = {}
         self.steps = _proof_steps(output)
+        self.annotations = {name: annotation for name, _, _, annotation in self.steps}
 
     def expand(self, term):
         if isinstance(term, str):
@@ -367,18 +421,40 @@ class _Proof:
                     return self.add_lemma(pair, terms, by)
         raise ReconstructionError(f"Cannot justify {show(pair[0])} = {show(pair[1])} from {parents}")
 
-    def justify_negative(self, pair, parents: list[str]):
-        """The left and right chains of a negative clause from the negated
-        conclusion's sides, as (terms, citations)."""
+    def justify_negative(self, pairs: list, parents: list[str]) -> tuple[list, list]:
+        """The literals of a negative clause, each (pair, left chain, right
+        chain, root), the chains (terms, citations) from the sides of the
+        negated conclusion law it comes from, its root; and the literals of
+        the parent clause that the inference removed."""
         negative = [self.negatives[p] for p in parents if p in self.negatives]
         sources = [self.equations[p] for p in parents if p in self.equations]
         if not negative:
-            return ([pair[0]], []), ([pair[1]], [])
-        (old, left, right), = negative
-        for target, swapped in ((pair, False), (pair[::-1], True)):
-            if tuple(map(self.expand, old)) == tuple(map(self.expand, target)):
-                new = [(left[0] + [target[0]], left[1] + [None]), (right[0] + [target[1]], right[1] + [None])]
-                return (new[0], new[1]) if not swapped else (new[1], new[0])
+            return [(pair, ([pair[0]], []), ([pair[1]], []), pair) for pair in pairs], []
+        if len(negative) != 1:
+            raise ReconstructionError("An inference from two negative clauses")
+        remaining, literals = list(negative[0]), [None] * len(pairs)
+        # The literals carried over first, then those rewritten.
+        for rewrite in (False, True):
+            for k, pair in enumerate(pairs):
+                for literal in remaining if literals[k] is None else []:
+                    literals[k] = self.carried(literal, pair, sources if rewrite else None)
+                    if literals[k] is not None:
+                        remaining.remove(literal)
+                        break
+        if None in literals:
+            raise ReconstructionError(f"Cannot justify a literal of {pairs} from {parents}")
+        return literals, remaining
+
+    def carried(self, literal, pair, sources):
+        """The literal `pair` from the parent's `literal`: the same up to
+        definitions, or, with `sources`, rewritten by one of them."""
+        old, left, right, root = literal
+        if sources is None:
+            for target, swapped in ((pair, False), (pair[::-1], True)):
+                if tuple(map(self.expand, old)) == tuple(map(self.expand, target)):
+                    new = [(left[0] + [target[0]], left[1] + [None]), (right[0] + [target[1]], right[1] + [None])]
+                    return (pair, *((new[0], new[1]) if not swapped else (new[1], new[0])), root)
+            return None
         for source, citation in sources:
             for substitution, chains in _rewrites(_rename_apart(source, "_s"), old, unify=True):
                 candidate = (chains[0][-1], chains[1][-1])
@@ -390,16 +466,14 @@ class _Proof:
                             + [_rename(t, renaming) for t in steps[1:]],
                             chain[1] + [citation] * (len(steps) - 1))
                            for chain, steps in ((left, chains[0]), (right, chains[1]))]
-                    return (new[0], new[1]) if not swapped else (new[1], new[0])
-        raise ReconstructionError(f"Cannot justify {show(pair[0])} != {show(pair[1])} from {parents}")
+                    return (pair, *((new[0], new[1]) if not swapped else (new[1], new[0])), root)
+        return None
 
-    def finish(self, parents: list[str]) -> dict:
-        """The certificate, from the clause that refutes a negative one."""
-        negative = [self.negatives[p] for p in parents if p in self.negatives]
+    def close(self, literal, parents: list[str]) -> tuple[str, dict]:
+        """The law and its certificate, from an inference that removes a
+        literal: its sides are equal, or an instance of an equation."""
         sources = [self.equations[p] for p in parents if p in self.equations]
-        if len(negative) != 1:
-            raise ReconstructionError("The refutation does not use one negative clause")
-        (pair, left, right), = negative
+        pair, left, right, root = literal
         substitution: dict = {}
         if _unify(pair[0], pair[1], substitution):
             middle: tuple[list, list] = ([], [])
@@ -416,10 +490,67 @@ class _Proof:
         right_terms = [_apply(t, substitution) for t in right[0]]
         terms = left_terms + middle[0] + right_terms[::-1][1:] if middle[0] else left_terms + right_terms[::-1][1:]
         by = left[1] + middle[1] + right[1][::-1]
-        return self.certificate(terms, by)
+        return self.certificate(terms, by, root)
 
-    def certificate(self, terms: list, by: list[str]) -> dict:
-        root = self.root
+    def half(self, name: str, positive: bool, atom, rule: str, parents: list[str]) -> None:
+        """A literal sP(t) or ~sP(t) of inequality splitting: from the
+        negative literal it splits, or rewritten from another."""
+        _, predicate, argument = atom
+        expand = self.expand
+        if rule == "inequality_splitting":
+            literals = [self.negatives[p] for p in parents if p in self.negatives]
+            named = [p for p in parents if p in self.split_names]
+            if len(literals) != 1 or len(literals[0]) != 1 or len(named) != 1:
+                raise ReconstructionError("Cannot split the inequality")
+            ((literal,),), (named,) = literals, named
+            pair, left, right, root = literal
+            given = self.split_names[named][2]
+            for side, other, chains in ((0, 1, (left, right)), (1, 0, (right, left))):
+                if expand(given) == expand(pair[side]) and expand(argument) == expand(pair[other]):
+                    self.halves[named] = (predicate, False, (chains[0][0] + [given], chains[0][1] + [None]), root)
+                    self.halves[name] = (predicate, True, (chains[1][0] + [argument], chains[1][1] + [None]), root)
+                    return
+            raise ReconstructionError("Cannot split the inequality")
+        halves = [self.halves[p] for p in parents if p in self.halves]
+        if len(halves) != 1:
+            raise ReconstructionError(f"Cannot justify {predicate}({show(argument)}) from {parents}")
+        _, _, (terms, by), root = halves[0]
+        if expand(terms[-1]) == expand(argument):
+            self.halves[name] = (predicate, positive, (terms + [argument], by + [None]), root)
+            return
+        for source, citation in [self.equations[p] for p in parents if p in self.equations]:
+            for substitution, chains in _rewrites(_rename_apart(source, "_s"), (terms[-1], "c_"), unify=True):
+                if chains[1] != ["c_"] or chains[0][-1] != argument:
+                    continue
+                self.halves[name] = (predicate, positive,
+                                     ([_apply(t, substitution) for t in terms] + chains[0][1:],
+                                      by + [citation] * (len(chains[0]) - 1)), root)
+                return
+        raise ReconstructionError(f"Cannot justify {predicate}({show(argument)}) from {parents}")
+
+    def meet(self, parents: list[str]) -> tuple[str, dict]:
+        """The law and its certificate, from ~sP(s) and sP(t) with s and t
+        the same."""
+        halves = {positive: (terms, by, root) for predicate, positive, (terms, by), root
+                  in (self.halves[p] for p in parents if p in self.halves)}
+        if set(halves) != {False, True}:
+            raise ReconstructionError("The refutation does not use both halves of an inequality")
+        (left, left_by, root), (right, right_by, _) = halves[False], halves[True]
+        if self.expand(left[-1]) != self.expand(right[-1]):
+            raise ReconstructionError("The halves of the inequality do not meet")
+        return self.certificate(left + right[::-1][1:], left_by + right_by[::-1], root)
+
+    def negative(self, name: str, pairs: list, parents: list[str], proved: list) -> None:
+        """A negative clause, and the laws of the literals its inference
+        removed from its parent, by subsumption or equality resolution."""
+        self.negatives[name], removed = self.justify_negative(pairs, parents)
+        for literal in removed:
+            try:
+                proved.append(self.close(literal, parents))
+            except ReconstructionError:
+                pass  # removed for another reason: its law is not proved here
+
+    def certificate(self, terms: list, by: list[str], root) -> tuple[str, dict]:
         # The chains of a negative clause follow its sides, which Vampire
         # may have swapped: the chain runs between the root's sides, either way.
         if terms[0] != root[0]:
@@ -427,11 +558,14 @@ class _Proof:
         if (terms[0], terms[-1]) != root:
             raise ReconstructionError("The chain does not join the sides of the negated conclusion")
         # The Skolem constants of the conclusion back to its variables, and
-        # other variables left in the chain to fresh ones.
-        law = (_to_tptp(self.law[0]), _to_tptp(self.law[1]))
-        for target, swapped in ((root, False), (root[::-1], True)):
+        # other variables left in the chain to fresh ones. The root may be
+        # written with the constants of definitions.
+        expanded = (self.expand(root[0]), self.expand(root[1]))
+        for (text, (lhs, rhs)), (target, swapped) in itertools.product(
+                self.laws.items(), [(expanded, False), (expanded[::-1], True)]):
             substitution: dict = {}
-            if _match(law[0], target[0], substitution) and _match(law[1], target[1], substitution):
+            if (_match(_to_tptp(lhs), target[0], substitution) and _match(_to_tptp(rhs), target[1], substitution)
+                    and all(isinstance(value, str) for value in substitution.values())):
                 break
         else:
             raise ReconstructionError("The negated conclusion is not the conclusion's")
@@ -440,46 +574,103 @@ class _Proof:
             raise ReconstructionError("Two variables of the conclusion share a Skolem constant")
         if swapped:
             terms, by = terms[::-1], by[::-1]
-        return _pruned([self.expanded(t, b) for t, b in self.lemmas],
-                       self.expanded(terms, by, lambda term: _rename(term, back)))
+        return text, _pruned([self.expanded(t, b) for t, b in self.lemmas],
+                             self.expanded(terms, by, lambda term: _rename(term, back)))
 
-    def run(self) -> dict:
-        names = {}
-        self.root = None
+    def run(self) -> list[tuple[str, dict]]:
+        """The laws proved, each with its certificate's lemmas and chain. A
+        step that cannot be redone loses only what depends on it: with
+        AVATAR, the other branches' laws are still proved."""
+        proved: list[tuple[str, dict]] = []
+        failed: set[str] = set()
         for name, role, text, annotation in self.steps:
             rule, parents = _rule(annotation), _parents(annotation)
-            if rule == "definition" or (role == "definition"):
-                formula = _parse_formula(text)
-                if formula[0] != "eq" or not isinstance(formula[1], str):
-                    raise ReconstructionError(f"Unknown definition {text}")
-                self.definitions[formula[1]] = formula[2]
-                pair = (formula[1], formula[2])
-                self.equations[name] = (pair, self.add_lemma(pair, [formula[1]], []))
+            text, branch = _LABEL.sub("", text), _LABEL.search(text) is not None
+            if rule == "avatar_sat_refutation":
+                return proved
+            if any(parent in failed for parent in parents):
+                failed.add(name)
                 continue
-            if role in ("conjecture", "negated_conjecture"):
-                continue
-            formula = _parse_formula(text)
-            while formula[0] == "all":
-                formula = formula[1]
-            if role == "axiom":
-                match = re.search(r"'h(\d+)'\)\s*$", annotation)
-                if match is None or formula[0] != "eq":
-                    raise ReconstructionError(f"Unknown axiom {name}")
-                self.equations[name] = ((formula[1], formula[2]), f"h{match.group(1)}")
-            elif formula[0] == "eq":
-                pair = (formula[1], formula[2])
-                self.equations[name] = (pair, self.justify_equation(pair, parents))
-            elif formula[0] == "neq":
-                pair = (formula[1], formula[2])
-                left, right = self.justify_negative(pair, parents)
-                if self.root is None:
-                    self.root = pair
-                self.negatives[name] = (pair, left, right)
-            elif formula[0] == "false":
-                return self.finish(parents)
-            # Other formulas (the conclusion, its negations before
-            # Skolemization) carry nothing the chains need.
+            try:
+                if self.step(name, role, text, rule, parents, branch, proved):
+                    return proved
+            except ReconstructionError:
+                if text.strip(" ()") == "$false" and not branch:
+                    raise
+                failed.add(name)
         raise ReconstructionError("The proof does not end in $false")
+
+    def step(self, name: str, role: str, text: str, rule: str, parents: list[str], branch: bool,
+             proved: list[tuple[str, dict]]) -> bool:
+        """Redoes one step of the proof; whether it ends the proof."""
+        if rule == "avatar_split_clause" and re.fullmatch(r"\(?\s*spl\d+_\d+\s*\)?", text.strip()):
+            # A branch closed by its equation itself.
+            equations = [self.equations[p] for p in parents if p in self.equations]
+            if len(equations) == 1:
+                (pair, citation), = equations
+                proved.append(self.certificate([pair[0], pair[1]], [citation], pair))
+            return False
+        if rule in _AVATAR or (role == "definition" and "<=>" in text):
+            return False
+        if rule == "definition" or (role == "definition"):
+            formula = _parse_formula(text)
+            if formula[0] == "not" and formula[1][0] == "pred":
+                self.split_names[name] = formula[1]
+                return False
+            if formula[0] != "eq" or not isinstance(formula[1], str):
+                raise ReconstructionError(f"Unknown definition {text}")
+            self.definitions[formula[1]] = formula[2]
+            pair = (formula[1], formula[2])
+            self.equations[name] = (pair, self.add_lemma(pair, [formula[1]], []))
+            return False
+        if role in ("conjecture", "negated_conjecture"):
+            return False
+        literals = _literals(text)
+        if len(literals) > 1:
+            # A negative clause of several laws' literals, or the conclusion
+            # and its negations before clausification, which carry nothing
+            # the chains need.
+            try:
+                formulas = [_parse_formula(literal) for literal in literals]
+            except ReconstructionError:
+                return False
+            if any(formula[0] != "neq" for formula in formulas):
+                return False
+            self.negative(name, [(f[1], f[2]) for f in formulas], parents, proved)
+            return False
+        try:
+            formula = _parse_formula(text)
+        except ReconstructionError:
+            if "&" in text:
+                return False
+            raise
+        while formula[0] == "all":
+            formula = formula[1]
+        if role == "axiom":
+            # Named as by `tptp_problem` here or in vampire.py.
+            match = re.search(r"'(?:h|premise)(\d+)'\)\s*$", self.annotations[name])
+            if match is None or formula[0] != "eq":
+                raise ReconstructionError(f"Unknown axiom {name}")
+            self.equations[name] = ((formula[1], formula[2]), f"h{match.group(1)}")
+        elif formula[0] == "eq":
+            pair = (formula[1], formula[2])
+            self.equations[name] = (pair, self.justify_equation(pair, parents))
+        elif formula[0] == "neq":
+            self.negative(name, [(formula[1], formula[2])], parents, proved)
+        elif formula[0] == "pred" or (formula[0] == "not" and formula[1][0] == "pred"):
+            self.half(name, formula[0] == "pred", formula if formula[0] == "pred" else formula[1], rule, parents)
+        elif formula[0] == "false" and any(p in self.halves for p in parents):
+            proved.append(self.meet(parents))
+            return not branch
+        elif formula[0] == "false":
+            if not any(p in self.negatives for p in parents):
+                raise ReconstructionError("The refutation does not use a negative clause")
+            _, removed = self.justify_negative([], parents)
+            proved += [self.close(literal, parents) for literal in removed]
+            return not branch
+        # Other formulas (the conclusion, its negations before
+        # Skolemization) carry nothing the chains need.
+        return False
 
 
 def _pruned(lemmas: list[dict], chain: dict) -> dict:
@@ -526,16 +717,28 @@ def _from_tptp(term):
     return (_from_tptp(term[0]), _from_tptp(term[1]))
 
 
+def certificates_from_tstp(premise: Sequence[str], conclusion: Sequence[str], output: str) -> list[dict]:
+    """The certificates of a Vampire proof (in TSTP, as casc mode prints it)
+    of the laws of `conclusion` from those of `premise`, checked: one for
+    each law the proof refutes the negation of."""
+    certificates = []
+    for law, chain in _Proof(premise, conclusion, output).run():
+        certificate = {"premise": list(premise), "conclusion": law, **chain}
+        try:
+            check_certificate(certificate)
+        except CertificateError as error:
+            raise ReconstructionError(f"The reconstructed certificate is wrong: {error}") from error
+        certificates.append(certificate)
+    return certificates
+
+
 def certificate_from_tstp(premise: Sequence[str], law: str, output: str) -> dict:
-    """The certificate of a Vampire proof (in TSTP, as casc mode prints it)
-    of `law` from the laws of `premise`, checked."""
-    proof = _Proof(premise, law, output)
-    certificate = {"premise": list(premise), "conclusion": law, **proof.run()}
-    try:
-        check_certificate(certificate)
-    except CertificateError as error:
-        raise ReconstructionError(f"The reconstructed certificate is wrong: {error}") from error
-    return certificate
+    """The certificate of a Vampire proof of `law` from the laws of
+    `premise`, checked."""
+    certificates = certificates_from_tstp(premise, [law], output)
+    if not certificates:
+        raise ReconstructionError("The proof proves no law")
+    return certificates[0]
 
 
 CASC = ("--mode", "casc")
@@ -576,6 +779,71 @@ def certify(premise: Sequence[str], law: str, time_limit: float, cores: int = 1)
         except ReconstructionError as error:
             reasons.append(f"{' '.join(options)}: {error}")
     return "; ".join(reasons)
+
+
+# Certificates from the proofs an exploration saved.
+
+def _mirror(term):
+    return term if isinstance(term, str) else (_mirror(term[1]), _mirror(term[0]))
+
+
+def _mirror_law(text: str) -> str:
+    lhs, rhs = parse_law(text)
+    return f"{show(_mirror(lhs))} = {show(_mirror(rhs))}"
+
+
+def mirrored(certificate: dict) -> dict:
+    """The certificate of the dual implication, every term mirrored: each
+    step then rewrites with the mirror image of the law it cites."""
+    terms = lambda chain: [show(_mirror(parse_term(term))) for term in chain]
+    return {
+        "premise": [_mirror_law(law) for law in certificate["premise"]],
+        "conclusion": _mirror_law(certificate["conclusion"]),
+        "lemmas": [{"terms": terms(lemma["terms"]), "by": lemma["by"]} for lemma in certificate.get("lemmas", [])],
+        "terms": terms(certificate["terms"]),
+        "by": certificate["by"],
+    }
+
+
+def _reconstructed(record: dict) -> list[dict] | str:
+    try:
+        return certificates_from_tstp(record["premise"], record["conclusion"], record["proof"])
+    except (ReconstructionError, RecursionError) as error:
+        return str(error)
+
+
+class SavedProofs:
+    """The certificates of the Vampire proofs of a file the exploration
+    saved, by the laws of their premises and conclusions."""
+
+    def __init__(self, path: Path, associative: bool, processes: int):
+        self.associative = associative
+        with lzma.open(path, "rt", encoding="utf-8") as file:
+            records = [r for r in map(json.loads, file) if r["prover"] == "vampire"]
+        self.proofs, self.failed = len(records), 0
+        self.by_conclusion: dict = {}
+        with ProcessPoolExecutor(processes) as pool:
+            for result in pool.map(_reconstructed, records, chunksize=4):
+                if isinstance(result, str):
+                    self.failed += 1
+                    continue
+                for certificate in result:
+                    premise = frozenset(self.key(law) for law in certificate["premise"])
+                    self.by_conclusion.setdefault(self.key(certificate["conclusion"]), []).append(
+                        (premise, certificate))
+
+    def key(self, text: str):
+        return law_key(parse_law(text), self.associative)
+
+    def certificate(self, premise: Sequence[str], law: str) -> dict | None:
+        """A certificate of the law from some of the premise laws, or the
+        mirror image of one of the dual implication."""
+        for mirror, image in ((False, lambda text: text), (True, _mirror_law)):
+            keys = {self.key(image(p)) for p in premise}
+            for proved, certificate in self.by_conclusion.get(self.key(image(law)), []):
+                if proved <= keys:
+                    return mirrored(certificate) if mirror else certificate
+        return None
 
 
 # The implications and equivalences of an exploration's result to certify.
@@ -661,11 +929,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--time-limit", type=float, default=10, help="seconds for each proof (default: 10)")
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
+    parser.add_argument("--proofs", type=Path, default=None,
+                        help="the proofs the exploration saved (default: RESULTS_DIR/proofs.jsonl.xz, if any)")
     args = parser.parse_args(argv)
     settings = tomllib.loads((args.results / "settings.toml").read_text(encoding="utf-8"))
     equations = json.loads((args.root / settings["equations"]).read_text(encoding="utf-8"))
     names = _law_names(equations)
     axioms = [a for a in names if str(a) in {str(x) for x in settings.get("axiom", [])}]
+    associativity = law_key(parse_law("x * (y * z) = (x * y) * z"), False)
+    associative = any(law_key(parse_law(names[a]), False) == associativity for a in axioms)
     tasks = [([names[p] for p in premise], names[law]) for premise, law in cover(args.results, equations, axioms)]
     implications = len(tasks)
     if args.classes:
@@ -673,6 +945,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"{implications} implications{f' and {len(tasks) - implications} class equivalences' if args.classes else ''}"
           " to certify", flush=True)
     started, results, failures = time.monotonic(), [], []
+    proofs = args.proofs or args.results / "proofs.jsonl.xz"
+    if args.proofs is not None or proofs.exists():
+        saved = SavedProofs(proofs, associative, args.jobs)
+        left = []
+        for premise, law in tasks:
+            certificate = saved.certificate(premise, law)
+            if certificate is None:
+                left.append((premise, law))
+            else:
+                results.append(certificate)
+        print(f"{len(results)} certified by the {saved.proofs} proofs saved ({saved.failed} not reconstructed) "
+              f"or their mirror images, in {time.monotonic() - started:.0f} s", flush=True)
+        tasks = left
     with ThreadPoolExecutor(args.jobs) as pool:
         for k, ((premise, law), result) in enumerate(
                 zip(tasks, pool.map(lambda task: certify(*task, args.time_limit), tasks)), start=1):
