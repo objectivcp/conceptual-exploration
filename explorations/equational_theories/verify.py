@@ -1,0 +1,303 @@
+"""Check the result of an exploration of laws from its evidence.
+
+usage: verify.py RESULTS_DIR CERTIFICATES [--classes]
+
+RESULTS_DIR is an exploration's output (settings.toml, context.cxt,
+magmas.json) and CERTIFICATES a file of proof certificates (certificates.py),
+one JSON object a line, compressed with xz if it ends in .xz. The checks:
+
+1. every object of the context is a finite magma of magmas.json in which the
+   axioms of the exploration hold, and every entry of its row is right: each
+   law is evaluated on the table by brute force;
+2. every certificate is right, its premise and conclusion being laws of the
+   exploration, up to renaming variables and swapping sides (and, with
+   associativity as an axiom, up to bracketing): each is an implication;
+3. the sets closed under these implications, the axioms and the laws whose
+   sides are the same are exactly the intents of the context
+   (conceptual_exploration.verification), so that the implications are a
+   basis of the theory of the laws, and the number of theories is the number
+   of intents;
+4. with --classes, for an exploration of semigroup laws whose laws stand for
+   classes, as listed in the equations file: the classes hold all semigroup
+   laws up to the largest order of the laws, each once (the trivial ones
+   possibly by x = x alone), and certificates
+   prove each law of a class equivalent to the class's law. The classes are
+   then distinct by 3, two laws with different columns being inequivalent.
+
+None of this uses the code of the exploration: certificates.py checks the
+proofs, the evaluation here the tables, and the library's verification
+module the closure systems. Prints what it checked; exits with an error at
+the first discrepancy.
+"""
+
+from __future__ import annotations
+
+import argparse
+import itertools
+import json
+import lzma
+import os
+import random
+import sys
+import time
+import tomllib
+from collections.abc import Sequence
+from pathlib import Path
+
+if __package__ in (None, ""):
+    # Run as a script: make the repository importable.
+    _ROOT = Path(__file__).resolve().parent.parent.parent
+    sys.path[:0] = [str(_ROOT / "src"), str(_ROOT)]
+
+from conceptual_exploration.verification import VerificationError, check_closure_systems
+from explorations.equational_theories.certificates import CertificateError, check_certificate, parse_law, word_law
+
+
+# Laws up to renaming variables and swapping sides.
+
+def _leaves(term) -> list[str]:
+    return [term] if isinstance(term, str) else _leaves(term[0]) + _leaves(term[1])
+
+
+def _shape(term, names: dict):
+    if isinstance(term, str):
+        return names.setdefault(term, len(names))
+    return (_shape(term[0], names), _shape(term[1], names))
+
+
+def law_key(law: tuple, associative: bool):
+    """The law with its variables numbered in order of first occurrence, the
+    smaller of its two ways round; for semigroups, on its words."""
+    forms = []
+    for a, b in (law, law[::-1]):
+        names: dict = {}
+        if associative:
+            forms.append((tuple(names.setdefault(v, len(names)) for v in _leaves(a)),
+                          tuple(names.setdefault(v, len(names)) for v in _leaves(b))))
+        else:
+            forms.append(repr((_shape(a, names), _shape(b, names))))
+    return min(forms)
+
+
+# Laws in finite magmas, by brute force.
+
+def is_associative(table: Sequence[Sequence[int]]) -> bool:
+    n = range(len(table))
+    return all(table[table[a][b]][c] == table[a][table[b][c]] for a in n for b in n for c in n)
+
+
+def nilpotency(table: Sequence[Sequence[int]]) -> tuple[int, int] | None:
+    """For a semigroup with a zero z in which every product of k elements
+    is z, (k, z) with k smallest, if k is at most 8."""
+    size = len(table)
+    powers = set(range(size))
+    for k in range(2, 9):
+        powers = {table[a][b] for a in powers for b in range(size)}
+        if len(powers) == 1:
+            (zero,) = powers
+            if all(table[zero][x] == zero == table[x][zero] for x in range(size)):
+                return k, zero
+            return None
+    return None
+
+
+def holds(table: Sequence[Sequence[int]], law: tuple, nilpotent: tuple[int, int] | None = None) -> bool:
+    """Whether the law holds in the magma: every assignment is tried, those of
+    the last variable at once. With `nilpotent` (k, z), a side of k or more
+    leaves is z, as in a nilpotent semigroup."""
+    size = len(table)
+    sides = list(law)
+    if nilpotent is not None:
+        sides = [nilpotent[1] if len(_leaves(side)) >= nilpotent[0] else side for side in sides]
+    variables = sorted({v for side in sides if not isinstance(side, int) for v in _leaves(side)})
+    if not variables:
+        return sides[0] == sides[1] if all(isinstance(s, int) for s in sides) else True
+    *fixed, last = variables
+    column = list(range(size))
+
+    def value(term, env):
+        if isinstance(term, int):
+            return term
+        if isinstance(term, str):
+            return column if term == last else env[term]
+        left, right = value(term[0], env), value(term[1], env)
+        if isinstance(left, list):
+            return [table[a][b] for a, b in zip(left, right)] if isinstance(right, list) else \
+                [table[a][right] for a in left]
+        return [table[left][b] for b in right] if isinstance(right, list) else table[left][right]
+
+    def differ(env) -> bool:
+        a, b = value(sides[0], env), value(sides[1], env)
+        a, b = (a if isinstance(a, list) else [a] * size), (b if isinstance(b, list) else [b] * size)
+        return a != b
+
+    # Laws that fail mostly fail on a few random assignments; then every one.
+    sample = random.Random(0)
+    for _ in range(64 if size ** len(fixed) > 256 else 0):
+        if differ({v: sample.randrange(size) for v in fixed}):
+            return False
+    return not any(differ(dict(zip(fixed, values))) for values in itertools.product(range(size), repeat=len(fixed)))
+
+
+# The semigroup laws up to an order, as keys of law_key.
+
+def semigroup_laws(max_order: int) -> set:
+    """All semigroup laws whose sides have at most max_order + 2 letters in
+    all, as keys, the trivial ones included."""
+    keys = set()
+    for length in range(2, max_order + 3):
+        for left in range(1, length):
+            for word in _words(length):
+                a, b = word[:left], word[left:]
+                keys.add(law_key((_word_term(a), _word_term(b)), True))
+    return keys
+
+
+def _words(length: int):
+    """The words of a length with variables numbered in order of first
+    occurrence."""
+    def extend(word, used):
+        if len(word) == length:
+            yield word
+            return
+        for v in range(used + 1):
+            yield from extend(word + (v,), max(used, v + 1))
+    yield from extend((), 0)
+
+
+def _word_term(word: Sequence[int]):
+    term = f"v{word[-1]}"
+    for v in reversed(word[:-1]):
+        term = (f"v{v}", term)
+    return term
+
+
+def read_context(path: Path) -> tuple[list[str], list[str], list[str]]:
+    lines = path.read_text(encoding="utf-8").split("\n")
+    if lines[0] != "B":
+        raise VerificationError(f"{path} is not a Burmeister context")
+    n, m = int(lines[2]), int(lines[3])
+    objects, attributes = lines[5:5 + n], lines[5 + n:5 + n + m]
+    rows = lines[5 + n + m:5 + n + m + n]
+    return objects, attributes, rows
+
+
+def read_certificates(path: Path) -> list[dict]:
+    opener = lzma.open if path.suffix == ".xz" else open
+    with opener(path, "rt", encoding="utf-8") as file:
+        return [json.loads(line) for line in file if line.strip()]
+
+
+def verify(results: Path, certificates_path: Path, classes: bool, root: Path) -> None:
+    started = time.monotonic()
+    settings = tomllib.loads((results / "settings.toml").read_text(encoding="utf-8"))
+    equations = json.loads((root / settings["equations"]).read_text(encoding="utf-8"))
+    axiom_ids = {str(a) for a in settings.get("axiom", [])}
+    laws = {}  # attribute name: law
+    for entry in equations:
+        name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
+        laws[name] = parse_law(entry["equation"])
+    axioms = [name for name in laws if name[2:] in axiom_ids and name.startswith("Eq")]
+    associative = any(law_key(laws[a], False) == law_key(parse_law("(x * y) * z = x * (y * z)"), False)
+                      for a in axioms)
+    objects, attributes, rows = read_context(results / "context.cxt")
+    if sorted(attributes) != sorted(laws):
+        raise VerificationError("The context's attributes are not the laws of the equations file")
+    index = {name: i for i, name in enumerate(attributes)}
+    key_of = {name: law_key(laws[name], associative) for name in attributes}
+    by_key: dict = {}
+    for name, key in key_of.items():
+        by_key.setdefault(key, name)
+
+    # 1. The objects.
+    tables = {m["name"]: m["table"] for m in json.loads((results / "magmas.json").read_text(encoding="utf-8"))}
+    intents = []
+    for name, row in zip(objects, rows):
+        table = tables.get(name)
+        if table is None:
+            raise VerificationError(f"No table for object {name}")
+        if not all(len(r) == len(table) and all(0 <= x < len(table) for x in r) for r in table):
+            raise VerificationError(f"{name} is not a table of a magma")
+        if associative and not is_associative(table):
+            raise VerificationError(f"{name} is not a semigroup")
+        nilpotent = nilpotency(table) if associative else None
+        intent = 0
+        for attribute, entry in zip(attributes, row):
+            value = holds(table, laws[attribute], nilpotent)
+            if entry not in "X." or value != (entry == "X"):
+                raise VerificationError(f"{name}, {attribute}: the context says {entry!r}")
+            intent |= value << index[attribute]
+        intents.append(intent)
+    print(f"{len(objects)} objects: their rows are right", flush=True)
+
+    # 2. The certificates.
+    certificates = read_certificates(certificates_path)
+    axiom_keys = {key_of[a] for a in axioms}
+    implications = []
+    single = set()  # (premise, conclusion) of the certificates with one law besides the axioms
+    for certificate in certificates:
+        premise, conclusion = check_certificate(certificate)
+        keys = {law_key(law, associative) for law in premise}
+        target = law_key(conclusion, associative)
+        if all(key in by_key for key in keys | {target}):
+            implications.append((sum(1 << index[by_key[key]] for key in keys), 1 << index[by_key[target]]))
+        if len(keys - axiom_keys) == 1:
+            single.add((next(iter(keys - axiom_keys)), target))
+    print(f"{len(certificates)} certificates are right, {len(implications)} of them implications between the laws",
+          flush=True)
+
+    # 3. The closure systems.
+    always = sum(1 << index[a] for a in axioms) | sum(
+        1 << index[a] for a in attributes if laws[a][0] == laws[a][1])
+    count = check_closure_systems(len(attributes), intents, implications + [(0, always)], os.cpu_count() or 1)
+    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the context", flush=True)
+
+    # 4. The classes.
+    if classes:
+        if not associative:
+            raise VerificationError("Classes are checked for semigroup laws only")
+        members: dict = {}  # law: the laws of the equations file in whose class it is
+        classes_of: dict = {}
+        for entry in equations:
+            name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
+            classes_of[name] = {law_key(word_law(word), True) for word in entry["class"]}
+            for key in classes_of[name]:
+                members.setdefault(key, set()).add(name)
+        max_order = max(len(_leaves(laws[a][0])) + len(_leaves(laws[a][1])) - 2 for a in attributes)
+        # The trivial laws are one class, which the equations file may list
+        # by x = x alone.
+        nontrivial = lambda keys: {key for key in keys if key[0] != key[1]}
+        expected, listed = nontrivial(semigroup_laws(max_order)), set(members)
+        if nontrivial(listed) != expected:
+            raise VerificationError(f"The classes do not list the semigroup laws of order at most {max_order}: "
+                                    f"{len(expected - listed)} missing, {len(nontrivial(listed) - expected)} extra")
+        for key, names in members.items():
+            if len({tuple(sorted(map(str, classes_of[name]))) for name in names}) != 1:
+                raise VerificationError(f"The law {key} is in two classes")
+            for name in names:
+                own = key_of[name]
+                if key != own and not ((own, key) in single and (key, own) in single):
+                    raise VerificationError(f"No certificates of the equivalence of {name} and {key}")
+        found = {frozenset(n) for n in members.values()}
+        print(f"{len(listed)} semigroup laws of order at most {max_order}, each in one class: "
+              f"{len(found)} classes, each law certified equivalent to its class's", flush=True)
+    print(f"Checked in {time.monotonic() - started:.0f} s")
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Check the result of an exploration of laws from its evidence.")
+    parser.add_argument("results", type=Path, metavar="RESULTS_DIR")
+    parser.add_argument("certificates", type=Path, metavar="CERTIFICATES")
+    parser.add_argument("--classes", action="store_true",
+                        help="also check the classes of semigroup laws listed in the equations file")
+    parser.add_argument("--root", type=Path, default=Path("."),
+                        help="the directory the exploration was run from (default: the current one)")
+    args = parser.parse_args(argv)
+    try:
+        verify(args.results, args.certificates, args.classes, args.root)
+    except (VerificationError, CertificateError) as error:
+        sys.exit(f"verify.py: {error}")
+
+
+if __name__ == "__main__":
+    main()
