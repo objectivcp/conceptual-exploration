@@ -68,6 +68,54 @@ def test_rules_keep_the_attribute_the_others_follow_from():
     assert [str(rule) for rule in rules] == ["x -> cell"]
 
 
+def _rules(base):
+    return {str(rule): rule.source for rule in simplified_rules(base)}
+
+
+def test_a_confirmed_rule_is_not_cut_by_unconfirmed_ones():
+    """p -> c is confirmed, p -> e and c -> e unconfirmed: cut with every
+    implication, p -> c would vanish into p -> c, e; it stays confirmed."""
+    base = ExplorationBase(attributes=["p", "c", "e", "z"])
+    base.accept(Implication({"p"}, {"c"}), ImplicationSource.CONFIRMED)
+    base.accept(Implication({"p"}, {"e"}), ImplicationSource.UNCONFIRMED)
+    base.accept(Implication({"c"}, {"e"}), ImplicationSource.UNCONFIRMED)
+
+    assert _rules(base) == {
+        "p -> c": ImplicationSource.CONFIRMED,
+        "p -> e": ImplicationSource.UNCONFIRMED,
+        "c -> e": ImplicationSource.UNCONFIRMED,
+    }
+    assert _equivalent(base, simplified_rules(base))
+
+
+def test_a_confirmed_rule_keeps_what_only_unconfirmed_ones_would_give():
+    """q -> p, e is confirmed; p gives e only by the unconfirmed c -> e, so
+    the confirmed rule keeps e."""
+    base = ExplorationBase(attributes=["p", "c", "e", "q", "z"])
+    base.accept(Implication({"c"}, {"e"}), ImplicationSource.UNCONFIRMED)
+    base.accept(Implication({"p"}, {"c"}), ImplicationSource.CONFIRMED)
+    base.accept(Implication({"q"}, {"p", "e"}), ImplicationSource.CONFIRMED)
+
+    assert _rules(base) == {
+        "c -> e": ImplicationSource.UNCONFIRMED,
+        "p -> c": ImplicationSource.CONFIRMED,
+        "q -> e, p": ImplicationSource.CONFIRMED,
+    }
+
+
+def test_open_steps_are_not_merged():
+    """a -> b and a, b -> c are both unconfirmed: a, b -> c is not cut to
+    a -> c, which would hide that it rests on a -> b."""
+    base = ExplorationBase(attributes=["a", "b", "c", "z"])
+    base.accept(Implication({"a"}, {"b"}), ImplicationSource.UNCONFIRMED)
+    base.accept(Implication({"a", "b"}, {"c"}), ImplicationSource.UNCONFIRMED)
+
+    assert _rules(base) == {
+        "a -> b": ImplicationSource.UNCONFIRMED,
+        "a, b -> c": ImplicationSource.UNCONFIRMED,
+    }
+
+
 def test_format_uses_the_given_names():
     base = ExplorationBase(attributes=[1, 2])
     base.accept(Implication(set(), {1}))

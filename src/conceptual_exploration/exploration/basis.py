@@ -14,7 +14,10 @@ A = TypeVar("A")
 class Rule(Generic[A]):
     """An accepted implication rewritten for reading.
 
-    `implication` is the one the expert accepted. `everything` says that the
+    `implication` is the one the expert accepted, and `source` says whether
+    it was confirmed; the rule follows from the trusted implications if it
+    was, and otherwise no attribute of its conclusion follows from its
+    premise by them (see `simplified_rules`). `everything` says that the
     premise entails every attribute, and that no attribute does so on its
     own, so the rule is printed as concluding everything: no object has the
     premise unless it has every attribute. That may be a contradiction,
@@ -44,16 +47,27 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
     """The accepted implications of `base`, simplified into rules for reading,
     without those that are then redundant.
 
-    Each premise is cut to the attributes the rest of it does not entail.
-    Each conclusion then starts as everything the premise entails and is cut
-    to the attributes that do not follow from the premise by way of the
-    background, the other rules, and the images of all of them under the
-    mappings; a rule left with no conclusion is redundant and is dropped. Rules are cut one at
-    a time against the others as already cut, so that, read together with the
-    background and the mappings (except for the unconfirmed implications of a
-    base that does not map them), the result entails exactly what the accepted
-    implications do. A rule's own images are not used in cutting it, since
-    they would let it derive its own conclusion.
+    Rules are simplified with the trusted implications alone: the
+    background, the confirmed implications and their images. Each premise is
+    cut to the attributes the rest of it does not entail by them. The
+    conclusion of a confirmed implication's rule then starts as everything
+    its premise entails by them, and that of an unconfirmed implication's
+    rule as what the implication adds to that. Each conclusion is cut to the
+    attributes that do not follow from the premise by way of the background,
+    the rules of the other confirmed implications, and the images of all of
+    these under the mappings; a rule left with no conclusion is redundant and
+    is dropped. The confirmed implications' rules are cut first, one at a
+    time against the others as already cut, so that with the background and
+    the mappings they entail exactly the trusted implications. An
+    unconfirmed implication's rule is cut against these alone, never against
+    another unconfirmed one, so that each states what is not proved: no
+    attribute of its conclusion follows from its premise by the trusted
+    implications, and an open question is not merged into another. Read
+    together with the background and the mappings (except for the
+    unconfirmed implications of a base that does not map them), the rules
+    entail exactly what the accepted implications do. A rule's own images
+    are not used in cutting it, since they would let it derive its own
+    conclusion.
 
     Conclusion attributes are tried for removal weakest first, by how much
     each entails on its own, so that a rule keeps the attribute the others
@@ -63,7 +77,8 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
     on its own, as a law satisfied only by one-element magmas does.
     """
     index = base.index
-    theory = base.implications
+    trusted = base.trusted_implications
+    sources = base.implication_sources
 
     def images(premise: int, conclusion: int, mapped: bool = True) -> set[tuple[int, int]]:
         return {
@@ -76,40 +91,49 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
     # mapped before, and with the mappings closed under composition so are
     # its own images; a background of whole orbits is mapped once per orbit.
     background: set[tuple[int, int]] = set()
-    for implication, source in base.implication_sources.items():
+    for implication, source in sources.items():
         if source is ImplicationSource.BACKGROUND:
             masks = (index.encode(implication.premise), index.encode(implication.conclusion))
             if masks not in background:
                 background |= images(*masks)
 
     accepted = base.accepted_implications
+    confirmed = [sources[implication] is ImplicationSource.CONFIRMED for implication in accepted]
     rules = []
-    for implication in accepted:
-        premise = index.encode(theory.simplify(implication).premise)
-        closure = theory.closure_mask(premise)
-        rules.append([premise, closure & ~premise])
+    for implication, is_confirmed in zip(accepted, confirmed):
+        premise = index.encode(trusted.simplify(implication).premise)
+        start = trusted.closure_mask(premise)
+        if is_confirmed:
+            rules.append([premise, start & ~premise])
+        else:
+            given = premise | index.encode(implication.conclusion)
+            rules.append([premise, trusted.closure_mask(given) & ~start])
     # Unconfirmed implications that the base does not map stand for themselves.
-    mapped = [
-        base.map_unconfirmed or base.implication_sources[implication] is not ImplicationSource.UNCONFIRMED
-        for implication in accepted
-    ]
+    mapped = [base.map_unconfirmed or c for c in confirmed]
     rule_images = [images(premise, conclusion, m) for (premise, conclusion), m in zip(rules, mapped)]
 
-    for i, rule in enumerate(rules):
-        premise, conclusion = rule
-        rest = list(background.union(*(rule_images[:i] + rule_images[i + 1:])))
+    def cut(i: int) -> None:
+        premise, conclusion = rules[i]
+        rest = list(background.union(*(rule_images[j] for j in range(len(rules)) if j != i and confirmed[j])))
         target = conclusion
         weakest_first = sorted(
             bits(target),
-            key=lambda position: (theory.closure_mask(1 << position).bit_count(), position),
+            key=lambda position: (trusted.closure_mask(1 << position).bit_count(), position),
         )
         for position in weakest_first:
             candidate = conclusion & ~(1 << position)
             implications = rest + list(images(premise, candidate, mapped[i]))
             if target & ~close_mask(premise, implications) == 0:
                 conclusion = candidate
-        rule[1] = conclusion
+        rules[i][1] = conclusion
         rule_images[i] = images(premise, conclusion, mapped[i])
+
+    for i in range(len(rules)):
+        if confirmed[i]:
+            cut(i)
+    for i in range(len(rules)):
+        if not confirmed[i]:
+            cut(i)
 
     full = base.full_mask
     return [
@@ -117,13 +141,13 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
             premise=frozenset(index.decode(premise)),
             conclusion=frozenset(index.decode(conclusion)),
             everything=(
-                theory.closure_mask(premise) & full == full
-                and theory.closure_mask(conclusion) & full != full
+                trusted.closure_mask(premise | (0 if confirmed[i] else conclusion)) & full == full
+                and trusted.closure_mask(conclusion) & full != full
             ),
-            source=base.implication_sources[implication],
+            source=ImplicationSource.CONFIRMED if confirmed[i] else ImplicationSource.UNCONFIRMED,
             implication=implication,
         )
-        for implication, (premise, conclusion) in zip(accepted, rules)
+        for i, (implication, (premise, conclusion)) in enumerate(zip(accepted, rules))
         if conclusion
     ]
 

@@ -87,7 +87,8 @@ def _closure(mask: int, rules: list[tuple[int, int]]) -> int:
 class Export:
     def __init__(self, results: Path, equations_file: Path, axioms: Sequence[str], etp: Path,
                  certificates: Path | None = None, duality: bool = True,
-                 background_label: str | None = None, closure: ImplicationClosure | None = None):
+                 background_label: str | None = None, closure: ImplicationClosure | None = None,
+                 map_unconfirmed: bool = True):
         self.results = results
         self.equations = ETP.load_equations(equations_file)
         entries = json.loads(equations_file.read_text(encoding="utf-8"))
@@ -101,6 +102,10 @@ class Export:
         self.certified = self._certified(certificates) if certificates else None
         self.duality = duality
         self.background_label = background_label
+        # As the exploration had it: with --ask-unconfirmed-duals, the dual of
+        # an unconfirmed implication is not its image but an implication of
+        # its own, accepted or refuted in turn.
+        self.map_unconfirmed = map_unconfirmed
         self.closure = closure
         self.bit = {eq: 1 << i for i, eq in enumerate(self.equations)}
         # Laws that hold everywhere: the assumed ones and the trivial ones.
@@ -138,7 +143,7 @@ class Export:
         """The exploration's implications, as accepted, and its background
         alone, each in a base with the duality."""
         mappings = [ETP.get_duality_mapping(self.equations, associative=self.associative)] if self.duality else []
-        base = ExplorationBase(attributes=self.equations, mappings=mappings)
+        base = ExplorationBase(attributes=self.equations, mappings=mappings, map_unconfirmed=self.map_unconfirmed)
         background = ExplorationBase(attributes=self.equations, mappings=mappings)
         for entry in json.loads((self.results / "implications.json").read_text(encoding="utf-8")):
             implication = Implication([self.by_key[k] for k in entry["premise"]],
@@ -170,7 +175,8 @@ class Export:
                 own = (rule.premise, rule.conclusion)
                 image = (frozenset(map(mapping, rule.premise)), frozenset(map(mapping, rule.conclusion)))
                 entries = [(f"{tag}{k}", own, source)]
-                if image != own:
+                # An unconfirmed rule whose dual was asked in turn has no dual.
+                if image != own and (self.map_unconfirmed or source != "unconfirmed"):
                     entries.append((f"{tag}{k}^op", image, f"dual of {tag}{k}"))
                 for name, (premise, conclusion), provenance in entries:
                     numbers = (sorted(self.number[eq] for eq in premise), sorted(self.number[eq] for eq in conclusion))
@@ -318,7 +324,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     settings_path = args.results / "settings.toml"
     settings = tomllib.loads(settings_path.read_text(encoding="utf-8")) if settings_path.exists() else {}
     export = Export(args.results, equations, axioms, args.etp, args.certificates,
-                    duality=not settings.get("no-duality", False), background_label=args.background_label)
+                    duality=not settings.get("no-duality", False), background_label=args.background_label,
+                    map_unconfirmed=not settings.get("ask-unconfirmed-duals", False))
     if args.etp_data:
         export.closure = etp_closure(args.etp_data, export.associative)
     write(export, args.output, args.reduce)

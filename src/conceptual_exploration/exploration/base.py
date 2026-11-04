@@ -136,6 +136,13 @@ class ExplorationBase(Generic[O, A]):
             if self.implication_sources[implication] == ImplicationSource.UNCONFIRMED
         )
 
+    @property
+    def trusted_implications(self) -> ImplicationTheory[A]:
+        """The trusted implications: the background, the confirmed
+        implications and their images, those the objects are completed
+        with. Not to be modified."""
+        return self._trusted
+
     def accept(
             self,
             implication: Implication[A],
