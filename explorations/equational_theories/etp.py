@@ -32,7 +32,8 @@ import argparse
 import json
 import re
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
+from operator import itemgetter
 from dataclasses import dataclass
 from math import isqrt
 from pathlib import Path
@@ -328,6 +329,51 @@ def graph_refutations(
                 {eq for eq in listed if _implies(graph, numbers[eq], numbers[b])},
             ))
     return objects
+
+
+class ImplicationClosure:
+    """The laws each ETP law implies by chains of the ETP's implications and
+    of their images under a duality, such as reversal among semigroups,
+    where the dual of an implication holds when the implication does.
+
+    Every implication of the graph has one premise, so the laws a set of
+    laws implies so are those its laws imply. Each law's implications are a
+    bitmask, bit q - 1 for law q.
+    """
+
+    def __init__(self, graph: ImplicationGraph, dual: Callable[[int], int | None]):
+        self.size = size = graph.size
+        flags = bytes(ord("1") if value in _TRUE else ord("0") for value in range(256))
+        rows = [bytes(graph.outcomes[p * size:(p + 1) * size]).translate(flags) for p in range(size)]
+        # The dual of each law, or `size`, a column of zeros, if it has none.
+        duals = [dual(q) for q in range(1, size + 1)]
+        image = itemgetter(*[size if d is None else d - 1 for d in duals])
+        self.edges = []
+        for p in range(size):
+            row = rows[p]
+            if duals[p] is not None:
+                dual_row = bytes(image(rows[duals[p] - 1] + b"0"))
+                row = bytes(a | b for a, b in zip(row, dual_row))
+            self.edges.append(int(row[::-1], 2))
+        self._cache: dict[int, int] = {}
+
+    def implied(self, law: int) -> int:
+        """The laws `law` implies, itself included; none for a law past the
+        ETP's."""
+        if law > self.size:
+            return 0
+        if law not in self._cache:
+            seen = frontier = 1 << (law - 1)
+            while frontier:
+                reached = 0
+                while frontier:
+                    low = frontier & -frontier
+                    frontier ^= low
+                    reached |= self.edges[low.bit_length() - 1]
+                frontier = reached & ~seen
+                seen |= reached
+            self._cache[law] = seen
+        return self._cache[law]
 
 
 def _implies(graph: ImplicationGraph, premise: int, conclusion: int) -> bool:

@@ -19,7 +19,7 @@ constants of the conclusion turned back into its variables.
 The prover is not trusted: a certificate is checked by certificates.py, and
 one that cannot be reconstructed or checked is no evidence.
 
-usage: certify.py RESULTS_DIR -o CERTIFICATES [--classes] [--proofs PROOFS]
+usage: certify.py RESULTS_DIR -o CERTIFICATES [--classes] [--proofs PROOFS] [--equations FILE --axiom LAW ...]
 
 certifies single-law implications that, with the exploration's axioms,
 entail every implication of RESULTS_DIR/implications.json (see `cover`), and
@@ -41,7 +41,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import tomllib
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
@@ -54,7 +53,7 @@ if __package__ in (None, ""):
 from explorations.equational_theories.certificates import (
     CertificateError, check_certificate, parse_law, parse_term, show, word_law,
 )
-from explorations.equational_theories.verify import law_key
+from explorations.equational_theories.verify import exploration_setting, law_key
 
 
 class ReconstructionError(ValueError):
@@ -931,11 +930,13 @@ def main(argv: Sequence[str] | None = None) -> None:
                         help="the directory the exploration was run from (default: the current one)")
     parser.add_argument("--proofs", type=Path, default=None,
                         help="the proofs the exploration saved (default: RESULTS_DIR/proofs.jsonl.xz, if any)")
+    parser.add_argument("--equations", type=Path, default=None, help="the equations file, if no settings.toml")
+    parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
     args = parser.parse_args(argv)
-    settings = tomllib.loads((args.results / "settings.toml").read_text(encoding="utf-8"))
-    equations = json.loads((args.root / settings["equations"]).read_text(encoding="utf-8"))
+    equations_path, axiom_ids = exploration_setting(args.results, args.root, args.equations, args.axiom)
+    equations = json.loads(equations_path.read_text(encoding="utf-8"))
     names = _law_names(equations)
-    axioms = [a for a in names if str(a) in {str(x) for x in settings.get("axiom", [])}]
+    axioms = [a for a in names if str(a) in axiom_ids]
     associativity = law_key(parse_law("x * (y * z) = (x * y) * z"), False)
     associative = any(law_key(parse_law(names[a]), False) == associativity for a in axioms)
     tasks = [([names[p] for p in premise], names[law]) for premise, law in cover(args.results, equations, axioms)]

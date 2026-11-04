@@ -1,10 +1,12 @@
 """Check the result of an exploration of laws from its evidence.
 
-usage: verify.py RESULTS_DIR CERTIFICATES [--classes]
-       verify.py RESULTS_DIR --lean LEAN_DIR --etp ETP_DIR [--classes]
+usage: verify.py RESULTS_DIR CERTIFICATES [--classes] [--equations FILE --axiom LAW ...]
+       verify.py RESULTS_DIR --lean LEAN_DIR ... --etp ETP_DIR [--classes] [--free-rows]
 
 RESULTS_DIR is an exploration's output (settings.toml, context.cxt,
-magmas.json) and CERTIFICATES a file of proof certificates (certificates.py),
+magmas.json, and free_magma_tables.json if some free magmas have finite
+stand-ins with the same rows; --equations and --axiom stand in for the
+settings.toml of explorations run before it was saved) and CERTIFICATES a file of proof certificates (certificates.py),
 one JSON object a line, compressed with xz if it ends in .xz. The checks:
 
 1. every object of the context is a finite magma of magmas.json in which the
@@ -37,7 +39,9 @@ from the signatures of the theorems `(G : Type*) [Magma G] (h3 : Equation3
 G) ... : EquationN G`, and the rows from the `Facts G [satisfied]
 [refuted]` of the semigroups: each row is the closure of its satisfied laws
 under the implications, which must give every law of the exploration but
-the refuted ones. Checks 3 and 4 then run on these.
+the refuted ones; with --free-rows, the rows of the free magmas without
+finite stand-ins, which rest on other evidence (completion.py), are taken
+from the context. Checks 3 and 4 then run on these.
 """
 
 from __future__ import annotations
@@ -193,18 +197,63 @@ def read_context(path: Path) -> tuple[list[str], list[str], list[str]]:
     return objects, attributes, rows
 
 
+def irreducible(rows: dict[str, int]) -> set[str]:
+    """The objects, by name, whose rows (as masks) are not the intersection
+    of the rows strictly containing them, the first of each row: the others
+    add no intent."""
+    distinct = set(rows.values())
+    kept = set()
+    for mask in distinct:
+        meet, above = -1, False
+        for other in distinct:
+            if other != mask and other & mask == mask:
+                meet &= other
+                above = True
+        if not above or meet != mask:
+            kept.add(mask)
+    names, seen = set(), set()
+    for name, mask in rows.items():
+        if mask in kept and mask not in seen:
+            seen.add(mask)
+            names.add(name)
+    return names
+
+
 def read_certificates(path: Path) -> list[dict]:
     opener = lzma.open if path.suffix == ".xz" else open
     with opener(path, "rt", encoding="utf-8") as file:
         return [json.loads(line) for line in file if line.strip()]
 
 
-def _setting(results: Path, root: Path):
+def exploration_setting(results: Path, root: Path, equations: Path | None = None,
+                        axioms: Sequence[str] | None = None) -> tuple[Path, list[str]]:
+    """The equations file and the axioms of an exploration, from its
+    settings.toml, or as given for an exploration run before it was saved."""
+    path = results / "settings.toml"
+    settings = tomllib.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if equations is None and "equations" not in settings:
+        raise VerificationError(f"No {path}: give the equations file")
+    return (equations or root / settings["equations"],
+            [str(a) for a in (axioms if axioms is not None else settings.get("axiom", []))])
+
+
+def object_tables(results: Path) -> dict[str, list[list[int]]]:
+    """The tables of the finite objects of an exploration, by name: its
+    magmas, and the finite stand-ins for free magmas, which have the same
+    rows, in free_magma_tables.json if there is one."""
+    tables = {m["name"]: m["table"] for m in json.loads((results / "magmas.json").read_text(encoding="utf-8"))}
+    stand_ins = results / "free_magma_tables.json"
+    if stand_ins.exists():
+        tables.update({m["name"]: m["table"] for m in json.loads(stand_ins.read_text(encoding="utf-8"))})
+    return tables
+
+
+def _setting(results: Path, root: Path, equations_path: Path | None = None, axioms: Sequence[str] | None = None):
     """The laws of an exploration, by attribute name, its axioms, and
     whether associativity is among them."""
-    settings = tomllib.loads((results / "settings.toml").read_text(encoding="utf-8"))
-    equations = json.loads((root / settings["equations"]).read_text(encoding="utf-8"))
-    axiom_ids = {str(a) for a in settings.get("axiom", [])}
+    equations_path, axiom_ids = exploration_setting(results, root, equations_path, axioms)
+    equations = json.loads(equations_path.read_text(encoding="utf-8"))
+    axiom_ids = set(axiom_ids)
     laws = {}
     for entry in equations:
         name = f"Eq{entry['id']}" if "id" in entry else entry["name"]
@@ -246,9 +295,10 @@ def check_classes(equations: list[dict], laws: dict, attributes: Sequence[str], 
           f"{len(found)} classes, each law proved equivalent to its class's", flush=True)
 
 
-def verify(results: Path, certificates_path: Path, classes: bool, root: Path) -> None:
+def verify(results: Path, certificates_path: Path, classes: bool, root: Path,
+           equations_path: Path | None = None, axiom_ids: Sequence[str] | None = None) -> None:
     started = time.monotonic()
-    equations, laws, axioms, associative = _setting(results, root)
+    equations, laws, axioms, associative = _setting(results, root, equations_path, axiom_ids)
     objects, attributes, rows = read_context(results / "context.cxt")
     if sorted(attributes) != sorted(laws):
         raise VerificationError("The context's attributes are not the laws of the equations file")
@@ -259,7 +309,7 @@ def verify(results: Path, certificates_path: Path, classes: bool, root: Path) ->
         by_key.setdefault(key, name)
 
     # 1. The objects.
-    tables = {m["name"]: m["table"] for m in json.loads((results / "magmas.json").read_text(encoding="utf-8"))}
+    tables = object_tables(results)
     intents = []
     for name, row in zip(objects, rows):
         table = tables.get(name)
@@ -317,16 +367,18 @@ _FACTS = re.compile(r"^@\[equational_result\]\ntheorem «Facts from ([^»]*)» :
                     r"  ∃ \(G : Type\) \(_ : Magma G\) \(_: Finite G\), Facts G \[([\d, ]*)\] \[([\d, ]*)\] :=", re.M)
 
 
-def verify_lean(results: Path, lean: Path, etp: Path, classes: bool, root: Path) -> None:
+def verify_lean(results: Path, lean: Sequence[Path], etp: Path, classes: bool, root: Path,
+                equations_path: Path | None = None, axiom_ids: Sequence[str] | None = None,
+                free_rows: bool = False) -> None:
     started = time.monotonic()
-    equations, laws, axioms, associative = _setting(results, root)
+    equations, laws, axioms, associative = _setting(results, root, equations_path, axiom_ids)
     attributes = list(laws)
     index = {name: i for i, name in enumerate(attributes)}
     key_of = {name: law_key(laws[name], associative) for name in attributes}
     by_key: dict = {}
     for name, key in key_of.items():
         by_key.setdefault(key, name)
-    sources = sorted(lean.glob("*.lean"))
+    sources = sorted(p for path in lean for p in (path.glob("*.lean") if path.is_dir() else [path]))
     texts = [path.read_text(encoding="utf-8") for path in sources]
     numbered: dict[int, tuple] = {}
     for text in texts + [path.read_text(encoding="utf-8")
@@ -370,9 +422,10 @@ def verify_lean(results: Path, lean: Path, etp: Path, classes: bool, root: Path)
                     changed = True
         return mask
 
-    full, intents = (1 << len(attributes)) - 1, []
+    full, intents, named = (1 << len(attributes)) - 1, [], set()
     for text in texts:
         for name, satisfied, refuted in _FACTS.findall(text):
+            named.add(name.split(" ")[-1])
             masks = []
             for numbers in (satisfied, refuted):
                 mask = 0
@@ -388,10 +441,19 @@ def verify_lean(results: Path, lean: Path, etp: Path, classes: bool, root: Path)
             if intent & masks[1] or intent | masks[1] != full:
                 raise VerificationError(f"{name}: the implications do not give its row from its facts")
             intents.append(intent)
-    print(f"{len(intents)} semigroups: their facts give their rows", flush=True)
+    print(f"{len(intents)} magmas: their facts give their rows", flush=True)
+    if free_rows:
+        # The free magmas, as the context has them: finite magmas need facts.
+        objects, context_attributes, rows = read_context(results / "context.cxt")
+        tables, added = object_tables(results), 0
+        for name, row in zip(objects, rows):
+            if name not in named and name not in tables:
+                intents.append(sum(1 << index[a] for a, entry in zip(context_attributes, row) if entry == "X"))
+                added += 1
+        print(f"{added} free magmas, their rows taken from the context", flush=True)
 
     count = check_closure_systems(len(attributes), intents, rules, os.cpu_count() or 1)
-    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the semigroups",
+    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the objects",
           flush=True)
     if classes:
         if not associative:
@@ -404,21 +466,28 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Check the result of an exploration of laws from its evidence.")
     parser.add_argument("results", type=Path, metavar="RESULTS_DIR")
     parser.add_argument("certificates", type=Path, metavar="CERTIFICATES", nargs="?")
-    parser.add_argument("--lean", type=Path, metavar="LEAN_DIR",
-                        help="check the statements of these Lean files in the ETP's form instead")
+    parser.add_argument("--lean", type=Path, nargs="+", metavar="LEAN_DIR",
+                        help="check the statements of the Lean files in the ETP's form in these directories "
+                             "(or these files) instead")
     parser.add_argument("--etp", type=Path, metavar="ETP_DIR", help="with --lean, a checkout of the ETP")
     parser.add_argument("--classes", action="store_true",
                         help="also check the classes of semigroup laws listed in the equations file")
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
+    parser.add_argument("--equations", type=Path, default=None, help="the equations file, if no settings.toml")
+    parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
+    parser.add_argument("--free-rows", action="store_true",
+                        help="with --lean, take the rows of the free magmas without finite stand-ins "
+                             "from the context")
     args = parser.parse_args(argv)
     if (args.certificates is None) == (args.lean is None) or (args.lean is None) != (args.etp is None):
         parser.error("give CERTIFICATES, or --lean and --etp")
     try:
         if args.lean is not None:
-            verify_lean(args.results, args.lean, args.etp, args.classes, args.root)
+            verify_lean(args.results, args.lean, args.etp, args.classes, args.root, args.equations, args.axiom,
+                        args.free_rows)
         else:
-            verify(args.results, args.certificates, args.classes, args.root)
+            verify(args.results, args.certificates, args.classes, args.root, args.equations, args.axiom)
     except (VerificationError, CertificateError) as error:
         sys.exit(f"verify.py: {error}")
 

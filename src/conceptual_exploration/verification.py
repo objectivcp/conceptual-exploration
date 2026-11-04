@@ -94,12 +94,19 @@ def check_closure_systems(
             if premise & ~intent == 0 and conclusion & ~intent:
                 raise VerificationError(f"Object {k} violates an implication")
 
+    # The objects having each attribute, as bitmasks over the objects: the
+    # objects having a set's attributes are the intersection of their
+    # columns, and its closure the attributes all of these have.
+    extents = [sum(1 << k for k, intent in enumerate(intents) if intent >> j & 1) for j in range(attributes)]
+    everyone = (1 << len(intents)) - 1
+
     def intent_closure(mask: int) -> int:
-        result = full
-        for intent in intents:
-            if mask & ~intent == 0:
-                result &= intent
-        return result
+        extent = everyone
+        while mask:
+            low = mask & -mask
+            mask ^= low
+            extent &= extents[low.bit_length() - 1]
+        return sum(1 << j for j in range(attributes) if extent & ~extents[j] == 0)
 
     # NextClosure, attribute 0 the most significant in the lectic order, and
     # the sets it asks the closures of.

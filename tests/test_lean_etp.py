@@ -87,3 +87,66 @@ def test_a_costly_law_is_decided_in_parts_by_its_first_variables():
     # The facts take the law decided in parts first.
     facts = facts_theorem("source", semigroup, FakeLaws())
     assert "Facts G [4512] [2]" in facts and "Finite.of_fintype _,\n      «source M2 satisfies 4512»,\n" in facts
+
+
+class FakeEtpLaws(FakeLaws):
+    """FakeLaws as the ETP's laws for lean_etp.main, all declared by it."""
+
+    def __init__(self, etp):
+        self.used = set()
+        self.declared = {2: "x = y", 3: "x = x ◇ x", 1: "x = x"}
+
+    def number(self, law):
+        number = 1 if law[0] == law[1] else super().number(law)
+        self.used.add(number)
+        return number
+
+    def text(self, number):
+        return self.declared[number]
+
+    def definition(self, number):
+        return parse_law(self.declared[number].replace("◇", "*"))
+
+
+def test_a_magma_exploration_without_settings_becomes_lean_files_whose_statements_give_its_result(
+        tmp_path, monkeypatch):
+    import json
+
+    import pytest
+
+    from explorations.equational_theories import lean_etp
+    from explorations.equational_theories.verify import VerificationError, verify_lean
+
+    monkeypatch.setattr(lean_etp, "EtpLaws", FakeEtpLaws)
+    etp = tmp_path / "etp"
+    (etp / "equational_theories" / "Equations").mkdir(parents=True)
+    (etp / "equational_theories" / "Equations" / "Basic.lean").write_text(
+        "equation 1 := x = x\nequation 2 := x = y\nequation 3 := x = x ◇ x\n")
+    equations = tmp_path / "equations.json"
+    equations.write_text(json.dumps([{"id": 1, "equation": "x = x"}, {"id": 2, "equation": "x = y"},
+                                     {"id": 3, "equation": "x = x * x"}]))
+    results = tmp_path / "run"
+    results.mkdir()
+    # The free magma F1, without a table, is the only object satisfying x = x
+    # alone; M3 is M1 again.
+    (results / "context.cxt").write_text("B\n\n4\n3\n\nM1\nM2\nF1\nM3\nEq1\nEq2\nEq3\nX.X\nXXX\nX..\nX.X\n")
+    (results / "magmas.json").write_text(json.dumps([{"name": "M1", "table": [[0, 0], [1, 1]]},
+                                                     {"name": "M2", "table": [[0]]},
+                                                     {"name": "M3", "table": [[0, 0], [1, 1]]}]))
+    certificates = tmp_path / "certificates.jsonl"
+    certificates.write_text(json.dumps({"premise": ["x = y"], "conclusion": "x = x * x",
+                                        "terms": ["x", "x * x"], "by": ["h0"]}) + "\n")
+    lean = tmp_path / "lean"
+    lean_etp.main([str(results), str(certificates), "--etp", str(etp), "-o", str(lean), "--module", "Test",
+                   "--equations-module", "Shared", "--equations", str(equations), "--axiom"])
+
+    implications = (lean / "Test" / "Implications0.lean").read_text()
+    assert implications.startswith("import Shared\n") and "namespace Test\n" in implications
+    tables = (lean / "Test" / "MagmaTables.lean").read_text()
+    assert "def «Test M1» :" in tables and "«Test M3»" not in tables
+    assert (lean / "Test.lean").read_text().splitlines()[:3] == ["import Shared", "import Test.Implications0",
+                                                                 "import Test.MagmaTables"]
+    statements = [lean / "Test", lean / "Shared.lean"]
+    with pytest.raises(VerificationError):
+        verify_lean(results, statements, etp, False, tmp_path, equations, [])
+    verify_lean(results, statements, etp, False, tmp_path, equations, [], free_rows=True)

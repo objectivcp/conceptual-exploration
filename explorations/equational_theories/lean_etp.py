@@ -15,20 +15,28 @@ about its definitions, and state the result as the ETP states its own:
   rewrites one subterm with an instance of a hypothesis or a lemma, and
   becomes a `conv` that goes to that subterm and rewrites it with the
   instance, written out. The class equivalences are two such implications.
-- Each semigroup of the context is a `finOpTable`, and an
+- Each finite magma (or semigroup) of the context, or finite stand-in for a
+  free magma (free_magma_tables.json), is a `finOpTable` named after the
+  module and the object (`«Order5 M1»`), each table once, and an
   `@[equational_result]` theorem `∃ (G : Type) (_ : Magma G) (_ : Finite G),
   Facts G [satisfied] [refuted]`, as in the ETP's Generated/All4x4Tables:
   the refuted laws are all those of the exploration it refutes, and the
   satisfied ones, as in the ETP, a few from which the others of its row
   follow by the implications proved, chosen to be cheap to decide. A
   satisfied law is decided by `decideFin!`, and a refuted one by
-  `decideFin!` at a counterexample.
+  `decideFin!` at a counterexample. Free magmas without a stand-in are
+  left out; verify.py --free-rows takes their rows from the context.
+
+The theorems are in the namespace NAME, so that several results can share
+a project; so can the module declaring their laws (--equations-module).
 
 usage: lean_etp.py RESULTS_DIR CERTIFICATES --etp ETP_DIR -o LEAN_DIR [--module NAME] [--classes]
+                   [--equations-module NAME] [--reduce] [--equations FILE --axiom LAW ...]
 
 ETP_DIR is a checkout of the ETP, such as the one lake puts in
 LEAN_DIR/.lake/packages/equational_theories; NAME/*.lean and NAME.lean are
-written in LEAN_DIR.
+written in LEAN_DIR. --equations and --axiom stand in for the settings.toml
+of explorations run before it was saved.
 """
 
 from __future__ import annotations
@@ -42,7 +50,6 @@ import lzma
 import math
 import re
 import sys
-import tomllib
 import types
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -56,7 +63,9 @@ if __package__ in (None, ""):
 from explorations.equational_theories.certificates import (
     _difference, _match, _subterm, parse_law, parse_term, show, word_law,
 )
-from explorations.equational_theories.verify import law_key, read_context
+from explorations.equational_theories.verify import (
+    exploration_setting, irreducible, law_key, object_tables, read_context,
+)
 
 
 class TranslationError(ValueError):
@@ -265,11 +274,15 @@ class Semigroup:
 
 
 def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict], laws: EtpLaws,
-          assumed: list[str]) -> list[Semigroup]:
-    """The semigroups of the context, each with the assumed laws and as few
-    others as needed for the implications of the certificates to give the
-    rest of its row, the cheapest first, as satisfied."""
+          assumed: list[str], reduce: bool = False) -> list[Semigroup]:
+    """The semigroups of the context, each table once, each with the assumed
+    laws and as few others as needed for the implications of the
+    certificates to give the rest of its row, the cheapest first, as
+    satisfied; with `reduce`, only those whose rows are not intersections of
+    the rows of other objects."""
     objects, names, rows = read_context(results / "context.cxt")
+    kept = irreducible({name: sum(1 << j for j, entry in enumerate(row) if entry == "X")
+                        for name, row in zip(objects, rows)}) if reduce else set(objects)
     index = {name: i for i, name in enumerate(names)}
     by_key = {law_key(attributes[name], False): name for name in names}
     rules = []
@@ -291,10 +304,16 @@ def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict],
                     changed = True
         return mask
 
-    tables = {m["name"]: m["table"] for m in json.loads((results / "magmas.json").read_text(encoding="utf-8"))}
+    tables = object_tables(results)
     result = []
+    seen = set()
     for name, row in zip(objects, rows):
-        table = tables[name]
+        # Free magmas without a finite stand-in have no table; a table seen
+        # already, under another name, has the same row.
+        table = tables.get(name)
+        if table is None or name not in kept or str(table) in seen:
+            continue
+        seen.add(str(table))
         satisfied = [a for a, entry in zip(names, row) if entry == "X"]
         intent = sum(1 << index[a] for a in satisfied)
         cost = {a: len(table) ** _variable_count(attributes[a]) for a in satisfied}
@@ -442,16 +461,25 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--etp", type=Path, required=True, metavar="ETP_DIR", help="a checkout of the ETP")
     parser.add_argument("-o", "--output", type=Path, required=True, metavar="LEAN_DIR")
     parser.add_argument("--module", default="Order5")
+    parser.add_argument("--equations-module", default=None, metavar="NAME",
+                        help="the module declaring the laws the ETP does not, shared by several results: "
+                             "laws it declares already are not declared again (default: MODULE.Equations)")
     parser.add_argument("--classes", action="store_true",
                         help="also the laws of the classes, whose certificates certify.py --classes wrote")
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
+    parser.add_argument("--reduce", action="store_true",
+                        help="only the magmas whose rows are not intersections of the rows of other objects")
+    parser.add_argument("--equations", type=Path, default=None, help="the equations file, if no settings.toml")
+    parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
     args = parser.parse_args(argv)
-    settings = tomllib.loads((args.results / "settings.toml").read_text(encoding="utf-8"))
-    equations = json.loads((args.root / settings["equations"]).read_text(encoding="utf-8"))
+    equations_path, axiom_ids = exploration_setting(args.results, args.root, args.equations, args.axiom)
+    equations = json.loads(equations_path.read_text(encoding="utf-8"))
     attributes = {(f"Eq{e['id']}" if "id" in e else e["name"]): parse_law(e["equation"]) for e in equations}
-    axiom_ids = {str(a) for a in settings.get("axiom", [])}
     assumed = [name for name in attributes if name.startswith("Eq") and name[2:] in axiom_ids]
+    associativity = law_key(parse_law("(x * y) * z = x * (y * z)"), False)
+    kind = "Semigroup" if any(law_key(attributes[a], False) == associativity for a in assumed) else "Magma"
+    equations_module = args.equations_module or f"{args.module}.Equations"
     laws = EtpLaws(args.etp)
     opener = lzma.open if args.certificates.suffix == ".xz" else open
     with opener(args.certificates, "rt", encoding="utf-8") as file:
@@ -466,34 +494,43 @@ def main(argv: Sequence[str] | None = None) -> None:
         name, text = implication_theorem(certificate, laws)
         steps = len(certificate["by"]) + sum(len(lemma["by"]) for lemma in certificate.get("lemmas", []))
         theorems.setdefault(name, (text, steps))
-    semigroups = facts(args.results, attributes, certificates, laws, assumed)
+    semigroups = facts(args.results, attributes, certificates, laws, assumed, args.reduce)
 
     directory = args.output / args.module
     directory.mkdir(parents=True, exist_ok=True)
     for old in directory.glob("*.lean"):
         old.unlink()
-    declared = sorted(n for n in laws.used if n not in laws.declared)
-    (directory / "Equations.lean").write_text(
+    equations_file = args.output / (equations_module.replace(".", "/") + ".lean")
+    shared = equations_file.read_text(encoding="utf-8") if equations_file.exists() else (
         "import equational_theories.Equations.All\n\n"
-        f"/-! The laws of {args.results.name} the ETP does not declare, numbered by its scheme -/\n\n"
-        + "".join(f"equation {n} := {laws.text(n)}\n" for n in declared), encoding="utf-8")
+        "/-! The laws the ETP does not declare, numbered by its scheme -/\n\n")
+    already = {int(n) for n in re.findall(r"^equation (\d+) :=", shared, re.M)}
+    declared = sorted(n for n in laws.used if n not in laws.declared and n not in already)
+    equations_file.parent.mkdir(parents=True, exist_ok=True)
+    equations_file.write_text(shared + "".join(f"equation {n} := {laws.text(n)}\n" for n in declared),
+                              encoding="utf-8")
     header = {
-        "Implications": (f"import {args.module}.Equations\nimport equational_theories.EquationalResult\n"
+        "Implications": (f"import {equations_module}\nimport equational_theories.EquationalResult\n"
                          "import Mathlib.Tactic.TypeStar\n\nset_option linter.unusedVariables false\n\n"),
-        "Semigroups": (f"import Mathlib.Data.Finite.Prod\nimport {args.module}.Equations\n"
+        "Semigroups": (f"import Mathlib.Data.Finite.Prod\nimport {equations_module}\n"
                        "import equational_theories.FactsSyntax\nimport equational_theories.MemoFinOp\n"
                        "import equational_theories.DecideBang\nimport equational_theories.EquationalResult\n\n"
                        "set_option linter.unusedVariables false\n\n"),
     }
+
+    def namespaced(texts: list[str]) -> str:
+        # Several results in one project prove some implications alike.
+        return f"namespace {args.module}\n\n" + "\n".join(texts) + f"\nend {args.module}\n"
     files = []
-    source = args.results.name
+    # The magmas are named after the module and their names in the context.
+    source = args.module
     for k, texts in enumerate(_packed(list(theorems.values()), 2000)):
-        (directory / f"Implications{k}.lean").write_text(header["Implications"] + "\n".join(texts), encoding="utf-8")
+        (directory / f"Implications{k}.lean").write_text(header["Implications"] + namespaced(texts), encoding="utf-8")
         files.append(f"Implications{k}")
     # The tables, the parts of the laws decided in parts, and the facts.
-    (directory / "SemigroupTables.lean").write_text(
-        header["Semigroups"] + "\n".join(table_definition(source, s) for s in semigroups), encoding="utf-8")
-    files.append("SemigroupTables")
+    (directory / f"{kind}Tables.lean").write_text(
+        header["Semigroups"] + namespaced([table_definition(source, s) for s in semigroups]), encoding="utf-8")
+    files.append(f"{kind}Tables")
     chunks = [(s, number, part) for s in semigroups for number, cost in s.satisfied if cost > PART
               for part in parts(source, s, number, laws)]
 
@@ -503,26 +540,25 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     part_files = _packed([(local(s, [text]), cost) for s, _, (_, text, cost) in chunks], 10 * PART)
     for k, texts in enumerate(part_files):
-        (directory / f"SemigroupParts{k}.lean").write_text(
-            header["Semigroups"].replace("\n\n", f"\nimport {args.module}.SemigroupTables\n\n", 1)
-            + "\n".join(texts), encoding="utf-8")
-        files.append(f"SemigroupParts{k}")
-    imports = "".join(f"import {args.module}.SemigroupParts{k}\n" for k in range(len(part_files)))
+        (directory / f"{kind}Parts{k}.lean").write_text(
+            header["Semigroups"].replace("\n\n", f"\nimport {args.module}.{kind}Tables\n\n", 1)
+            + namespaced(texts), encoding="utf-8")
+        files.append(f"{kind}Parts{k}")
+    imports = "".join(f"import {args.module}.{kind}Parts{k}\n" for k in range(len(part_files)))
     facts_texts = []
     for s in semigroups:
         whole = [assembled(source, s, number, laws)[1] for number, cost in s.satisfied if cost > PART]
         facts_texts.append(((local(s, whole) if whole else "") + facts_theorem(source, s, laws),
                             sum(cost for _, cost in s.satisfied if cost <= PART) + len(s.refuted)))
     for k, texts in enumerate(_packed(facts_texts, 2 * PART)):
-        (directory / f"Semigroups{k}.lean").write_text(
-            header["Semigroups"].replace("\n\n", f"\nimport {args.module}.SemigroupTables\n{imports}\n", 1)
-            + "\n".join(texts), encoding="utf-8")
-        files.append(f"Semigroups{k}")
+        (directory / f"{kind}s{k}.lean").write_text(
+            header["Semigroups"].replace("\n\n", f"\nimport {args.module}.{kind}Tables\n{imports}\n", 1)
+            + namespaced(texts), encoding="utf-8")
+        files.append(f"{kind}s{k}")
     (args.output / f"{args.module}.lean").write_text(
-        "".join(f"import {args.module}.{name}\n" for name in ["Equations", *files]), encoding="utf-8")
-    print(f"Wrote {len(declared)} laws, {len(theorems)} implications and {len(semigroups)} semigroups "
-          f"in {len(files) + 1} files to {directory}")
-
+        f"import {equations_module}\n" + "".join(f"import {args.module}.{name}\n" for name in files), encoding="utf-8")
+    print(f"Wrote {len(declared)} laws, {len(theorems)} implications and {len(semigroups)} {kind.lower()}s "
+          f"in {len(files)} files to {directory}, and their laws to {equations_file}")
 
 if __name__ == "__main__":
     main()
