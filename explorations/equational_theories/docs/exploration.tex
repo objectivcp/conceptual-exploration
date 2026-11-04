@@ -18,6 +18,8 @@
 \usepackage[hidelinks]{hyperref}
 
 \newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Corollary}
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \theoremstyle{remark}
@@ -214,22 +216,92 @@ When every object satisfies associativity (option \code{-{}-axiom}, which adds t
 
 \subsection{Background implications from bounded equational reasoning}\label{sec:background}
 
-For laws in a single variable, the library can derive background implications syntactically. A derivation uses three rules:
-\begin{enumerate}
-  \item multiply both sides by the same term from the same side: from $s = t$ derive $u * s = u * t$ and $s * u = t * u$;
-  \item substitute a term for the variable: from $s = t$ derive $s[x := u] = t[x := u]$;
-  \item replace one occurrence of a subterm by an equal one: from $a = b$ and an equation $e$ derive $e$ with one occurrence of $a$ replaced by $b$ (or vice versa). This includes symmetry and transitivity.
-\end{enumerate}
-\tocheck{These rules are complete for one-variable equational logic}{every equational consequence of one-variable laws should be derivable as a chain of replacements of instances $u[x := v] \to w[x := v]$ of premise laws inside contexts, which rules~2, 1 and~3 provide in this order; this argument has not been written out in full.}, but derivations may pass through arbitrarily large equations. Derivations are therefore bounded by an \emph{order} $N$: all equations they pass through have order at most $N$. Within this bound, all rule instances are computed once, as Horn clauses between numbered equations, and the laws a set of laws derives are obtained by forward chaining.
+For laws in a single variable, background implications can be derived syntactically, by equational reasoning restricted to equations of bounded size. This subsection defines these derivations, relates them to semantic consequence, and describes how background implications are obtained from them.
 
-A \emph{transient order} $N' > N$ admits derivations of one more shape: a derived equation is multiplied or substituted into once, giving an equation of order at most $N'$, and both sides of it are then rewritten independently with the derived equations, each rewrite replacing a side of a derived equation by the other side when that is no larger. Every pair of terms reached from the two sides that forms an equation of order at most $N$ is derived. For example, substituting $x * x$ for $x$ in $x * x = ((x * x) * x) * x$ gives an equation of order~10, which $x = (x * x) * (x * x)$ rewrites to $x = (x * (x * x)) * (x * x)$, of order~4. Such steps alternate with the forward chaining until nothing new is derived.
+\paragraph{Terms and equations.}
+Let $T$ be the set of terms built from a single variable $x$ with the binary operation~$*$, and let $|t|$ be the number of operations in a term~$t$. An \emph{equation} is an unordered pair of terms, written $s \approx t$; it is \emph{trivial} if $s = t$, and its \emph{order} is $|s| + |t|$. A law in the variable~$x$ is thus an equation, the order of its sides being immaterial. We write $\mathcal{E}_N$ for the finite set of equations of order at most~$N$, $C[\,\cdot\,]$ for a context, that is, a term with one hole, and $t[u/x]$ for the term obtained from~$t$ by substituting $u$ for every occurrence of~$x$. For a set $P$ of equations, $P \models e$ means that every magma satisfying the laws of~$P$ satisfies~$e$.
 
-The derivation closure $\sigma$ is a closure operator on sets of laws, and the background implications are computed from it in one of two ways:
+\paragraph{Inference rules.}
+Derivations use three rules, for all $s, t, u, a, b \in T$:
 \begin{itemize}
-  \item with a \emph{premise size} $K$ (default $2$), every set $P$ of at most $K$ laws yields $P \to \sigma(P) \setminus P$, unless the implications kept so far entail it. The result is sound but may miss implications that need larger premises;
-  \item with premise size $0$, the canonical basis of $\sigma$ is computed with NextClosure, which visits every $\sigma$-closed set and is much slower.
+  \item[(M)] \emph{multiplication}: from $s \approx t$ infer $u * s \approx u * t$ and $s * u \approx t * u$;
+  \item[(S)] \emph{substitution}: from $s \approx t$ infer $s[u/x] \approx t[u/x]$;
+  \item[(R)] \emph{replacement}: from $a \approx b$ and an equation~$e$ infer the equation obtained from~$e$ by replacing one occurrence of~$a$, in either side, by~$b$.
 \end{itemize}
-In both cases the background is sound: every background implication is valid in all magmas. Laws with several variables are not supported, since rule~2 would then have to rename variables apart and identify laws up to renaming.
+Since equations are unordered, (R) may replace either side of $a \approx b$ by the other, and it subsumes transitivity: from $a \approx b$ and $a \approx c$ it infers $b \approx c$. An \emph{instance} of a rule is given by its premises and its conclusion. All three rules are sound: a magma that satisfies the premises of an instance satisfies its conclusion.
+
+\begin{definition}
+For $N \ge 0$, let $I_N$ be the set of instances of (M), (S) and~(R) whose premises and conclusion are non-trivial equations of~$\mathcal{E}_N$. For $P \subseteq \mathcal{E}_N$, the set $D_N(P)$ of equations \emph{derivable from~$P$ within order~$N$} is the least subset of~$\mathcal{E}_N$ that contains the non-trivial equations of~$P$ and, for every instance in~$I_N$ whose premises it contains, its conclusion.
+\end{definition}
+
+The set $I_N$ is finite. The implementation computes it once, as Horn clauses with one or two premises over the numbered equations of~$\mathcal{E}_N$, and computes $D_N(P)$ by forward chaining. Excluding trivial equations loses nothing:
+
+\begin{lemma}\label{lem:trivial}
+Let $I_N^{=}$ be defined as~$I_N$ but with trivial equations admitted as premises and conclusions. Then the non-trivial equations derivable from~$P$ with the instances in~$I_N^{=}$ are exactly those of~$D_N(P)$.
+\end{lemma}
+
+\begin{proof}
+A trivial equation $u \approx u$ yields only trivial equations by (M) and~(S), and, as the first premise of~(R), only its second premise. As the second premise of~(R), with a non-trivial first premise $a \approx b$, it yields $C[b] \approx C[a]$, where $u = C[a]$. The same equation follows from $a \approx b$ by one application of~(M) for each level of the context~$C$, through the equations $C'[a] \approx C'[b]$ for the subcontexts~$C'$ of~$C$. These are non-trivial, since $a \ne b$, and their order does not exceed that of $C[a] \approx C[b]$. By induction on derivations, trivial equations can therefore be eliminated without leaving~$\mathcal{E}_N$.
+\end{proof}
+
+\begin{proposition}\label{prop:bounded}
+Let $P \subseteq \mathcal{E}_N$ and $N \le M$. Then
+\[
+  D_N(P) \;\subseteq\; D_M(P) \cap \mathcal{E}_N \;\subseteq\; \{\, e \in \mathcal{E}_N : P \models e \,\},
+\]
+and every non-trivial $e \in \mathcal{E}_N$ with $P \models e$ belongs to $D_M(P)$ for some $M \ge N$.
+\end{proposition}
+
+\begin{proof}
+The first inclusion holds since $I_N \subseteq I_M$, and the second by the soundness of the rules. For the last claim, let $P \models s \approx t$. By Birkhoff's completeness theorem~\cite[Chapter~3]{BN98}, there is a chain of terms $s = t_0, t_1, \dots, t_n = t$ in which each $t_i$ is obtained from $t_{i-1}$ by replacing a subterm $l\theta$ by~$r\theta$, for a law $l \approx r$ of~$P$, used in either direction, and a substitution~$\theta$. Mapping every variable to~$x$ turns it into such a chain of terms of~$T$, with substitutions $x \mapsto w_i$, since $s$ and~$t$ contain no other variable. For the $i$-th step, (S)~gives $l[w_i/x] \approx r[w_i/x]$ from $l \approx r$, and (M), applied once for each level of the context of the replaced subterm, gives $t_{i-1} \approx t_i$. Then (R), replacing the side $t_{i-1}$ of $s \approx t_{i-1}$ by~$t_i$, gives $s \approx t_i$. All the equations involved lie in~$\mathcal{E}_M$ for some~$M$, and by Lemma~\ref{lem:trivial} the trivial ones among them can be eliminated.
+\end{proof}
+
+The rules are thus complete for one-variable laws, but a derivation may have to pass through equations of much higher order than its premises and its conclusion, so that $D_N$ is incomplete for every fixed~$N$. Raising~$N$ is expensive: the number of terms with $k$ operations is the Catalan number~$C_k$, and $\mathcal{E}_N$ has 30 non-trivial equations for $N = 4$, 1,023 for $N = 7$ and 41,217 for $N = 10$, with correspondingly many instances.
+
+\paragraph{Transient order.}
+A second bound admits derivations of one further shape, which leave~$\mathcal{E}_N$ once.
+
+\begin{definition}
+Let $D \subseteq \mathcal{E}_N$ be a set of non-trivial equations. For terms $u, v \in T$, write $u \to_D v$ if $v$ is obtained from~$u$ by replacing one occurrence of a subterm~$a$ by~$b$, where $a \approx b \in D$ and $|b| \le |a|$. For $N' \ge N$, a \emph{transient step} from~$D$ takes an equation $e \in D$ and an instance of (M) or~(S) with premise~$e$ whose conclusion $s' \approx t'$ has order greater than~$N$ and at most~$N'$, and yields every non-trivial equation $s'' \approx t'' \in \mathcal{E}_N$ with $s' \to_D^* s''$ and $t' \to_D^* t''$. For $P \subseteq \mathcal{E}_N$, $D_{N,N'}(P)$ is the least subset of~$\mathcal{E}_N$ that contains~$D_N(P)$ and is closed under~$I_N$ and under transient steps from itself.
+\end{definition}
+
+In particular, $D_{N,N} = D_N$. The equation $s' \approx t'$ and the terms between it and the result are not kept: they are never premises of later steps, nor used for rewriting. Since transient steps depend on what has been derived, they are not instantiated in advance; the implementation alternates forward chaining with transient steps from all equations derived so far, until neither adds an equation. It explores at most 5,000 terms from each side, which can only remove conclusions. For example, substituting $x * x$ for~$x$ in $x * x \approx ((x * x) * x) * x$ gives an equation of order~10, which $x \approx (x * x) * (x * x)$ rewrites to $x \approx (x * (x * x)) * (x * x)$, of order~4.
+
+\begin{proposition}\label{prop:transient}
+For $P \subseteq \mathcal{E}_N$ and $N \le N'$,
+\[
+  D_N(P) \;\subseteq\; D_{N,N'}(P) \;\subseteq\; D_{N'}(P) \cap \mathcal{E}_N.
+\]
+\end{proposition}
+
+\begin{proof}
+The first inclusion holds by definition. For the second, since $D_{N'}(P)$ is closed under $I_N \subseteq I_{N'}$, it suffices to show that a transient step from a set $D \subseteq D_{N'}(P)$ yields only equations of~$D_{N'}(P)$. The instance of (M) or~(S) that gives $s' \approx t'$ from $e \in D$ lies in~$I_{N'}^{=}$. A rewrite $u \to_D v$ in a side of an equation $u \approx w$ is an instance of~(R) with premises $a \approx b \in D$ and $u \approx w$ and conclusion $v \approx w$, whose order does not exceed that of $u \approx w$, since $|b| \le |a|$. Rewriting $s'$ to~$s''$ and then $t'$ to~$t''$ is therefore a derivation of $s'' \approx t''$ from~$D$ with instances in~$I_{N'}^{=}$, and by Lemma~\ref{lem:trivial}, $s'' \approx t'' \in D_{N'}(P)$.
+\end{proof}
+
+The second inclusion is strict in general: a derivation within order~$N'$ may leave~$\mathcal{E}_N$ several times before returning, rewrite with equations of order above~$N$, or enlarge a term, and a transient step does none of these. The transient order thus trades completeness for cost: $D_{N'}$ requires the instances over all of~$\mathcal{E}_{N'}$, whereas transient steps start only from equations already derived and keep only those of~$\mathcal{E}_N$.
+
+\paragraph{Background implications.}
+Let $L$ be the set of explored laws, all of order at most~$N$, and $L_0 \subseteq L$ the set of its trivial laws. For $P \subseteq L$, let
+\[
+  \sigma(P) = P \cup L_0 \cup \bigl(D_{N,N'}(P) \cap L\bigr).
+\]
+As the least fixed point of monotone operators, $D_{N,N'}$ is a closure operator on the subsets of~$\mathcal{E}_N$, and $\sigma$ is one on the subsets of~$L$, disregarding the bound on the terms explored. By Propositions~\ref{prop:bounded} and~\ref{prop:transient}, every implication $P \to \sigma(P)$ holds in all magmas. The background implications are computed from~$\sigma$ in one of two ways:
+\begin{itemize}
+  \item With a \emph{premise size} $K \ge 1$ (by default $K = 2$), the background $B_K$ starts with $\emptyset \to L_0$, and the sets $P \subseteq L \setminus L_0$ with $|P| \le K$ are considered by increasing size, $P \to \sigma(P) \setminus P$ being added unless the implications added so far entail it. The Horn closure under~$B_K$ coincides with~$\sigma$ on sets of at most $K$ laws, and is contained in~$\sigma$ on larger sets, possibly strictly: laws that more than $K$ laws derive only jointly are missed.
+  \item With $K = 0$, the background $B_0$ is the canonical basis of~$\sigma$, computed with NextClosure. The Horn closure under~$B_0$ is~$\sigma$, but NextClosure visits every $\sigma$-closed set.
+\end{itemize}
+
+\begin{corollary}\label{cor:transient}
+For the same laws~$L$ and premise size~$K$, every implication of the background computed with order~$N$ and transient order~$N'$ is entailed by the background computed with order~$N'$ alone. If the former entails every implication between laws of~$L$ that holds in all magmas, the two backgrounds are therefore equivalent.
+\end{corollary}
+
+\begin{proof}
+Let $\sigma$ and $\sigma'$ be the two closure operators; by Proposition~\ref{prop:transient}, $\sigma(P) \subseteq \sigma'(P)$ for every $P \subseteq L$. An implication $P \to Q$ of the first background satisfies $Q \subseteq \sigma(P)$, and $|P| \le K$ unless $K = 0$. In either case, the Horn closure of~$P$ under the second background contains $\sigma'(P) \supseteq Q$. The second claim follows since both backgrounds hold in all magmas.
+\end{proof}
+
+For the 31 laws of Section~\ref{sec:case31}, the background with $N = 4$, $N' = 10$ and $K = 2$ entails every implication that holds in all magmas, and is thus equivalent to the background of order~10, whose computation would require the instances over all 41,217 equations of~$\mathcal{E}_{10}$.
+
+Laws in several variables are not supported: rule~(S) would then have to substitute for each variable separately and to rename variables apart, and laws would have to be identified up to renaming.
 
 \subsection{Background implications from the ETP}\label{sec:etp}
 
@@ -1006,6 +1078,7 @@ print(result.base.open_questions, expert.answers)
 \end{itemize}
 
 \begin{thebibliography}{ETP25}
+\bibitem[BN98]{BN98} Franz Baader and Tobias Nipkow. \emph{Term Rewriting and All That}. Cambridge University Press, 1998.
 \bibitem[ETP25]{ETP25} Equational Theories Project contributors. \emph{The Equational Theories Project: Advancing collaborative mathematical research at scale}. arXiv:2512.07087, 2025. \url{https://arxiv.org/abs/2512.07087}
 \bibitem[GO16]{GO16} Bernhard Ganter and Sergei Obiedkov. \emph{Conceptual Exploration}. Springer, 2016.
 \bibitem[LF26a]{LF26a} Bruno Le Floch. \emph{Implication semilattice of 990 quasigroup equational laws}. arXiv:2603.29909, 2026. \url{https://arxiv.org/abs/2603.29909}
