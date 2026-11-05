@@ -13,4 +13,4 @@ python explorations/equational_theories/lean_etp.py $R $R/certificates.jsonl.xz 
 python explorations/equational_theories/verify.py $R --lean LEAN_DIR/Order5 --etp LEAN_DIR/.lake/packages/equational_theories --classes
 ```
 
-The build takes about 12 hours of CPU time, most of it in `Order5/SemigroupParts*`, which decide in parts the laws too costly to decide at once. Lake runs one Lean process per core, each needing up to about 5 GB; with less memory, build the modules a few at a time, such as `lake build Order5.SemigroupParts0 Order5.SemigroupParts1`.
+The build takes hours rather than minutes, most of it in `Order5/SemigroupParts*`, which decide in parts the laws too costly to decide at once. Lake runs one Lean process per core, each needing up to about 5 GB; with less memory, build the modules a few at a time, such as `lake build Order5.SemigroupParts0 Order5.SemigroupParts1`.
