@@ -6,7 +6,7 @@ from typing import TypeVar, Generic, Iterable
 from ..core.bitset import AttributeIndex, bits
 from ..core.context import PartialContext, PartialObject
 from ..core.implication import Implication
-from ..core.theory import ImplicationTheory
+from ..core.theory import ImplicationTheory, close_mask
 from ..core.truth import Truth
 
 A = TypeVar("A")
@@ -51,16 +51,22 @@ class ExplorationBase(Generic[O, A]):
     Objects are completed only with the trusted implications: background,
     confirmed and their images. An unconfirmed implication may be false, and
     completing with it could put a false value into a row; it still takes part
-    in `implications` and so in choosing the questions. An object that turns
-    out to violate one is recorded in `refuted` rather than rejected. With
+    in `implications` and so in choosing the questions. With
     `map_unconfirmed` false, unconfirmed implications are not mapped until
     they are confirmed, so that their images are asked about in turn; an
     unconfirmed implication that the trusted ones come to entail, such as the
     image of a confirmed one, is then recorded as confirmed.
     `rejected_implications` collects the implications the expert showed false
-    without a counterexample. They are facts, and an unconfirmed implication
-    that would make the theory entail one of them is not accepted but
-    recorded in `conflicts`, together with the rejected implication.
+    as a whole without knowing which attribute of the conclusion fails. They
+    are facts, as the objects are.
+
+    Each unconfirmed implication, with its images if they are mapped, must
+    hold together with the trusted implications: it must not contradict an
+    object or entail a rejected implication. One that does is recorded in
+    `refuted`, with the object or the rejected implication, whenever an
+    object, a trusted implication or a rejected one comes in. Unconfirmed
+    implications that contradict an object or a rejected implication only
+    together are allowed: which of them is false is not known.
     """
 
     def __init__(
@@ -91,11 +97,12 @@ class ExplorationBase(Generic[O, A]):
         # others, checked against every stored row.
         self._trusted = ImplicationTheory[A](index=self.index)
         self._untrusted: dict[Implication[A], tuple[int, int]] = {}
-        self.refuted: dict[Implication[A], VersionedObject[O]] = {}
+        # Each refuted unconfirmed implication (the one accepted, not an
+        # image), with the object or the rejected implication refuting it.
+        self.refuted: dict[Implication[A], VersionedObject[O] | Implication[A]] = {}
         # The implication each mapped image was mapped from.
         self._origins: dict[Implication[A], Implication[A]] = {}
         self.rejected_implications: list[Implication[A]] = []
-        self.conflicts: list[tuple[Implication[A], Implication[A]]] = []
         self._rows: dict[VersionedObject[O], tuple[int, int]] = {}
         # The objects sharing each distinct row. Many versions of an object
         # repeat a row under another name, and the context closure and the
@@ -105,8 +112,11 @@ class ExplorationBase(Generic[O, A]):
         # a bit, and each attribute (by position) a mask of the rows that
         # have it and of the rows that deny it.
         self._row_bits: dict[tuple[int, int], int] = {}
+        self._rows_by_bit: dict[int, tuple[int, int]] = {}
         self._next_row_bit = 1
         self._live_rows = 0
+        # The rows with an unknown attribute.
+        self._partial_rows = 0
         self._rows_with: dict[int, int] = {}
         self._rows_without: dict[int, int] = {}
 
@@ -172,6 +182,7 @@ class ExplorationBase(Generic[O, A]):
                     if origin == implication and self.implication_sources[image] is ImplicationSource.MAPPED_UNCONFIRMED:
                         self.implication_sources[image] = ImplicationSource.MAPPED
                 self._settle_untrusted()
+                self._check_untrusted_after_trusted()
             return
         masks = self._add_implication(implication, source, trusted)
         added = self._add_mapped(*masks, trusted, implication) if trusted or self.map_unconfirmed else []
@@ -179,6 +190,9 @@ class ExplorationBase(Generic[O, A]):
             self._update([masks, *added])
             if not self.map_unconfirmed:
                 self._settle_untrusted()
+            self._check_untrusted_after_trusted()
+        else:
+            self._check_untrusted_implication(implication)
 
     def _settle_untrusted(self) -> None:
         """Trust the untrusted implications that the trusted ones entail.
@@ -199,36 +213,83 @@ class ExplorationBase(Generic[O, A]):
         return self.rejected_implications
 
     def reject(self, implication: Implication[A]) -> None:
-        """Record an implication shown false without a counterexample."""
-        if implication not in self.rejected_implications:
-            self.rejected_implications.append(implication)
+        """Record an implication shown false as a whole without a
+        counterexample."""
+        if implication in self.rejected_implications:
+            return
+        self.rejected_implications.append(implication)
+        masks = self._masks(implication)
+        for origin, group in self._untrusted_groups().items():
+            self._check_against_rejected(origin, group, implication, masks)
 
-    def contradicted(self, implication: Implication[A]) -> Implication[A] | None:
-        """A rejected implication that the theory would entail if it
-        accepted `implication` (with its images, if unconfirmed
-        implications are mapped), or None."""
-        premise = self.index.encode(implication.premise)
-        conclusion = self.index.encode(implication.conclusion)
-        extra = [(premise, conclusion)]
-        if self.map_unconfirmed:
-            extra += self.mapped_images(premise, conclusion)
+    def known_false(self, implication: Implication[A]) -> bool:
+        """Whether the trusted knowledge shows `implication` false; see
+        `known_false_mask`."""
+        return self.known_false_mask(*self._masks(implication))
 
-        def closure(mask: int) -> int:
-            while True:
-                mask = self.implications.closure_mask(mask)
-                grown = mask
-                for p, c in extra:
-                    if p & grown == p:
-                        grown |= c
-                if grown == mask:
-                    return mask
-                mask = grown
+    def known_false_mask(self, premise: int, conclusion: int) -> bool:
+        """Whether the implication, with its images and the trusted
+        implications, contradicts an object or entails a rejected
+        implication.
 
+        The images count whether or not unconfirmed implications are mapped:
+        an implication whose image is false is false itself. So does a
+        preimage of a rejected implication, which needs no check of its own:
+        if the implication entails one, applying the mapping shows that it
+        entails the rejected implication itself, the trusted implications and
+        the images being closed under the mappings.
+
+        Only the objects certainly having the premise of the implication or
+        of an image can be contradicted. A complete one is closed under the
+        trusted implications, so it is contradicted only if one of these
+        refutes it directly; a partial one needs the closure.
+        """
+        extra = [(premise, conclusion), *self.mapped_images(premise, conclusion)]
+        for p, c in extra:
+            rows = self._rows_having(p)
+            complete = rows & ~self._partial_rows
+            if complete and any(complete & self._rows_without.get(i, 0) for i in bits(c)):
+                return True
+            for position in bits(rows & self._partial_rows):
+                positive, negative = self._rows_by_bit[1 << position]
+                if self._closure_with(positive, extra) & negative:
+                    return True
         for rejected in self.rejected_implications:
-            target = self.index.encode(rejected.conclusion)
-            if closure(self.index.encode(rejected.premise)) & target == target:
-                return rejected
-        return None
+            p, c = self._masks(rejected)
+            if self._closure_with(p, extra) & c == c:
+                return True
+        return False
+
+    def earliest_refuted(self) -> tuple[Implication[A], VersionedObject[O] | Implication[A]] | None:
+        """The refuted unconfirmed implication accepted first, with what
+        refutes it, or None. Dropping it and those accepted after it leaves
+        none refuted."""
+        if not self.refuted:
+            return None
+        order = {implication: n for n, implication in enumerate(self.implications.implications)}
+        implication = min(self.refuted, key=lambda i: order.get(i, len(order)))
+        return implication, self.refuted[implication]
+
+    def _masks(self, implication: Implication[A]) -> tuple[int, int]:
+        return self.index.encode(implication.premise), self.index.encode(implication.conclusion)
+
+    def _closure_with(self, mask: int, extra: list[tuple[int, int]]) -> int:
+        """The closure of `mask` under the trusted implications and `extra`."""
+        while True:
+            mask = self._trusted.closure_mask(mask)
+            grown = close_mask(mask, extra)
+            if grown == mask:
+                return mask
+            mask = grown
+
+    def _rows_having(self, attributes: int) -> int:
+        """The bits of the rows certainly having `attributes`."""
+        rows = self._live_rows
+        for position in bits(attributes):
+            rows &= self._rows_with.get(position, 0)
+            if not rows:
+                break
+        return rows
 
     def origin(self, implication: Implication[A]) -> Implication[A]:
         """The implication accepted or given as background that `implication`
@@ -407,8 +468,11 @@ class ExplorationBase(Generic[O, A]):
         bit = self._next_row_bit
         self._next_row_bit <<= 1
         self._row_bits[row] = bit
+        self._rows_by_bit[bit] = row
         self._live_rows |= bit
         positive, negative = row
+        if self._partial(positive, negative):
+            self._partial_rows |= bit
         for position in bits(positive):
             self._rows_with[position] = self._rows_with.get(position, 0) | bit
         for position in bits(negative):
@@ -416,7 +480,9 @@ class ExplorationBase(Generic[O, A]):
 
     def _forget_row(self, row: tuple[int, int]) -> None:
         bit = self._row_bits.pop(row)
+        del self._rows_by_bit[bit]
         self._live_rows &= ~bit
+        self._partial_rows &= ~bit
         positive, negative = row
         for position in bits(positive):
             self._rows_with[position] &= ~bit
@@ -425,8 +491,8 @@ class ExplorationBase(Generic[O, A]):
 
     def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
         self._set_row(name, row)
-        for implication, masks in self._untrusted.items():
-            self._check_untrusted(implication, masks, name, *row)
+        for origin, group in self._untrusted_groups().items():
+            self._check_against_row(origin, group, name, *row)
         obj = self.context.objects.get(name)
         if obj is None:
             self.context.add(
@@ -439,11 +505,9 @@ class ExplorationBase(Generic[O, A]):
     def context_closure_mask(self, attributes: int) -> int:
         """The attributes every object having `attributes` might have: the
         mask form of `context.closure`."""
-        rows = self._live_rows
-        for position in bits(attributes):
-            rows &= self._rows_with.get(position, 0)
-            if not rows:
-                return self.full_mask
+        rows = self._rows_having(attributes)
+        if not rows:
+            return self.full_mask
         result = self.full_mask
         for position, denying in self._rows_without.items():
             if denying & rows:
@@ -526,13 +590,74 @@ class ExplorationBase(Generic[O, A]):
         masks = self.implications.add(implication)
         if not trusted:
             self._untrusted[implication] = masks
-            for name, (positive, negative) in self._rows.items():
-                self._check_untrusted(implication, masks, name, positive, negative)
         else:
             self._trusted.add(implication)
         return masks
 
-    def _check_untrusted(self, implication, masks, name, positive: int, negative: int) -> None:
+    def _partial(self, positive: int, negative: int) -> bool:
+        return (positive | negative) & self.full_mask != self.full_mask
+
+    def _untrusted_groups(self) -> dict[Implication[A], list[tuple[int, int]]]:
+        """The masks of the untrusted implications, by the implication each
+        is or is an image of."""
+        groups: dict[Implication[A], list[tuple[int, int]]] = {}
+        for implication, masks in self._untrusted.items():
+            groups.setdefault(self.origin(implication), []).append(masks)
+        return groups
+
+    def _check_untrusted_implication(self, implication: Implication[A]) -> None:
+        """Check a newly accepted unconfirmed implication, with its images,
+        against every object and rejected implication."""
+        group = self._untrusted_groups().get(implication)
+        if group is None:
+            return
+        for row, names in self._names_by_row.items():
+            self._check_against_row(implication, group, next(iter(names)), *row)
+        for rejected in self.rejected_implications:
+            self._check_against_rejected(implication, group, rejected, self._masks(rejected))
+
+    def _check_untrusted_after_trusted(self) -> None:
+        """Check the unconfirmed implications again after the trusted ones
+        grew.
+
+        A complete object is contradicted by an unconfirmed implication only
+        directly, whatever the trusted implications, so only the partial ones
+        are checked again, and only those that the whole theory contradicts,
+        since an unconfirmed implication contradicts no more with the
+        trusted ones than all implications do together.
+        """
+        if not self._untrusted:
+            return
+        groups = self._untrusted_groups()
+        for position in bits(self._partial_rows):
+            row = self._rows_by_bit[1 << position]
+            if self.implications.closure_mask(row[0]) & row[1]:
+                name = next(iter(self._names_by_row[row]))
+                for origin, group in groups.items():
+                    self._check_against_row(origin, group, name, *row)
+        for rejected in self.rejected_implications:
+            masks = self._masks(rejected)
+            if self.implications.closure_mask(masks[0]) & masks[1] == masks[1]:
+                for origin, group in groups.items():
+                    self._check_against_rejected(origin, group, rejected, masks)
+
+    def _check_against_row(self, origin, group, name, positive: int, negative: int) -> None:
+        """Record `origin` as refuted by the object `name` if the unconfirmed
+        implications `group`, with the trusted ones, contradict its row. A
+        complete row, closed under the trusted implications, is contradicted
+        only if one of `group` refutes it directly."""
+        if origin in self.refuted or not any(p & positive == p for p, _ in group):
+            return
+        if self._partial(positive, negative):
+            contradicted = self._closure_with(positive, group) & negative
+        else:
+            contradicted = any(p & positive == p and c & negative for p, c in group)
+        if contradicted:
+            self.refuted[origin] = name
+
+    def _check_against_rejected(self, origin, group, rejected, masks) -> None:
+        """Record `origin` as refuted by `rejected` if the unconfirmed
+        implications `group`, with the trusted ones, entail it."""
         premise, conclusion = masks
-        if premise & positive == premise and conclusion & negative and implication not in self.refuted:
-            self.refuted[implication] = name
+        if origin not in self.refuted and self._closure_with(premise, group) & conclusion == conclusion:
+            self.refuted[origin] = rejected

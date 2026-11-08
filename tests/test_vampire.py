@@ -179,7 +179,7 @@ def test_shown_false_but_undecided_rejects_the_rest_without_a_row():
     # False as a whole; both laws undecided, so which one fails is not known.
     scripted(expert, laws("CounterSatisfiable", "Timeout", other="Timeout"))
     answer = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
-    assert isinstance(answer, Undecided) and not answer.unconfirmed
+    assert isinstance(answer, Undecided) and answer.rejected
     assert not answer.proved
     assert answer.object is None
     assert expert.last_status == "rejected"
@@ -270,7 +270,7 @@ def test_undecided_rest_is_unconfirmed_when_nothing_speaks_against_it():
     # Undecided as a whole; x = x * (x * x) proved, x = x * x undecided.
     scripted(expert, laws("Timeout", "Timeout"))
     answer = expert.validate(QUESTION, QUESTION.premise | QUESTION.conclusion)
-    assert isinstance(answer, Undecided) and answer.unconfirmed
+    assert isinstance(answer, Undecided) and not answer.rejected
     assert answer.proved == {Equation.parse("x = x * (x * x)")}
     assert expert.last_status == "unconfirmed"
     # Asked again, the answer is remembered.
@@ -283,7 +283,7 @@ def test_nothing_decided_is_unconfirmed():
     scripted(expert, lambda conjecture, options: ("Timeout", ""))
     question = implication(["x * x = x * (x * x)"], ["x = x * x"])
     answer = expert.validate(question)
-    assert answer.unconfirmed and not answer.proved
+    assert not answer.rejected and not answer.proved
     assert expert.last_status == "unconfirmed"
 
 
@@ -371,7 +371,7 @@ def test_a_law_whose_search_ran_out_is_not_searched_again_with_its_premise():
     assert searches == [expert.quick_model_time_limit] + [expert.model_time_limit] * 2
     searches.clear()
     one = implication(["x * x = x * (x * x)"], ["x = x * x"])
-    assert expert.validate(one).unconfirmed
+    assert not expert.validate(one).rejected
     # Only the brief search of step 3.
     assert searches == [expert.quick_model_time_limit]
 

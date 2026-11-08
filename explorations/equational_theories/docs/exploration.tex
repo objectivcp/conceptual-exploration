@@ -92,16 +92,20 @@ Algorithm~\ref{alg:exploration} summarizes the loop; the notation is explained i
 \Loop
   \State $C \gets P^{\diamond} \setminus P$ \Comment{context closure, Section~\ref{sec:partial}}
   \If{$C = \emptyset$} \State $P \gets$ next $\cl$-closed set after $P$; \textbf{continue} \EndIf
+  \If{$P \to C$ is known false} \Comment{Section~\ref{sec:undecided}}
+    \State add a derived witness for each $c \in C$ with $P \to c$ known false; if there is one, \textbf{continue} with the same $P$
+    \State $C \gets \{c\}$ for the first $c \in C$
+  \EndIf
   \State ask the expert about $P \to C$
   \If{the answer is an object $g$ refuting $P \to C$}
     \State add $g$ and its images under $\Phi$, completed with $\mathcal{T}$; \textbf{continue} with the same $P$
   \ElsIf{the answer is ``accept''}
     \State add $P \to C$ and its images to $\cl$ (and to $\mathcal{T}$ if the expert decided it)
   \Else \Comment{undecided: proved part $D \subseteq C$, partial object, flag}
-    \State add the partial object; add $P \to D$ to $\cl$ and $\mathcal{T}$
-    \State add $P \to C \setminus D$ to $\cl$ only (unconfirmed), or reject it
+    \State add the partial object; add $P \to D$ to $\cl$ and $\mathcal{T}$; $R \gets C \setminus \mathcal{T}(P \cup D)$
+    \State add $P \to R$ to $\cl$ only (unconfirmed), or reject it
   \EndIf
-  \If{an object violates an implication of $\cl \setminus \mathcal{T}$} \State \textbf{stop} and resume (Section~\ref{sec:rounds}) \EndIf
+  \If{an object or a rejected implication refutes an implication of $\cl \setminus \mathcal{T}$} \State \textbf{stop} and resume (Section~\ref{sec:rounds}) \EndIf
   \State $P \gets$ next $\cl$-closed set after $P$ (or stop if there is none)
 \EndLoop
 \end{algorithmic}
@@ -155,20 +159,24 @@ An expert reports that it has not decided a question it accepts through \code{is
 \begin{itemize}
   \item a set $D \subseteq C$ of conclusion attributes it did prove: $P \to D$ is accepted as confirmed;
   \item optionally a partial object, which must not refute $P \to C$ and is added to the context (its unknown entries may be filled later by completion);
-  \item a flag telling what to do with the rest $P \to C \setminus D$: it is accepted as \emph{unconfirmed} if the expert knows nothing against it, or \emph{rejected} if the expert knows it to be false without knowing which attribute fails.
+  \item a flag, \code{rejected}, telling what to do with the rest $P \to R$, where $R$ consists of the attributes of $C$ that do not follow from $P \cup D$ by the trusted implications (those that do are proved with $D$): it is accepted as \emph{unconfirmed} if the expert knows nothing against it, or \emph{rejected} if the expert knows it to be false without knowing which attribute fails.
 \end{itemize}
+An expert that knows a single attribute $c$ to fail returns a counterexample instead, if need be the partial object with the row $(P, \{c\})$. The partial object of an \code{Undecided} answer may show the rest false, as defined next, although the question was not; the rest is then not accepted, and if nothing was proved, the same premise is taken up again, where the question is split.
 
 \paragraph{Trusted and untrusted implications.}
-Unconfirmed implications take part in the closure that generates the premises: they steer the enumeration as accepted implications do. They are, however, not used to complete objects, since they may be false and would then write false values into rows. Every object added later is checked against them; an object violating an unconfirmed implication refutes it.
+Unconfirmed implications take part in the closure that generates the premises: they steer the enumeration as accepted implications do. They are, however, not used to complete objects, since they may be false and would then write false values into rows. Each unconfirmed implication, together with its images if they are added and with the trusted implications, must not contradict an object, that is, give it an attribute it lacks, nor entail a rejected implication; an object or a rejected implication it contradicts refutes it. This is checked whenever an object, a trusted implication or a rejected implication comes in, since a trusted implication may make an unconfirmed one contradict a partial object it did not contradict before. Unconfirmed implications that contradict an object or a rejected implication only together are allowed: one of them is false, but which is not known.
+
+\paragraph{Questions known false.}
+A question $P \to C$ is \emph{known false} if, together with its images under the symmetries and with the trusted implications, it contradicts an object or entails a rejected implication. The images count whether or not they are added to the theory, since an implication with a false image is false itself. A question known false is not asked. Each attribute $c \in C$ for which $P \to c$ is known false gets a \emph{derived witness} with the row $(P, \{c\})$, which takes $c$ out of $P^{\diamond}$. If there is none, the attributes of $C$ contradict only together; this happens when completion leaves them unknown in a partial object, as with an object lacking $d$, unknown on $b_1$ and $b_2$, and a trusted $b_1 b_2 \to d$. The expert is then asked about $P \to c$ for the first $c \in C$ alone. No question entailing a preimage of a rejected implication is asked either: mapping such a question with its images and the trusted implications shows that they entail the rejected implication itself. A confirmed implication therefore never contradicts the objects or the rejected implications.
 
 \paragraph{Rejected implications.}
-A rejected implication is not accepted, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to C \setminus D$ fails as a whole, but some of the attributes of $C \setminus D$ may still follow from $P$. Rejected implications are listed separately in the results. If the rest has a single attribute $c$, though, it is not rejected: some object has the attributes of $P$, and those of $D$, which $P$ implies, and lacks $c$, and nothing else is known about it. Such a \emph{witness} is a counterexample, if a partial one, and it joins the context with the row $(P \cup D, \{c\})$; in the results, witnesses are named \code{W}$k$.
+A rejected implication is not accepted, and the enumeration continues with the next closed set as if the context had no question about $P$. The theory remains sound. It may, however, be incomplete at $P$: the expert knows that $P \to R$ fails as a whole, but some of the attributes of $R$ may still follow from $P$. Rejected implications are listed separately in the results. If the rest has a single attribute $c$, though, it is not rejected: some object has the attributes of $P$, and those of $D$, which $P$ implies, and lacks $c$, and nothing else is known about it. Such a \emph{witness} is a counterexample, if a partial one, and it joins the context with the row $(P \cup D, \{c\})$; in the results, witnesses are named \code{W}$k$.
 
-A rejected implication is a fact, which no row can express: it says that some attribute of $C \setminus D$ fails, but not which. It is used as a constraint instead. An unconfirmed implication that, together with the theory and with its images under the symmetries if they are added, would entail a rejected implication is not accepted; it is reported as \emph{conflicting}, together with the rejected implication. A rejected implication is never entailed when it is recorded, since its premise is closed under the theory; it can become entailed only by a later unconfirmed implication, through its images or in a later round (Section~\ref{sec:rounds}), so that this check suffices.
+A rejected implication is a fact, which no row can express: it says that some attribute of $R$ fails, but not which. It is used as a constraint instead: questions entailing it are known false, and an unconfirmed implication entailing it with the trusted implications is refuted. A rejected implication is never entailed when it is recorded, since its premise is closed under the theory.
 
 \subsection{Resuming after a refuted unconfirmed implication}\label{sec:rounds}
 
-When an object refutes an unconfirmed implication $P \to C$, all closed sets enumerated after $P$ were computed with a false implication, and the enumeration from $P$ on cannot be trusted. The exploration then stops and is resumed (\code{explore\_in\_rounds}): a new round starts with
+When an object or a rejected implication refutes an unconfirmed implication $P \to C$, all closed sets enumerated after $P$ were computed with a false implication, and the enumeration from $P$ on cannot be trusted. If several are refuted at once, $P \to C$ is the one accepted first. The exploration then stops and is resumed (\code{explore\_in\_rounds}): a new round starts with
 \begin{itemize}
   \item the implications accepted before $P \to C$, whatever their source;
   \item the \emph{confirmed} implications accepted after it, which are true whatever steered the enumeration to them;

@@ -6,7 +6,7 @@ from ..core.context import PartialObject
 from ..core.implication import Implication
 from ..experts.base import Expert
 from .attribute import AttributeExploration, QuestionReport
-from .base import ExplorationBase, ImplicationSource
+from .base import ExplorationBase, ImplicationSource, VersionedObject
 from .state import ExplorationState
 
 A = TypeVar("A")
@@ -23,8 +23,9 @@ class RoundsResult(Generic[O, A]):
     rounds: int = 1
     questions_asked: int = 0
     counterexamples: list = field(default_factory=list)
-    # Each unconfirmed implication refuted, with the object refuting it.
-    refuted: list[tuple[Implication[A], O]] = field(default_factory=list)
+    # Each unconfirmed implication refuted, with the object or the rejected
+    # implication refuting it.
+    refuted: list[tuple[Implication[A], O | Implication[A]]] = field(default_factory=list)
 
 
 def explore_in_rounds(
@@ -38,8 +39,8 @@ def explore_in_rounds(
         on_resume: Callable[[Implication[A], O], None] | None = None,
         map_unconfirmed: bool = True,
 ) -> RoundsResult[O, A]:
-    """Explore, resuming whenever an object refutes an implication accepted
-    as unconfirmed.
+    """Explore, resuming whenever an object or a rejected implication
+    refutes an implication accepted as unconfirmed.
 
     Such an implication has steered the enumeration since it was accepted,
     so the exploration stops (see `AttributeExploration.run`) and the next
@@ -84,9 +85,9 @@ def explore_in_rounds(
             base.reject(implication)
         exploration = AttributeExploration(base, expert, evaluate_all, on_question)
         if base.refuted:
-            # An object of the last round refutes an earlier implication too.
+            # What the last round found refutes an earlier implication too.
             state = exploration.state
-            state.stopped_by = base.origin(next(iter(base.refuted)))
+            state.stopped_by = base.earliest_refuted()[0]
         else:
             state = exploration.run(start)
         if result is None:
@@ -100,7 +101,9 @@ def explore_in_rounds(
             return result
 
         culprit = state.stopped_by
-        refuter = next(iter(base.refuted.values())).original
+        refuter = base.refuted[culprit]
+        if isinstance(refuter, VersionedObject):
+            refuter = refuter.original
         result.refuted.append((culprit, refuter))
         if on_resume is not None:
             on_resume(culprit, refuter)

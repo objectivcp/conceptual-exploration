@@ -311,7 +311,7 @@ class CompletionExpert(Expert[FreeMagma, Equation]):
         if rules is None:
             self.answers["completion failed"] += 1
             if self.fallback is None:
-                return Undecided(unconfirmed=True)
+                return Undecided()
             self._by_fallback = True
             return self.fallback.validate(implication, attributes)
         laws = set(attributes or self.attributes) | set(implication.conclusion)

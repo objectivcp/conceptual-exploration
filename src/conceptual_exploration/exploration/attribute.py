@@ -6,6 +6,7 @@ from ..experts.base import Expert, Undecided
 from .base import ExplorationBase, ImplicationSource
 from .state import ExplorationState
 from ..algorithms.next_closure import NextClosure
+from ..core.bitset import bits
 from ..core.context import PartialObject
 from ..core.implication import Implication
 
@@ -15,16 +16,18 @@ O = TypeVar("O")
 
 @dataclass(frozen=True)
 class Witness(Generic[A]):
-    """An object known to exist because the expert showed `implication`
-    false, its conclusion a single attribute, without giving a
-    counterexample: it has the attributes of the premise and lacks the one of
-    the conclusion, and nothing else is known about it."""
+    """An object known to exist because `implication`, its conclusion a
+    single attribute, is false, though no counterexample is known: it has
+    the attributes of the premise and lacks the one of the conclusion, and
+    nothing else is known about it. The expert showed the implication false,
+    or, if `derived`, the trusted knowledge does."""
 
     implication: Implication[A]
+    derived: bool = False
 
     @property
     def name(self) -> str:
-        return f"Witness against {self.implication}"
+        return f"{'Derived' if self.derived else 'Witness'} against {self.implication}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +66,7 @@ def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
         if question.counterexample is not None:
             print(f'Counterexample found: {question.counterexample}\n')
         elif question.undecided is not None:
-            outcome = "Unconfirmed" if question.undecided.unconfirmed else "Rejected"
+            outcome = "Rejected" if question.undecided.rejected else "Unconfirmed"
             proved = ", ".join(map(str, question.undecided.proved))
             print(f'{outcome}{f"; proved {proved}" if proved else ""}\n')
         else:
@@ -91,10 +94,13 @@ class AttributeExploration:
         """Explore from the first closed set, or from the first closed set
         lectically at or after `start`, which resumes an exploration.
 
-        The exploration stops early if an object refutes an implication
-        accepted as unconfirmed: that implication has steered the enumeration,
-        which has to be resumed from the question it was accepted at without
-        it. `state.stopped_by` then holds it.
+        The exploration stops early if an object or a rejected implication
+        refutes an implication accepted as unconfirmed: that implication has
+        steered the enumeration, which has to be resumed from the question it
+        was accepted at without it. `state.stopped_by` then holds it.
+
+        A question the trusted knowledge already shows false is not asked
+        (see `_question`).
         """
         # Premises and closures are bitmasks over the base's index; only the
         # implication put to the expert is turned back into sets.
@@ -113,9 +119,15 @@ class AttributeExploration:
                 closure = self.base.context_closure_mask(premise)
 
                 while closure != premise:
+                    conclusion = self._question(premise, closure & ~premise)
+                    if self._stopped():
+                        return self.state
+                    if not conclusion:
+                        closure = self.base.context_closure_mask(premise)
+                        continue
                     implication = Implication(
                         premise=index.decode(premise),
-                        conclusion=index.decode(closure & ~premise),
+                        conclusion=index.decode(conclusion),
                     )
                     counterexample = self.expert.validate(
                         implication,
@@ -123,9 +135,13 @@ class AttributeExploration:
                     )
                     self.state.questions_asked += 1
                     if isinstance(counterexample, Undecided):
-                        premise = self._leave_open(implication, counterexample)
+                        following = self._leave_open(implication, counterexample)
                         if self._stopped():
                             return self.state
+                        if following is None:
+                            closure = self.base.context_closure_mask(premise)
+                            continue
+                        premise = following
                         break
                     if counterexample:
                         if not counterexample.refutes(implication):
@@ -145,9 +161,6 @@ class AttributeExploration:
                             else ImplicationSource.UNCONFIRMED
                         )
                         self._report(implication, None, source)
-                        if source is ImplicationSource.UNCONFIRMED and self._conflicts(implication):
-                            premise = next(premises)
-                            break
                         self.base.accept(implication, source)
                         self.state.accepted_implications.append(implication)
                         if self._stopped():
@@ -162,28 +175,54 @@ class AttributeExploration:
 
         return self.state
 
-    def _conflicts(self, implication: Implication[A], proved: frozenset[A] = frozenset()) -> bool:
-        """Whether accepting the unconfirmed `implication`, after the
-        confirmed one with the conclusion `proved`, would make the theory
-        entail a rejected implication; such an implication is recorded in
-        `conflicts` instead."""
-        premise = frozenset(implication.premise) | proved
-        rejected = self.base.contradicted(Implication(premise, implication.conclusion))
-        if rejected is None:
-            return False
-        self.base.conflicts.append((implication, rejected))
-        return True
+    def _question(self, premise: int, conclusion: int) -> int:
+        """The conclusion to ask about with `premise`, or 0 if the context
+        closure has to be computed again first.
+
+        If the trusted knowledge shows the implication with the whole
+        conclusion false, it is not asked. Each attribute of the conclusion
+        that the trusted knowledge shows not to follow from the premise gets
+        a derived witness, which takes it out of the context closure. If
+        there is none, the attributes contradict only together, and the
+        first of them is asked about alone.
+        """
+        base = self.base
+        if not base.known_false_mask(premise, conclusion):
+            return conclusion
+        derived = False
+        for position in bits(conclusion):
+            if base.known_false_mask(premise, 1 << position):
+                rule = Implication(base.index.decode(premise), base.index.decode(1 << position))
+                witness = PartialObject(Witness(rule, derived=True), set(rule.premise), set(rule.conclusion))
+                base.add_counterexample(witness)
+                self.state.counterexamples.append(witness)
+                derived = True
+        if derived:
+            return 0
+        return conclusion & -conclusion
 
     def _stopped(self) -> bool:
-        if not self.base.refuted:
+        refuted = self.base.earliest_refuted()
+        if refuted is None:
             return False
-        self.state.stopped_by = self.base.origin(next(iter(self.base.refuted)))
+        self.state.stopped_by = refuted[0]
         return True
 
-    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int:
-        """Take an answer the expert could not decide: accept the part of the
-        conclusion it did confirm, reject the rest or accept it as
-        unconfirmed, and return the next premise.
+    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int | None:
+        """Take an answer the expert could not decide and return the next
+        premise, or None to ask about the same premise again.
+
+        The object the answer carries is added first, then the part of the
+        conclusion the expert proved is accepted. What the trusted
+        implications then entail is proved as well; the rest is rejected or,
+        if the expert knows nothing against it, accepted as unconfirmed.
+
+        The object may show the rest false together with the trusted
+        knowledge, although the question was not known false; the rest is
+        then not accepted. If nothing was proved either, the same premise is
+        asked about again, where the question is split (see `_question`);
+        otherwise the enumeration goes on, and the rest is not asked again,
+        as a rejected rest is not.
 
         If nothing is accepted, the premise stays closed under the
         implications, and the enumeration goes on to the next closed set as
@@ -196,27 +235,39 @@ class AttributeExploration:
                     f'Undecided answer to {implication} carries a refuting object'
                 )
             self.base.add_counterexample(answer.object)
-        proved = answer.proved & implication.conclusion
-        rest = Implication(implication.premise, implication.conclusion - proved)
-        if not answer.unconfirmed and len(rest.conclusion) == 1:
-            # Some object has the premise and what it implies, and lacks the
-            # one attribute: a counterexample, if a partial one.
-            witness = PartialObject(Witness(rest), set(implication.premise) | proved, set(rest.conclusion))
-            self.base.add_counterexample(witness)
-            self.state.counterexamples.append(witness)
-        elif not answer.unconfirmed:
-            self.base.reject(rest)
-        accepted = []
+        index = self.base.index
+        premise = index.encode(implication.premise)
+        proved = index.encode(answer.proved & implication.conclusion)
+        accepted = False
         if proved:
-            accepted.append((Implication(implication.premise, proved), ImplicationSource.CONFIRMED))
-        if answer.unconfirmed and rest.conclusion and not self._conflicts(rest, proved):
-            # After the confirmed part, which a resumed round then keeps.
-            accepted.append((rest, ImplicationSource.UNCONFIRMED))
+            # First, so that a resumed round keeps it.
+            confirmed = Implication(implication.premise, index.decode(proved))
+            self.base.accept(confirmed, ImplicationSource.CONFIRMED)
+            self.state.accepted_implications.append(confirmed)
+            accepted = True
+        rest_mask = index.encode(implication.conclusion) & ~self.base.trusted_implications.closure_mask(premise | proved)
+        rest = Implication(implication.premise, index.decode(rest_mask))
+        if answer.rejected:
+            if not rest_mask:
+                raise ValueError(f'The expert rejects {implication} but proves all of it')
+            if rest_mask & (rest_mask - 1) == 0:
+                # Some object has the premise and what it implies, and lacks
+                # the one attribute: a counterexample, if a partial one.
+                witness = PartialObject(Witness(rest), index.decode(premise | proved), set(rest.conclusion))
+                self.base.add_counterexample(witness)
+                self.state.counterexamples.append(witness)
+            else:
+                self.base.reject(rest)
+        elif rest_mask:
+            if answer.object is not None and self.base.known_false(rest):
+                if not accepted:
+                    return None
+            else:
+                self.base.accept(rest, ImplicationSource.UNCONFIRMED)
+                self.state.accepted_implications.append(rest)
+                accepted = True
         if not accepted:
             return next(self._premises)
-        for accepted_implication, source in accepted:
-            self.base.accept(accepted_implication, source)
-            self.state.accepted_implications.append(accepted_implication)
         return self._premises.send(True)
 
     def _report(

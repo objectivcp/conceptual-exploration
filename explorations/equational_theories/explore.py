@@ -265,9 +265,8 @@ def save_results(
         "no counterexample in the searched sizes, or proved by Vampire; unconfirmed = neither",
         "refuted nor decided;",
         "mapped = dual of another implication, added when not already entailed; mapped unconfirmed",
-        "= dual of an unconfirmed implication. Rejected implications are shown false without a",
-        "counterexample known to violate their conclusion; conflicting ones are unconfirmed",
-        "implications not accepted because the theory would then entail a rejected one.",
+        "= dual of an unconfirmed implication. Rejected implications are shown false as a whole",
+        "without knowing which law of their conclusion fails.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
@@ -281,10 +280,6 @@ def save_results(
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
         records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
-    for implication, rejected in base.conflicts:
-        records.append({"premise": ids(implication.premise), "conclusion": ids(implication.conclusion),
-                        "source": "conflicting",
-                        "contradicts": {"premise": ids(rejected.premise), "conclusion": ids(rejected.conclusion)}})
     extra = []
     if refuted:
         extra += ["", "Unconfirmed implications refuted by a later object, and dropped:"]
@@ -296,9 +291,6 @@ def save_results(
     if base.rejected_implications:
         extra += ["", "Rejected implications:"]
         extra += [f"  {show(i)}" for i in base.rejected_implications]
-    if base.conflicts:
-        extra += ["", "Unconfirmed implications not accepted, contradicting a rejected one:"]
-        extra += [f"  {show(i)}   (contradicts {show(r)})" for i, r in base.conflicts]
     (directory / "implications.txt").write_text(
         "\n".join(header + lines + extra) + "\n", encoding="utf-8"
     )
@@ -542,7 +534,6 @@ def run_magma_exploration(
     print(f"Implications Found:           {len(base.implications.implications)}")
     print(f"Counterexamples Found:        {len(state.counterexamples)}")
     print(f"Rejected Implications:        {len(base.rejected_implications)}")
-    print(f"  Conflicting, Not Accepted:  {len(base.conflicts)}")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -569,13 +560,9 @@ def run_magma_exploration(
         for implication, name in refuted:
             print(f"  {implication}   (by {name})")
     if base.rejected_implications:
-        print("\nRejected Implications (shown false, but no known object violates the conclusion):")
+        print("\nRejected Implications (shown false as a whole, but no law of the conclusion known to fail):")
         for implication in base.rejected_implications:
             print(f"  {implication}")
-    if base.conflicts:
-        print("\nUnconfirmed Implications Not Accepted (they would contradict a rejected one):")
-        for implication, rejected in base.conflicts:
-            print(f"  {implication}   (contradicts {rejected})")
     if base.unconfirmed_implications and expert_kind == "z3":
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"

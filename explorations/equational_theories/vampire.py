@@ -328,7 +328,7 @@ class VampireExpert(MagmaExpert):
             return None
         if implication in self._undecided:
             answer = self._undecided[implication]
-            self.last_status = "unconfirmed" if answer.unconfirmed else "rejected"
+            self.last_status = "rejected" if answer.rejected else "unconfirmed"
             return answer
 
         problem = tptp_problem(implication.premise, implication.conclusion)
@@ -384,9 +384,9 @@ class VampireExpert(MagmaExpert):
 
         # Known to be false if Vampire says so, but on which law is not known;
         # otherwise nothing speaks against the rest.
-        unconfirmed = status != "CounterSatisfiable"
-        self.last_status = "unconfirmed" if unconfirmed else "rejected"
-        answer = Undecided(frozenset(implication.conclusion & free.positive), None, unconfirmed)
+        rejected = status == "CounterSatisfiable"
+        self.last_status = "rejected" if rejected else "unconfirmed"
+        answer = Undecided(frozenset(implication.conclusion & free.positive), None, rejected)
         self._undecided[implication] = answer
         return answer
 

@@ -87,7 +87,7 @@ def test_the_expert_proves_refutes_with_a_free_magma_or_falls_back():
     assert refutation.object == FreeMagma(frozenset({eq8}))
     assert (refutation.positive, refutation.negative) == ({eq8}, {idempotent, eq23, commutative})
     # Commutativity cannot be oriented, and there is no fallback.
-    assert expert.validate(Implication([commutative], [idempotent])) == Undecided(unconfirmed=True)
+    assert expert.validate(Implication([commutative], [idempotent])) == Undecided()
     assert expert.answers == {"proved": 1, "free magma": 1, "completion failed": 1}
 
 
