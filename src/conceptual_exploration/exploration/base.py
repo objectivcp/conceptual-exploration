@@ -78,6 +78,15 @@ class ExplorationBase(Generic[O, A]):
     object, a trusted implication or a rejected one comes in. Unconfirmed
     implications that contradict an object or a rejected implication only
     together are allowed: which of them is false is not known.
+
+    A tentative object (`add_tentative`) stands for an implication with a
+    single attribute in its conclusion that is undecided and taken to be
+    false. It takes part in the context closure, and so in choosing the
+    questions, but in nothing that needs facts: it is not mapped, and
+    neither shows a question false nor refutes an unconfirmed implication.
+    The trusted implications must not contradict it; if they come to, it is
+    recorded in `refuted` with the implication it stands for, which they
+    then entail.
     """
 
     def __init__(
@@ -109,8 +118,14 @@ class ExplorationBase(Generic[O, A]):
         self._trusted = ImplicationTheory[A](index=self.index)
         self._untrusted: dict[Implication[A], tuple[int, int]] = {}
         # Each refuted unconfirmed implication (the one accepted, not an
-        # image), with the object or the rejected implication refuting it.
-        self.refuted: dict[Implication[A], VersionedObject[O] | Implication[A]] = {}
+        # image), with the object or the rejected implication refuting it,
+        # and each refuted tentative object, with the implication it stands
+        # for.
+        self.refuted: dict[Implication[A] | VersionedObject[O], VersionedObject[O] | Implication[A]] = {}
+        # The tentative objects, each with the implication it stands for.
+        self._tentative: dict[VersionedObject[O], Implication[A]] = {}
+        # When each accepted implication and each tentative object was added.
+        self._added_at: dict[Implication[A] | VersionedObject[O], int] = {}
         # The implication each mapped image was mapped from.
         self._origins: dict[Implication[A], Implication[A]] = {}
         self.rejected_implications: list[Implication[A]] = []
@@ -126,8 +141,10 @@ class ExplorationBase(Generic[O, A]):
         self._rows_by_bit: dict[int, tuple[int, int]] = {}
         self._next_row_bit = 1
         self._live_rows = 0
-        # The rows with an unknown attribute.
+        # The rows with an unknown attribute, and those of an object other
+        # than a tentative one.
         self._partial_rows = 0
+        self._trusted_rows = 0
         self._rows_with: dict[int, int] = {}
         self._rows_without: dict[int, int] = {}
 
@@ -195,6 +212,7 @@ class ExplorationBase(Generic[O, A]):
                 self._settle_untrusted()
                 self._check_untrusted_after_trusted()
             return
+        self._added_at[implication] = len(self._added_at)
         masks = self._add_implication(implication, source, trusted)
         added = self._add_mapped(*masks, trusted, implication) if trusted or self.map_unconfirmed else []
         if trusted:
@@ -251,13 +269,14 @@ class ExplorationBase(Generic[O, A]):
         the images being closed under the mappings.
 
         Only the objects certainly having the premise of the implication or
-        of an image can be contradicted. A complete one is closed under the
-        trusted implications, so it is contradicted only if one of these
-        refutes it directly; a partial one needs the closure.
+        of an image can be contradicted, and tentative ones do not count. A
+        complete one is closed under the trusted implications, so it is
+        contradicted only if one of these refutes it directly; a partial one
+        needs the closure.
         """
         extra = [(premise, conclusion), *self.mapped_images(premise, conclusion)]
         for p, c in extra:
-            rows = self._rows_having(p)
+            rows = self._rows_having(p) & self._trusted_rows
             complete = rows & ~self._partial_rows
             if complete and any(complete & self._rows_without.get(i, 0) for i in bits(c)):
                 return True
@@ -299,12 +318,12 @@ class ExplorationBase(Generic[O, A]):
             return tuple(kept)
 
         found: dict[tuple[Implication[A], ...], list] = {}
-        for position in bits(self._partial_rows):
+        for position in bits(self._partial_rows & self._trusted_rows):
             row = self._rows_by_bit[1 << position]
             positive, negative = row
             if self.implications.closure_mask(positive) & negative:
                 key = minimal(lambda extra: self._closure_with(positive, extra) & negative)
-                names = list(self._names_by_row[row])
+                names = [n for n in self._names_by_row[row] if n not in self._tentative]
                 found.setdefault(key, []).append(next((n for n in names if n.version == 0), names[0]))
         for rejected in self.rejected_implications:
             premise, conclusion = self._masks(rejected)
@@ -313,15 +332,36 @@ class ExplorationBase(Generic[O, A]):
                 found.setdefault(key, []).append(rejected)
         return [JointConflict(key, tuple(contradicted)) for key, contradicted in found.items()]
 
-    def earliest_refuted(self) -> tuple[Implication[A], VersionedObject[O] | Implication[A]] | None:
-        """The refuted unconfirmed implication accepted first, with what
-        refutes it, or None. Dropping it and those accepted after it leaves
+    def earliest_refuted(self) -> tuple[Implication[A] | VersionedObject[O], VersionedObject[O] | Implication[A]] | None:
+        """The refuted unconfirmed implication or tentative object added
+        first, with what refutes it, or None. Dropping it and the
+        unconfirmed implications and tentative objects added after it leaves
         none refuted."""
         if not self.refuted:
             return None
-        order = {implication: n for n, implication in enumerate(self.implications.implications)}
-        implication = min(self.refuted, key=lambda i: order.get(i, len(order)))
-        return implication, self.refuted[implication]
+        item = min(self.refuted, key=self.added_at)
+        return item, self.refuted[item]
+
+    def added_at(self, item: Implication[A] | VersionedObject[O]) -> int:
+        """When an accepted implication or a tentative object was added,
+        counting from 0 over both."""
+        return self._added_at[item]
+
+    @property
+    def tentative_objects(self) -> dict[VersionedObject[O], Implication[A]]:
+        """The tentative objects, in the order they were added, each with the
+        implication it stands for."""
+        return dict(self._tentative)
+
+    def add_tentative(self, implication: Implication[A], name: O) -> None:
+        """Add a tentative object `name` standing for the undecided
+        `implication`, whose conclusion is a single attribute: it has the
+        premise and lacks that attribute. It is completed with the trusted
+        implications, but not mapped."""
+        version = VersionedObject(name, 0)
+        self._tentative[version] = implication
+        self._added_at[version] = len(self._added_at)
+        self._add_row(version, *self._masks(implication))
 
     def _masks(self, implication: Implication[A]) -> tuple[int, int]:
         return self.index.encode(implication.premise), self.index.encode(implication.conclusion)
@@ -516,6 +556,11 @@ class ExplorationBase(Generic[O, A]):
             self._names_by_row[row] = {}
             self._register_row(row)
         self._names_by_row[row][name] = None
+        if name not in self._tentative:
+            self._trusted_rows |= self._row_bits[row]
+        if old is not None and old in self._names_by_row:
+            if all(n in self._tentative for n in self._names_by_row[old]):
+                self._trusted_rows &= ~self._row_bits[old]
 
     def _register_row(self, row: tuple[int, int]) -> None:
         bit = self._next_row_bit
@@ -536,6 +581,7 @@ class ExplorationBase(Generic[O, A]):
         del self._rows_by_bit[bit]
         self._live_rows &= ~bit
         self._partial_rows &= ~bit
+        self._trusted_rows &= ~bit
         positive, negative = row
         for position in bits(positive):
             self._rows_with[position] &= ~bit
@@ -544,8 +590,9 @@ class ExplorationBase(Generic[O, A]):
 
     def _store(self, name: VersionedObject[O], row: tuple[int, int]) -> None:
         self._set_row(name, row)
-        for origin, group in self._untrusted_groups().items():
-            self._check_against_row(origin, group, name, *row)
+        if name not in self._tentative:
+            for origin, group in self._untrusted_groups().items():
+                self._check_against_row(origin, group, name, *row)
         obj = self.context.objects.get(name)
         if obj is None:
             self.context.add(
@@ -575,7 +622,9 @@ class ExplorationBase(Generic[O, A]):
         fires, and a complete object has no unknown attribute for the negative
         side to claim; such objects are left alone. A firing implication on a
         complete object can only be a conflict, which `_complete` reports.
-        Objects sharing a row are completed once, together.
+        Objects sharing a row are completed once, together. A conflict with
+        tentative objects alone refutes them instead, and leaves their row as
+        it is until the exploration resumes without them.
         """
         if not added:
             return
@@ -586,7 +635,14 @@ class ExplorationBase(Generic[O, A]):
             )
             if not fires and (positive | negative) & self.full_mask == self.full_mask:
                 continue
-            row = self._complete(positive, negative, next(iter(names)))
+            try:
+                row = self._complete(positive, negative, next(iter(names)))
+            except ValueError:
+                if not all(name in self._tentative for name in names):
+                    raise
+                for name in names:
+                    self.refuted.setdefault(name, self._tentative[name])
+                continue
             if row != (positive, negative):
                 for name in list(names):
                     self._store(name, row)
@@ -665,7 +721,9 @@ class ExplorationBase(Generic[O, A]):
         if group is None:
             return
         for row, names in self._names_by_row.items():
-            self._check_against_row(implication, group, next(iter(names)), *row)
+            name = next((n for n in names if n not in self._tentative), None)
+            if name is not None:
+                self._check_against_row(implication, group, name, *row)
         for rejected in self.rejected_implications:
             self._check_against_rejected(implication, group, rejected, self._masks(rejected))
 
@@ -682,10 +740,10 @@ class ExplorationBase(Generic[O, A]):
         if not self._untrusted:
             return
         groups = self._untrusted_groups()
-        for position in bits(self._partial_rows):
+        for position in bits(self._partial_rows & self._trusted_rows):
             row = self._rows_by_bit[1 << position]
             if self.implications.closure_mask(row[0]) & row[1]:
-                name = next(iter(self._names_by_row[row]))
+                name = next(n for n in self._names_by_row[row] if n not in self._tentative)
                 for origin, group in groups.items():
                     self._check_against_row(origin, group, name, *row)
         for rejected in self.rejected_implications:

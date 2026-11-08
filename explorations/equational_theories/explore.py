@@ -91,9 +91,11 @@ def save_results(
     """Write the implications found and the context of an exploration.
 
     implications.txt and implications.json list every implication found
-    with its source, the rejected implications, and the sets of unconfirmed
-    implications that contradict an object or a rejected implication only
-    together, each minimal, with what it contradicts;
+    with its source, the rejected implications and, with `undecided="reject"`,
+    the implications rejected tentatively, for which the context has a
+    tentative object; implications.txt and joint_conflicts.json the sets of
+    unconfirmed implications that contradict an object or a rejected
+    implication only together, each minimal, with what it contradicts;
     simplified_implications.txt lists the implications simplified into
     rules for reading, as printed at the end of the exploration, after the
     background simplified the same way, each followed by its images under
@@ -106,7 +108,7 @@ def save_results(
     conclusion shown false without a counterexample, by the expert or, if
     `derived`, by what is known; context.cxt
     (Burmeister format) holds every object whose row is complete, and
-    partial_context.cxt every object, in the same format with ? where it is
+    partial_context.cxt every object but the tentative ones, in the same format with ? where it is
     not known whether the object satisfies the equation. A dual image is
     named after its original with ^op. proofs.jsonl.xz holds the expert's
     `proofs`, if any, one JSON object a line.
@@ -193,6 +195,8 @@ def save_results(
     kind = lambda o: ("F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation)
                       else "W" if isinstance(o, Witness) else "M")
     for version, obj in base.context.objects.items():
+        if version in base.tentative_objects:
+            continue
         original = version.original
         prefix = kind(original)
         count = sum(1 for o in names if kind(o) == prefix)
@@ -270,8 +274,9 @@ def save_results(
         "refuted nor decided;",
         "mapped = dual of another implication, added when not already entailed; mapped unconfirmed",
         "= dual of an unconfirmed implication. Rejected implications are shown false as a whole",
-        "without knowing which law of their conclusion fails. Joint conflicts are minimal sets of",
-        "unconfirmed implications that contradict an object or a rejected implication only together.",
+        "without knowing which law of their conclusion fails; tentatively rejected ones are",
+        "undecided and taken to be false. Joint conflicts are minimal sets of unconfirmed",
+        "implications that contradict an object or a rejected implication only together.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
@@ -285,13 +290,14 @@ def save_results(
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
         records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
+    for implication in base.tentative_objects.values():
+        records.append({"premise": ids(implication.premise), "conclusion": ids(implication.conclusion),
+                        "source": "tentatively rejected"})
     conflicts = base.joint_conflicts()
     pair = lambda i: {"premise": ids(i.premise), "conclusion": ids(i.conclusion)}
     named = lambda c: object_names[c] if c in object_names else pair(c)
-    for conflict in conflicts:
-        records.append({"source": "joint conflict",
-                        "implications": [pair(i) for i in conflict.implications],
-                        "contradicts": [named(c) for c in conflict.contradicted]})
+    joint = [{"implications": [pair(i) for i in conflict.implications],
+              "contradicts": [named(c) for c in conflict.contradicted]} for conflict in conflicts]
     extra = []
     if refuted:
         extra += ["", "Unconfirmed implications refuted by a later object or rejected implication, and dropped:"]
@@ -303,6 +309,9 @@ def save_results(
     if base.rejected_implications:
         extra += ["", "Rejected implications:"]
         extra += [f"  {show(i)}" for i in base.rejected_implications]
+    if base.tentative_objects:
+        extra += ["", "Undecided implications rejected tentatively, still open:"]
+        extra += [f"  {show(i)}" for i in base.tentative_objects.values()]
     if conflicts:
         extra += ["", "Unconfirmed implications contradicting an object or a rejected implication only together:"]
         for conflict in conflicts:
@@ -314,6 +323,10 @@ def save_results(
     (directory / "implications.json").write_text(
         "[\n" + ",\n".join("  " + json.dumps(r) for r in records) + "\n]\n", encoding="utf-8"
     )
+    if joint:
+        (directory / "joint_conflicts.json").write_text(
+            "[\n" + ",\n".join("  " + json.dumps(r) for r in joint) + "\n]\n", encoding="utf-8"
+        )
 
 
 def run_magma_exploration(
@@ -346,6 +359,7 @@ def run_magma_exploration(
     map_unconfirmed: bool = True,
     axioms: Sequence[int | str] = (),
     background_files: Sequence[str | Path] = (),
+    undecided: str = "accept",
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -367,6 +381,8 @@ def run_magma_exploration(
     print(f"Equations File:           {Path(equations_path).name}")
     print(f"Duality Symmetry Enabled: {use_duality_symmetry}"
           f"{'' if map_unconfirmed or not use_duality_symmetry else ', duals of unconfirmed implications asked'}")
+    if undecided == "reject":
+        print("Undecided Implications:   rejected tentatively")
     if expert_kind == "vampire":
         print(
             f"Expert:                   Vampire, {vampire_prove_time_limit} s to prove{first_setting}, "
@@ -535,6 +551,7 @@ def run_magma_exploration(
         on_question=report_every(report_interval),
         on_resume=resumed,
         map_unconfirmed=map_unconfirmed,
+        undecided=undecided,
     )
     base, state = result.base, result.state
     state.questions_asked = result.questions_asked
@@ -553,6 +570,8 @@ def run_magma_exploration(
     print(f"Rejected Implications:        {len(base.rejected_implications)}")
     conflicts = base.joint_conflicts()
     print(f"Joint Conflicts:              {len(conflicts)}")
+    if base.tentative_objects:
+        print(f"Rejected Tentatively:         {len(base.tentative_objects)}")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -581,6 +600,10 @@ def run_magma_exploration(
     if base.rejected_implications:
         print("\nRejected Implications (shown false as a whole, but no law of the conclusion known to fail):")
         for implication in base.rejected_implications:
+            print(f"  {implication}")
+    if base.tentative_objects:
+        print("\nUndecided Implications Rejected Tentatively (still open):")
+        for implication in base.tentative_objects.values():
             print(f"  {implication}")
     if conflicts:
         print("\nUnconfirmed Implications Contradicting an Object or a Rejected Implication Only Together:")
@@ -633,6 +656,8 @@ def run_magma_exploration(
             settings += " and its refutations as objects"
         if not map_unconfirmed:
             settings += ", duals of unconfirmed implications asked"
+        if undecided == "reject":
+            settings += ", undecided implications rejected tentatively"
         if background_order is not None:
             settings += (
                 f", background order {background_order}, transient order "
@@ -951,6 +976,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not use the duality symmetry, so that the equations need not be closed under duality.",
     )
     parser.add_argument(
+        "--undecided",
+        choices=["accept", "reject"],
+        default="accept",
+        help=(
+            "What becomes of what the expert leaves undecided: accept it as "
+            "unconfirmed (default), so that it steers the enumeration, or "
+            "reject each law of it tentatively, by an object standing for it "
+            "that only steers the enumeration, so that larger premises are "
+            "asked about."
+        ),
+    )
+    parser.add_argument(
         "--ask-unconfirmed-duals",
         action="store_true",
         help=(
@@ -1128,6 +1165,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 map_unconfirmed=not args.ask_unconfirmed_duals,
                 axioms=args.axiom,
                 background_files=args.background,
+                undecided=args.undecided,
             )
         finally:
             sys.stdout = sys.__stdout__

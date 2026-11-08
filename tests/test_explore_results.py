@@ -152,7 +152,27 @@ def test_joint_conflicts_are_saved_with_what_they_contradict(tmp_path):
 
     text = (tmp_path / "implications.txt").read_text()
     assert "  Eq3 ==> Eq43; Eq43 ==> Eq4   (contradict F1)" in text
+    assert json.loads((tmp_path / "joint_conflicts.json").read_text()) == [
+        {"implications": [{"premise": [3], "conclusion": [43]}, {"premise": [43], "conclusion": [4]}],
+         "contradicts": ["F1"]}
+    ]
+    # Every record of implications.json is an implication.
+    assert all("premise" in r for r in json.loads((tmp_path / "implications.json").read_text()))
+
+
+def test_tentative_objects_are_saved_as_implications_rejected_tentatively(tmp_path):
+    from conceptual_exploration import Tentative
+
+    idempotent = Equation.parse("x = x * x", id=3)
+    commutative = Equation.parse("x * y = y * x", id=43)
+    equations = [idempotent, commutative]
+    base = ExplorationBase(attributes=equations)
+    open_ = Implication(frozenset({idempotent}), frozenset({commutative}))
+    base.add_tentative(open_, Tentative(open_))
+
+    save_results(base, equations, tmp_path, "test")
+
+    assert (tmp_path / "partial_context.cxt").read_text().splitlines()[2] == "0"
     records = json.loads((tmp_path / "implications.json").read_text())
-    assert {"source": "joint conflict",
-            "implications": [{"premise": [3], "conclusion": [43]}, {"premise": [43], "conclusion": [4]}],
-            "contradicts": ["F1"]} in records
+    assert {"premise": [3], "conclusion": [43], "source": "tentatively rejected"} in records
+    assert "  Eq3 ==> Eq43" in (tmp_path / "implications.txt").read_text()

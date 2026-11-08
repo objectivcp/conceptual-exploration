@@ -2,6 +2,8 @@
 
 from itertools import combinations
 
+import pytest
+
 from conceptual_exploration import Expert, Implication, PartialObject, Undecided, explore_in_rounds
 from conceptual_exploration.exploration.base import ImplicationSource
 
@@ -116,7 +118,8 @@ class Random(Expert):
         return None
 
 
-def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones_on_its_own():
+@pytest.mark.parametrize("undecided", ["accept", "reject"])
+def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones_on_its_own(undecided):
     import random
     from conceptual_exploration.core.theory import ImplicationTheory
 
@@ -129,7 +132,9 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
         rng = random.Random(seed)
         rules = [(set(rng.sample(attributes, 2)), rng.choice(attributes)) for _ in range(5)]
         rules += [({swap[a] for a in p}, swap[c]) for p, c in rules]
-        result = explore_in_rounds(attributes, Random(attributes, swap, rules, seed), mappings=[lambda a: swap[a]])
+        result = explore_in_rounds(
+            attributes, Random(attributes, swap, rules, seed), mappings=[lambda a: swap[a]], undecided=undecided
+        )
         base = result.base
         sources = base.implication_sources
         trusted = list(base.trusted_implications)
@@ -152,6 +157,10 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
             assert not any(contradicts([unconfirmed], item) for item in items), (seed, unconfirmed)
         for rejected in base.rejected_implications:
             assert not base.trusted_implications.entails(rejected), seed
+        for stands_for in base.tentative_objects.values():
+            assert not base.trusted_implications.entails(stands_for), seed
+        if undecided == "reject":
+            assert not base.unconfirmed_implications
         # Each joint conflict contradicts what it names, and minimally.
         for conflict in base.joint_conflicts():
             for item in conflict.contradicted:
@@ -159,3 +168,42 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
                 assert contradicts(conflict.implications, item), seed
                 for u in conflict.implications:
                     assert not contradicts([v for v in conflict.implications if v != u], item), seed
+
+
+DUAL = {"a": "c", "c": "a", "b": "d", "d": "b"}
+# Closed under a -> b and its dual c -> d.
+DUAL_WORLD = [set(), {"b"}, {"d"}, {"b", "d"}, {"a", "b"}, {"c", "d"}, {"a", "b", "d"}, {"b", "c", "d"},
+              {"a", "b", "c", "d"}]
+
+
+class Unsure(Expert):
+    """Refutes from DUAL_WORLD and proves what it holds, except that it
+    leaves c -> d undecided the first time."""
+
+    def __init__(self):
+        self.hidden = False
+
+    def validate(self, implication, attributes=None):
+        for row in DUAL_WORLD:
+            if implication.premise <= row and not implication.conclusion <= row:
+                return PartialObject(frozenset(row), set(row), set("abcd") - row)
+        if implication.premise == {"c"} and not self.hidden:
+            self.hidden = True
+            return Undecided()
+        return None
+
+
+def test_a_tentative_object_contradicted_by_an_image_is_dropped_and_the_exploration_resumed():
+    from conceptual_exploration import Tentative
+
+    result = explore_in_rounds("abcd", Unsure(), mappings=[lambda x: DUAL[x]], undecided="reject")
+    # a -> b, confirmed after c -> d was rejected tentatively, has it as image.
+    c_to_d = Implication(frozenset("c"), frozenset("d"))
+    assert result.refuted == [(Tentative(c_to_d), c_to_d)]
+    assert result.rounds == 2
+    assert not result.base.tentative_objects
+    for r in range(5):
+        for subset in combinations("abcd", r):
+            rows = [row for row in DUAL_WORLD if set(subset) <= row]
+            expected = set("abcd").intersection(*rows) if rows else set("abcd")
+            assert result.base.implications.closure(set(subset)) == expected

@@ -714,3 +714,59 @@ def test_no_joint_conflicts_without_unconfirmed_implications():
     base = ExplorationBase(attributes=["a", "b"], background_implications=[_implication("a", "b")])
     base.add_counterexample(PartialObject("x", {"b"}, set()))
     assert base.joint_conflicts() == []
+
+
+def test_undecided_implications_can_be_rejected_tentatively():
+    from conceptual_exploration import AttributeExploration, Tentative
+
+    accepting, rejecting = _Recording(), _Recording()
+    base = ExplorationBase(attributes=["a", "b"])
+    AttributeExploration(base, accepting).run()
+    assert accepting.questions == [_implication("", "ab")]
+    assert base.unconfirmed_implications == (_implication("", "ab"),)
+
+    # Rejected tentatively, nothing steers the enumeration away from the
+    # questions with a larger premise.
+    base = ExplorationBase(attributes=["a", "b"])
+    AttributeExploration(base, rejecting, undecided="reject").run()
+    assert rejecting.questions == [_implication("", "ab"), _implication("b", "a"), _implication("a", "b")]
+    assert not base.implications.implications
+    stands_for = [_implication("", "a"), _implication("", "b"), _implication("b", "a"), _implication("a", "b")]
+    assert list(base.tentative_objects.values()) == stands_for
+    assert [v.original for v in base.tentative_objects] == [Tentative(i) for i in stands_for]
+
+
+def test_a_tentatively_rejected_rest_follows_the_proved_part():
+    from conceptual_exploration import AttributeExploration, Undecided
+
+    def prove_b(implication, number):
+        if number == 1:
+            return Undecided(frozenset({"b"}))
+
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    AttributeExploration(base, _Recording(prove_b), undecided="reject").run(start=frozenset({"a"}))
+    assert base.implication_sources[_implication("a", "b")] is ImplicationSource.CONFIRMED
+    tentative = next(o for v, o in base.context.objects.items() if v in base.tentative_objects)
+    assert base.tentative_objects[next(iter(base.tentative_objects))] == _implication("a", "c")
+    assert (tentative.positive, tentative.negative) == ({"a", "b"}, {"c"})
+
+
+def test_tentative_objects_are_not_facts():
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    base.add_tentative(_implication("a", "c"), "t")
+    # It steers the questions, but shows nothing false and refutes nothing.
+    assert base.context_closure_mask(base.index.encode({"a"})) == base.index.encode({"a", "b"})
+    assert not base.known_false(_implication("a", "c"))
+    base.accept(_implication("a", "c"), ImplicationSource.UNCONFIRMED)
+    assert not base.refuted
+    assert base.joint_conflicts() == []
+
+
+def test_a_tentative_object_is_refuted_when_the_trusted_implications_contradict_it():
+    swap = {"a": "c", "c": "a", "b": "d", "d": "b"}
+    base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]])
+    base.add_tentative(_implication("a", "b"), "t")
+    # c -> d has a -> b as its image.
+    base.accept(_implication("c", "d"), ImplicationSource.CONFIRMED)
+    [(name, stands_for)] = base.refuted.items()
+    assert name.original == "t" and stands_for == _implication("a", "b")
