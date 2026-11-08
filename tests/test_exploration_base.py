@@ -541,7 +541,7 @@ def test_attributes_contradicting_an_object_only_together_are_asked_one_at_a_tim
     assert not base.refuted
 
 
-def test_an_object_showing_the_undecided_rest_false_gets_the_question_split():
+def test_an_undecided_rest_contradicting_an_object_only_together_is_accepted_attribute_by_attribute():
     from conceptual_exploration import AttributeExploration, Undecided
 
     base = ExplorationBase(
@@ -558,10 +558,39 @@ def test_an_object_showing_the_undecided_rest_false_gets_the_question_split():
     expert = _Recording(first_with_w)
     AttributeExploration(base, expert).run(start=frozenset({"a"}))
 
-    # v does not show a -> b1, b2 false, but w, which has y, does.
-    assert expert.questions[:2] == [_implication("a", ["b1", "b2"]), _implication("a", ["b1"])]
+    # v does not show a -> b1, b2 false, but w, which has y, does; the
+    # expert knows nothing against b1 or b2, and is not asked again.
+    assert expert.questions[0] == _implication("a", ["b1", "b2"])
+    assert all(q.premise != {"a"} for q in expert.questions[1:])
     assert _implication("a", ["b1", "b2"]) not in base.implications
-    assert base.implication_sources[_implication("a", ["b1"])] is ImplicationSource.UNCONFIRMED
+    for b in ("b1", "b2"):
+        assert base.implication_sources[_implication("a", [b])] is ImplicationSource.UNCONFIRMED
+    assert not base.refuted
+
+
+def test_an_undecided_rest_that_an_object_refutes_in_part_keeps_the_rest_open():
+    from conceptual_exploration import AttributeExploration, Undecided, Witness
+
+    base = ExplorationBase(
+        attributes=["a", "b", "c1", "c2", "y", "d"],
+        background_implications=[_implication(["b", "c1", "y"], "d")],
+    )
+    base.add_counterexample(PartialObject("v", {"a"}, {"y", "d"}))
+    w = PartialObject("w", {"a", "y"}, {"d"})
+
+    def prove_b_with_w(implication, number):
+        if number == 1:
+            return Undecided(frozenset({"b"}), object=w)
+
+    expert = _Recording(prove_b_with_w)
+    AttributeExploration(base, expert).run(start=frozenset({"a"}))
+
+    # With b proved, completion denies c1 in w, which has y; c2 stays open.
+    assert expert.questions[0] == _implication("a", ["b", "c1", "c2"])
+    assert base.implication_sources[_implication("a", "b")] is ImplicationSource.CONFIRMED
+    assert base.implication_sources[_implication("a", ["c2"])] is ImplicationSource.UNCONFIRMED
+    assert not any(isinstance(v.original, Witness) for v in base.context.objects)
+    assert not base.refuted
 
 
 def test_the_rest_of_an_undecided_answer_leaves_out_what_the_proved_part_entails():

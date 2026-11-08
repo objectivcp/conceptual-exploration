@@ -135,13 +135,9 @@ class AttributeExploration:
                     )
                     self.state.questions_asked += 1
                     if isinstance(counterexample, Undecided):
-                        following = self._leave_open(implication, counterexample)
+                        premise = self._leave_open(implication, counterexample)
                         if self._stopped():
                             return self.state
-                        if following is None:
-                            closure = self.base.context_closure_mask(premise)
-                            continue
-                        premise = following
                         break
                     if counterexample:
                         if not counterexample.refutes(implication):
@@ -186,20 +182,28 @@ class AttributeExploration:
         there is none, the attributes contradict only together, and the
         first of them is asked about alone.
         """
-        base = self.base
-        if not base.known_false_mask(premise, conclusion):
+        if not self.base.known_false_mask(premise, conclusion):
             return conclusion
-        derived = False
-        for position in bits(conclusion):
+        if self._settle(premise, conclusion) != conclusion:
+            return 0
+        return conclusion & -conclusion
+
+    def _settle(self, premise: int, conclusion: int) -> int:
+        """Give each attribute of `conclusion` that the trusted knowledge
+        shows not to follow from `premise`, and that no object refutes yet,
+        a derived witness; return the other attributes, those not settled."""
+        base = self.base
+        closure = base.context_closure_mask(premise)
+        left = 0
+        for position in bits(conclusion & closure):
             if base.known_false_mask(premise, 1 << position):
                 rule = Implication(base.index.decode(premise), base.index.decode(1 << position))
                 witness = PartialObject(Witness(rule, derived=True), set(rule.premise), set(rule.conclusion))
                 base.add_counterexample(witness)
                 self.state.counterexamples.append(witness)
-                derived = True
-        if derived:
-            return 0
-        return conclusion & -conclusion
+            else:
+                left |= 1 << position
+        return left
 
     def _stopped(self) -> bool:
         refuted = self.base.earliest_refuted()
@@ -208,21 +212,22 @@ class AttributeExploration:
         self.state.stopped_by = refuted[0]
         return True
 
-    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int | None:
+    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int:
         """Take an answer the expert could not decide and return the next
-        premise, or None to ask about the same premise again.
+        premise.
 
         The object the answer carries is added first, then the part of the
         conclusion the expert proved is accepted. What the trusted
         implications then entail is proved as well; the rest is rejected or,
         if the expert knows nothing against it, accepted as unconfirmed.
 
-        The object may show the rest false together with the trusted
-        knowledge, although the question was not known false; the rest is
-        then not accepted. If nothing was proved either, the same premise is
-        asked about again, where the question is split (see `_question`);
-        otherwise the enumeration goes on, and the rest is not asked again,
-        as a rejected rest is not.
+        The object, with what was proved, may show the rest false, although
+        the question was not known false. Its attributes that an object now
+        refutes, or that the trusted knowledge shows false on their own (see
+        `_settle`), are then settled; the others, which the expert knows
+        nothing against, are accepted as unconfirmed, together if they do
+        not contradict anything together and one by one otherwise. Nothing
+        is asked again.
 
         If nothing is accepted, the premise stays closed under the
         implications, and the enumeration goes on to the next closed set as
@@ -259,12 +264,17 @@ class AttributeExploration:
             else:
                 self.base.reject(rest)
         elif rest_mask:
-            if answer.object is not None and self.base.known_false(rest):
-                if not accepted:
-                    return None
-            else:
-                self.base.accept(rest, ImplicationSource.UNCONFIRMED)
-                self.state.accepted_implications.append(rest)
+            parts = [rest_mask]
+            if answer.object is not None and self.base.known_false_mask(premise, rest_mask):
+                left = self._settle(premise, rest_mask)
+                if left and self.base.known_false_mask(premise, left):
+                    parts = [1 << position for position in bits(left)]
+                else:
+                    parts = [left] if left else []
+            for part in parts:
+                unconfirmed = Implication(implication.premise, index.decode(part))
+                self.base.accept(unconfirmed, ImplicationSource.UNCONFIRMED)
+                self.state.accepted_implications.append(unconfirmed)
                 accepted = True
         if not accepted:
             return next(self._premises)
