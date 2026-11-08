@@ -136,3 +136,23 @@ def test_the_expert_proofs_are_saved(tmp_path):
         assert [json.loads(line) for line in file] == [proof]
     save_results(ExplorationBase(attributes=equations), equations, tmp_path / "none", "test")
     assert not (tmp_path / "none" / "proofs.jsonl.xz").exists()
+
+
+def test_joint_conflicts_are_saved_with_what_they_contradict(tmp_path):
+    idempotent = Equation.parse("x = x * x", id=3)
+    commutative = Equation.parse("x * y = y * x", id=43)
+    left_zero = Equation.parse("x = x * y", id=4)
+    equations = [idempotent, commutative, left_zero]
+    base = ExplorationBase(attributes=equations)
+    base.add_counterexample(PartialObject(FreeMagma(frozenset({idempotent})), {idempotent}, {left_zero}))
+    base.accept(Implication(frozenset({idempotent}), frozenset({commutative})), ImplicationSource.UNCONFIRMED)
+    base.accept(Implication(frozenset({commutative}), frozenset({left_zero})), ImplicationSource.UNCONFIRMED)
+
+    save_results(base, equations, tmp_path, "test")
+
+    text = (tmp_path / "implications.txt").read_text()
+    assert "  Eq3 ==> Eq43; Eq43 ==> Eq4   (contradict F1)" in text
+    records = json.loads((tmp_path / "implications.json").read_text())
+    assert {"source": "joint conflict",
+            "implications": [{"premise": [3], "conclusion": [43]}, {"premise": [43], "conclusion": [4]}],
+            "contradicts": ["F1"]} in records

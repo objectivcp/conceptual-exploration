@@ -683,3 +683,34 @@ def test_an_implication_is_known_false_through_an_image_with_truth_values():
     assert base.known_false(_implication("ab", "c"))
     assert base.known_false(_implication("a", "c"))
     assert not base.known_false(_implication("b", "a"))
+
+
+def test_joint_conflicts_name_a_minimal_set_and_what_it_contradicts():
+    base = ExplorationBase(attributes=["a", "b", "c", "d", "e"])
+    base.add_counterexample(PartialObject("x", {"a"}, {"c"}))
+    base.add_counterexample(PartialObject("y", {"a", "d"}, {"c"}))
+    for premise, conclusion in [("a", "b"), ("d", "e"), ("b", "c"), ("e", "d")]:
+        base.accept(_implication(premise, conclusion), ImplicationSource.UNCONFIRMED)
+    assert not base.refuted
+
+    # d -> e and e -> d have nothing to do with it.
+    [conflict] = base.joint_conflicts()
+    assert conflict.implications == (_implication("a", "b"), _implication("b", "c"))
+    assert {name.original for name in conflict.contradicted} == {"x", "y"}
+
+
+def test_joint_conflicts_include_rejected_implications():
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    base.accept(_implication("a", "b"), ImplicationSource.UNCONFIRMED)
+    base.accept(_implication("b", "c"), ImplicationSource.UNCONFIRMED)
+    base.reject(_implication("a", "c"))
+    assert not base.refuted
+    [conflict] = base.joint_conflicts()
+    assert conflict.implications == (_implication("a", "b"), _implication("b", "c"))
+    assert conflict.contradicted == (_implication("a", "c"),)
+
+
+def test_no_joint_conflicts_without_unconfirmed_implications():
+    base = ExplorationBase(attributes=["a", "b"], background_implications=[_implication("a", "b")])
+    base.add_counterexample(PartialObject("x", {"b"}, set()))
+    assert base.joint_conflicts() == []

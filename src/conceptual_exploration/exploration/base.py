@@ -22,6 +22,17 @@ class VersionedObject(Generic[O]):
         return f"{self.original}#{self.version}"
 
 
+@dataclass(frozen=True, slots=True)
+class JointConflict(Generic[O, A]):
+    """Unconfirmed implications that, with the trusted ones, contradict the
+    objects or rejected implications in `contradicted` only together: none
+    of them does on its own, and without any one of them the others do not
+    either. One of them is false, but which is not known."""
+
+    implications: tuple[Implication[A], ...]
+    contradicted: tuple[VersionedObject[O] | Implication[A], ...]
+
+
 class ImplicationSource(Enum):
     BACKGROUND = "background"
     CONFIRMED = "confirmed"
@@ -259,6 +270,48 @@ class ExplorationBase(Generic[O, A]):
             if self._closure_with(p, extra) & c == c:
                 return True
         return False
+
+    def joint_conflicts(self) -> list[JointConflict[O, A]]:
+        """The sets of unconfirmed implications that contradict an object or
+        a rejected implication only together, each with what it contradicts.
+
+        For each partial object and rejected implication that all
+        implications together contradict, the unconfirmed implications
+        (each with its images, if they are mapped) are dropped one at a
+        time, in the order they were accepted, as long as the rest still
+        contradict it; what is left is a minimal set. A complete object
+        contradicted by the implications together is refuted by one of
+        them, which `refuted` records instead. Objects or rejected
+        implications contradicted by the same set are reported together.
+        """
+        groups = self._untrusted_groups()
+        if not groups:
+            return []
+        order = {implication: n for n, implication in enumerate(self.implications.implications)}
+        origins = sorted(groups, key=lambda i: order.get(i, len(order)))
+
+        def minimal(contradicts) -> tuple[Implication[A], ...]:
+            kept = list(origins)
+            for origin in origins:
+                rest = [o for o in kept if o != origin]
+                if contradicts([masks for o in rest for masks in groups[o]]):
+                    kept = rest
+            return tuple(kept)
+
+        found: dict[tuple[Implication[A], ...], list] = {}
+        for position in bits(self._partial_rows):
+            row = self._rows_by_bit[1 << position]
+            positive, negative = row
+            if self.implications.closure_mask(positive) & negative:
+                key = minimal(lambda extra: self._closure_with(positive, extra) & negative)
+                names = list(self._names_by_row[row])
+                found.setdefault(key, []).append(next((n for n in names if n.version == 0), names[0]))
+        for rejected in self.rejected_implications:
+            premise, conclusion = self._masks(rejected)
+            if self.implications.closure_mask(premise) & conclusion == conclusion:
+                key = minimal(lambda extra: self._closure_with(premise, extra) & conclusion == conclusion)
+                found.setdefault(key, []).append(rejected)
+        return [JointConflict(key, tuple(contradicted)) for key, contradicted in found.items()]
 
     def earliest_refuted(self) -> tuple[Implication[A], VersionedObject[O] | Implication[A]] | None:
         """The refuted unconfirmed implication accepted first, with what

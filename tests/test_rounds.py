@@ -121,7 +121,8 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
     from conceptual_exploration.core.theory import ImplicationTheory
 
     # Over these seeds, about 60 rounds resume, two of them after a rejected
-    # implication, and about ten witnesses are derived.
+    # implication, about ten witnesses are derived, and about 25 joint
+    # conflicts are left.
     attributes = list("abcdefgh")
     swap = dict(zip("abcdefgh", "efghabcd"))
     for seed in range(60):
@@ -133,13 +134,28 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
         sources = base.implication_sources
         trusted = list(base.trusted_implications)
         rows = [(set(o.positive), set(o.negative)) for o in base.context.objects.values()]
-        for unconfirmed in base.unconfirmed_implications:
-            group = [i for i in base.implications if base.origin(i) == unconfirmed and sources[i] in (
+        names = {name: (set(o.positive), set(o.negative)) for name, o in base.context.objects.items()}
+
+        def group(unconfirmed):
+            return [i for i in base.implications if base.origin(i) == unconfirmed and sources[i] in (
                 ImplicationSource.UNCONFIRMED, ImplicationSource.MAPPED_UNCONFIRMED)]
-            theory = ImplicationTheory(trusted + group, index=base.index)
-            for positive, negative in rows:
-                assert not set(theory.closure(positive)) & negative, (seed, unconfirmed)
-            for rejected in base.rejected_implications:
-                assert not rejected.conclusion <= set(theory.closure(set(rejected.premise))), (seed, unconfirmed)
+
+        def contradicts(unconfirmed, item):
+            theory = ImplicationTheory(trusted + [i for u in unconfirmed for i in group(u)], index=base.index)
+            if isinstance(item, Implication):
+                return item.conclusion <= set(theory.closure(set(item.premise)))
+            positive, negative = item
+            return bool(set(theory.closure(positive)) & negative)
+
+        items = rows + list(base.rejected_implications)
+        for unconfirmed in base.unconfirmed_implications:
+            assert not any(contradicts([unconfirmed], item) for item in items), (seed, unconfirmed)
         for rejected in base.rejected_implications:
             assert not base.trusted_implications.entails(rejected), seed
+        # Each joint conflict contradicts what it names, and minimally.
+        for conflict in base.joint_conflicts():
+            for item in conflict.contradicted:
+                item = item if isinstance(item, Implication) else names[item]
+                assert contradicts(conflict.implications, item), seed
+                for u in conflict.implications:
+                    assert not contradicts([v for v in conflict.implications if v != u], item), seed

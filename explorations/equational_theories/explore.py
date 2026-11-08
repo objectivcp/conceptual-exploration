@@ -91,8 +91,9 @@ def save_results(
     """Write the implications found and the context of an exploration.
 
     implications.txt and implications.json list every implication found
-    with its source, the rejected implications, and the unconfirmed ones not
-    accepted because they would contradict a rejected one;
+    with its source, the rejected implications, and the sets of unconfirmed
+    implications that contradict an object or a rejected implication only
+    together, each minimal, with what it contradicts;
     simplified_implications.txt lists the implications simplified into
     rules for reading, as printed at the end of the exploration, after the
     background simplified the same way, each followed by its images under
@@ -102,7 +103,8 @@ def save_results(
     with their rows, which Vampire may have left partial; etp_refutations.json
     holds the objects standing for refutations of the ETP graph, and
     witnesses.json those standing for implications with one law in their
-    conclusion that the expert showed false without a counterexample; context.cxt
+    conclusion shown false without a counterexample, by the expert or, if
+    `derived`, by what is known; context.cxt
     (Burmeister format) holds every object whose row is complete, and
     partial_context.cxt every object, in the same format with ? where it is
     not known whether the object satisfies the equation. A dual image is
@@ -186,6 +188,7 @@ def save_results(
         return {eq for eq in equations if mapping(eq) in laws}
 
     names: dict[object, str] = {}
+    object_names: dict[object, str] = {}  # by version
     magmas, free, etp, witnesses, rows = [], [], [], [], []  # rows: (name, positive, negative)
     kind = lambda o: ("F" if isinstance(o, FreeMagma) else "R" if isinstance(o, EtpRefutation)
                       else "W" if isinstance(o, Witness) else "M")
@@ -198,6 +201,7 @@ def save_results(
         dual_of = name if version.version else None
         if version.version:
             name += "^op"
+        object_names[version] = name
         rows.append((name, obj.positive, obj.negative))
         if isinstance(original, FreeMagma):
             free.append({
@@ -208,7 +212,7 @@ def save_results(
             })
         elif isinstance(original, Witness):
             witnesses.append({
-                "name": name, "dual_of": dual_of,
+                "name": name, "dual_of": dual_of, "derived": original.derived,
                 "refutes": {"premise": ids(preimage(version, original.implication.premise)),
                             "conclusion": ids(preimage(version, original.implication.conclusion))},
                 "positive": ids(obj.positive),
@@ -266,7 +270,8 @@ def save_results(
         "refuted nor decided;",
         "mapped = dual of another implication, added when not already entailed; mapped unconfirmed",
         "= dual of an unconfirmed implication. Rejected implications are shown false as a whole",
-        "without knowing which law of their conclusion fails.",
+        "without knowing which law of their conclusion fails. Joint conflicts are minimal sets of",
+        "unconfirmed implications that contradict an object or a rejected implication only together.",
         "",
         "Equations:",
         *(f"  {label(eq)}: {eq.lhs} = {eq.rhs}" for eq in ordered),
@@ -280,9 +285,16 @@ def save_results(
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
         records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
+    conflicts = base.joint_conflicts()
+    pair = lambda i: {"premise": ids(i.premise), "conclusion": ids(i.conclusion)}
+    named = lambda c: object_names[c] if c in object_names else pair(c)
+    for conflict in conflicts:
+        records.append({"source": "joint conflict",
+                        "implications": [pair(i) for i in conflict.implications],
+                        "contradicts": [named(c) for c in conflict.contradicted]})
     extra = []
     if refuted:
-        extra += ["", "Unconfirmed implications refuted by a later object, and dropped:"]
+        extra += ["", "Unconfirmed implications refuted by a later object or rejected implication, and dropped:"]
         extra += [f"  {', '.join(map(label, sorted(i.premise, key=order)))} ==> "
                   f"{', '.join(map(label, sorted(i.conclusion, key=order)))}"
                   for i in refuted]
@@ -291,6 +303,11 @@ def save_results(
     if base.rejected_implications:
         extra += ["", "Rejected implications:"]
         extra += [f"  {show(i)}" for i in base.rejected_implications]
+    if conflicts:
+        extra += ["", "Unconfirmed implications contradicting an object or a rejected implication only together:"]
+        for conflict in conflicts:
+            contradicted = ", ".join(object_names[c] if c in object_names else show(c) for c in conflict.contradicted)
+            extra += [f"  {'; '.join(map(show, conflict.implications))}   (contradict {contradicted})"]
     (directory / "implications.txt").write_text(
         "\n".join(header + lines + extra) + "\n", encoding="utf-8"
     )
@@ -534,6 +551,8 @@ def run_magma_exploration(
     print(f"Implications Found:           {len(base.implications.implications)}")
     print(f"Counterexamples Found:        {len(state.counterexamples)}")
     print(f"Rejected Implications:        {len(base.rejected_implications)}")
+    conflicts = base.joint_conflicts()
+    print(f"Joint Conflicts:              {len(conflicts)}")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -556,13 +575,18 @@ def run_magma_exploration(
             "\n  implication, so it remains unproved."
         )
     if refuted:
-        print("\nUnconfirmed Implications Refuted by a Later Object (and dropped):")
+        print("\nUnconfirmed Implications Refuted by a Later Object or Rejected Implication (and dropped):")
         for implication, name in refuted:
             print(f"  {implication}   (by {name})")
     if base.rejected_implications:
         print("\nRejected Implications (shown false as a whole, but no law of the conclusion known to fail):")
         for implication in base.rejected_implications:
             print(f"  {implication}")
+    if conflicts:
+        print("\nUnconfirmed Implications Contradicting an Object or a Rejected Implication Only Together:")
+        for conflict in conflicts:
+            contradicted = ", ".join(str(c) for c in conflict.contradicted)
+            print(f"  {'; '.join(map(str, conflict.implications))}   (contradict {contradicted})")
     if base.unconfirmed_implications and expert_kind == "z3":
         print(
             "\n  [UNCONFIRMED] = no counterexample was found, but the solver ran out"
