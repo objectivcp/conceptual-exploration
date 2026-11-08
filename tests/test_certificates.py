@@ -187,6 +187,19 @@ def test_the_cover_takes_the_strongest_laws_first(tmp_path):
     assert cover(tmp_path, equations, []) == [([3], 43), ([2], 3)]
 
 
+def test_the_cover_leaves_out_what_was_not_found(tmp_path):
+    equations = [{"id": 1, "equation": "x = x", "class": []},
+                 {"id": 3, "equation": "x = x * x", "class": []},
+                 {"id": 43, "equation": "x * y = y * x", "class": []}]
+    (tmp_path / "context.cxt").write_text("B\n\n1\n3\n\nM1\nEq1\nEq3\nEq43\nX.X\n", encoding="utf-8")
+    (tmp_path / "implications.json").write_text(
+        '[{"premise": [3], "conclusion": [43], "source": "unconfirmed"},'
+        ' {"premise": [43], "conclusion": [3], "source": "rejected"},'
+        ' {"premise": [1], "conclusion": [3], "source": "refuted"},'
+        ' {"premise": [1], "conclusion": [43], "source": "tentatively rejected"}]', encoding="utf-8")
+    assert cover(tmp_path, equations, []) == [([3], 43)]
+
+
 def test_a_mirrored_certificate_proves_the_dual():
     certificate = mirrored(certificate_from_tstp(["x = x * x"], "x = x * (x * x)", PROOF))
     assert certificate["conclusion"] == "x = ((x * x) * x)"

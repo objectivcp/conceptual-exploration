@@ -61,6 +61,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from itertools import permutations
 from pathlib import Path
 
+from explorations.equational_theories.certify import found_implications
 from explorations.equational_theories.etp import EtpLaws
 from explorations.equational_theories.magma import ETP, Equation, Magma, Op, Term, Var
 from explorations.equational_theories.vampire import (
@@ -676,7 +677,7 @@ def commutative_inputs(
 
 def write_inputs(args: argparse.Namespace) -> None:
     data = json.loads(args.classes.read_text())
-    order4 = json.loads(args.order4.read_text()) if args.order4 else []
+    order4 = found_implications(args.order4) if args.order4 else []
     entries, background = exploration_inputs(data["classes"], order4)
     write = lambda kind, value: (args.directory / f"{kind}_{args.prefix}.json").write_text(
         "[\n" + ",\n".join(json.dumps(item) for item in value) + "\n]\n"
@@ -695,7 +696,7 @@ def write_commutative_inputs(args: argparse.Namespace) -> None:
     entries, background = commutative_inputs(
         args.max_order,
         json.loads(args.order4_equations.read_text()),
-        json.loads(args.order4.read_text()),
+        found_implications(args.order4),
         EtpLaws.load(args.etp_equations),
     )
     seeds = [

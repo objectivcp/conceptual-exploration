@@ -55,6 +55,16 @@ from explorations.equational_theories.certificates import (
 )
 from explorations.equational_theories.verify import exploration_setting, law_key
 
+# The sources of the implications an exploration's implications.json lists
+# as found; the others are refuted, rejected or rejected tentatively.
+FOUND = ("background", "confirmed", "mapped", "unconfirmed", "mapped unconfirmed")
+
+
+def found_implications(path: Path) -> list[dict]:
+    """The entries of an exploration's implications.json for the
+    implications it found (with a source in `FOUND`)."""
+    return [entry for entry in json.loads(path.read_text(encoding="utf-8")) if entry["source"] in FOUND]
+
 
 class ReconstructionError(ValueError):
     pass
@@ -854,9 +864,10 @@ def _law_names(equations: list[dict]) -> dict:
 def cover(results: Path, equations: list[dict], axioms: Sequence) -> list[tuple[list, object]]:
     """Single-law implications, (premise, conclusion) by the names of
     implications.json, that together with the axioms entail every
-    implication of it. Each implication's conclusion laws are taken from the
-    strongest, those of the fewest objects of the context, each only if the
-    ones taken so far do not entail it."""
+    implication found that it lists (with a source in `FOUND`). Each
+    implication's conclusion laws are taken from the strongest, those of
+    the fewest objects of the context, each only if the ones taken so far
+    do not entail it."""
     names = list(_law_names(equations))
     bit = {name: 1 << i for i, name in enumerate(names)}
     context_name = {(f"Eq{n}" if isinstance(n, int) else n): n for n in names}
@@ -879,7 +890,7 @@ def cover(results: Path, equations: list[dict], axioms: Sequence) -> list[tuple[
         return mask
 
     chosen = []
-    for entry in json.loads((results / "implications.json").read_text(encoding="utf-8")):
+    for entry in found_implications(results / "implications.json"):
         premise = sorted(set(entry["premise"]) | set(axioms), key=names.index)
         mask = sum(bit[p] for p in premise) | always
         for law in sorted(entry["conclusion"], key=lambda law: extent[law]):
