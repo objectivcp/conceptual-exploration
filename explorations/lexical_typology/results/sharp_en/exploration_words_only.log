@@ -1,0 +1,700 @@
+Field:    adjectives that describe something as sharp: having an edge or a point that can cut or prick, a pointed shape, or a quality likened to these, such as a sudden intense pain or a quick, penetrating mind (English adjectives)
+Contexts: 10; seed words: sharp, pointed, keen
+Judge:    sonnet, 3 votes; referee: opus; proposer: opus, 2 words per question
+Limits:   60 words, 100 proposals
+
+Number of implications: 0
+Number of objects: 3
+Question 1:  -> a ___ knife
+Counterexample found: spiky
+Satisfies: 
+Does not satisfy: a ___ pain, a ___ knife, a ___ needle, a ___ mind, a ___ razor, a ___ pencil
+
+
+Number of implications: 0
+Number of objects: 4
+Question 2: a ___ mind -> a ___ knife, a ___ pain, a ___ razor
+Counterexample found: acute
+Satisfies: a ___ mind, a ___ pain
+Does not satisfy: a ___ arrow, a ___ knife, a ___ needle, a ___ razor, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+Number of implications: 0
+Number of objects: 5
+Question 3: a ___ mind -> a ___ pain
+Counterexample found: incisive
+Satisfies: a ___ mind
+Does not satisfy: a ___ arrow, a ___ knife, a ___ pain, a ___ needle, a ___ razor, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+Number of implications: 0
+Number of objects: 6
+Question 4: a ___ pain -> a ___ mind
+Counterexample found: stabbing
+Satisfies: a ___ pain
+Does not satisfy: a ___ arrow, a ___ knife, a ___ needle, a ___ mind, a ___ razor, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+Number of implications: 0
+Number of objects: 7
+Question 5: a ___ chin -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Counterexample found: angular
+Satisfies: a ___ nose, a ___ chin
+Does not satisfy: a ___ arrow, a ___ knife, a ___ pain, a ___ needle, a ___ mind, a ___ razor, a ___ pencil, a ___ thorn
+
+
+Number of implications: 0
+Number of objects: 8
+Question 6: a ___ chin -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 8
+Question 7: a ___ nose -> a ___ chin
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 9
+Question 8: a ___ chin, a ___ mind, a ___ nose -> a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 9
+Question 9: a ___ chin, a ___ nose, a ___ pain -> a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 9
+Question 10: a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor
+Counterexample found: pointy
+Satisfies: a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+Does not satisfy: a ___ mind, a ___ pain, a ___ razor
+
+
+Number of implications: 4
+Number of objects: 10
+Question 11: a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil
+Counterexample found: barbed
+Satisfies: a ___ arrow, a ___ thorn
+Does not satisfy: a ___ pain, a ___ knife, a ___ needle, a ___ mind, a ___ razor, a ___ nose, a ___ pencil, a ___ chin
+
+
+Number of implications: 4
+Number of objects: 11
+Question 12: a ___ thorn -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 11
+Question 13: a ___ arrow -> a ___ thorn
+Counterexample found: sharpened
+Satisfies: a ___ pencil, a ___ arrow, a ___ knife
+Does not satisfy: a ___ nose, a ___ pain, a ___ thorn, a ___ chin
+
+
+Number of implications: 5
+Number of objects: 12
+Question 14: a ___ arrow, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 12
+Question 15: a ___ arrow, a ___ pain -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 12
+Question 16: a ___ arrow, a ___ chin, a ___ nose -> a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 12
+Question 17: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 13
+Question 18: a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
+Counterexample found: fine
+Satisfies: a ___ needle
+Does not satisfy: a ___ arrow, a ___ knife, a ___ pain, a ___ mind, a ___ nose, a ___ thorn, a ___ chin
+
+
+Number of implications: 9
+Number of objects: 14
+Question 19: a ___ needle -> a ___ pencil
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 15
+Question 20: a ___ mind, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 15
+Question 21: a ___ needle, a ___ pain -> a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 15
+Question 22: a ___ chin, a ___ needle, a ___ nose -> a ___ arrow, a ___ knife, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 15
+Question 23: a ___ arrow, a ___ needle -> a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 15
+Question 24: a ___ arrow, a ___ needle, a ___ thorn -> a ___ chin, a ___ knife, a ___ nose, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 15
+Question 25: a ___ razor -> a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ thorn
+Counterexample found: honed
+Satisfies: a ___ mind, a ___ arrow, a ___ knife, a ___ razor
+Does not satisfy: a ___ pain, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+honed refutes the unconfirmed a ___ arrow, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn; resuming
+
+
+Number of implications: 5
+Number of objects: 16
+Question 1: a ___ arrow, a ___ mind -> a ___ knife, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 16
+Question 2: a ___ arrow, a ___ pain -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 16
+Question 3: a ___ arrow, a ___ chin, a ___ nose -> a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 4: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 5: a ___ needle -> a ___ pencil
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 6: a ___ mind, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 7: a ___ needle, a ___ pain -> a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 16
+Question 8: a ___ chin, a ___ needle, a ___ nose -> a ___ arrow, a ___ knife, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 16
+Question 9: a ___ arrow, a ___ needle -> a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 16
+Question 10: a ___ arrow, a ___ needle, a ___ thorn -> a ___ chin, a ___ knife, a ___ nose, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 16
+Question 11: a ___ razor -> a ___ arrow, a ___ knife, a ___ mind, a ___ needle
+Counterexample found: whetted
+Satisfies: a ___ arrow, a ___ knife, a ___ razor
+Does not satisfy: a ___ pain, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+Number of implications: 12
+Number of objects: 17
+Question 12: a ___ razor -> a ___ arrow, a ___ knife, a ___ mind
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 17
+Question 13: a ___ mind, a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 17
+Question 14: a ___ pain, a ___ razor -> a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 17
+Question 15: a ___ chin, a ___ nose, a ___ razor -> a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pain, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 17
+Question 16: a ___ arrow, a ___ razor -> a ___ knife, a ___ mind
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 17
+Question 17: a ___ arrow, a ___ razor, a ___ thorn -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil
+Counterexample found: wicked
+Satisfies: a ___ arrow, a ___ knife, a ___ pain, a ___ needle, a ___ razor, a ___ thorn
+Does not satisfy: a ___ nose, a ___ pencil, a ___ mind, a ___ chin
+
+
+wicked refutes the unconfirmed a ___ arrow, a ___ pain -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn; resuming
+
+
+Number of implications: 6
+Number of objects: 18
+Question 1: a ___ arrow, a ___ pain -> a ___ knife, a ___ needle, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 18
+Question 2: a ___ arrow, a ___ chin, a ___ nose -> a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 18
+Question 3: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 18
+Question 4: a ___ mind, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 18
+Question 5: a ___ needle, a ___ pain -> a ___ arrow, a ___ knife, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 18
+Question 6: a ___ chin, a ___ needle, a ___ nose -> a ___ arrow, a ___ knife, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 18
+Question 7: a ___ arrow, a ___ needle -> a ___ knife, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 18
+Question 8: a ___ arrow, a ___ needle, a ___ thorn -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 18
+Question 9: a ___ razor -> a ___ arrow, a ___ knife
+Counterexample found: stropped
+Satisfies: a ___ knife, a ___ razor
+Does not satisfy: a ___ arrow, a ___ pain, a ___ needle, a ___ mind, a ___ nose, a ___ pencil, a ___ thorn, a ___ chin
+
+
+Number of implications: 12
+Number of objects: 19
+Question 10: a ___ razor -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 19
+Question 11: a ___ knife, a ___ mind -> a ___ arrow, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 19
+Question 12: a ___ knife, a ___ pain -> a ___ arrow, a ___ needle, a ___ razor, a ___ thorn
+Counterexample found: jagged
+Satisfies: a ___ pain, a ___ knife
+Does not satisfy: a ___ needle, a ___ mind, a ___ razor, a ___ nose, a ___ pencil, a ___ chin
+
+
+Number of implications: 14
+Number of objects: 20
+Question 13: a ___ knife, a ___ pain -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 20
+Question 14: a ___ chin, a ___ knife, a ___ nose -> a ___ arrow, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 20
+Question 15: a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 20
+Question 16: a ___ knife, a ___ needle -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 20
+Question 17: a ___ arrow, a ___ knife, a ___ needle -> a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 20
+Question 18: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil -> a ___ chin, a ___ nose, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 20
+Question 19: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 20
+Question 20: a ___ knife, a ___ pain, a ___ razor -> a ___ arrow, a ___ needle, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 20
+Question 21: a ___ knife, a ___ needle, a ___ razor -> a ___ arrow, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 20
+Question 22: a ___ arrow, a ___ knife, a ___ needle, a ___ razor -> a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 20
+Question 23: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ razor -> a ___ chin, a ___ nose, a ___ pain, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 20
+Question 24: a ___ arrow, a ___ knife, a ___ needle, a ___ razor, a ___ thorn -> a ___ pain
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 20
+Question 25: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pain, a ___ razor, a ___ thorn -> a ___ chin, a ___ nose, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 20
+Question 26: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ razor -> a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Exploring again with the words judged but not in the context: spiky, acute, incisive, stabbing, piercing, angular, beaky, pointy, barbed, prickly, sharpened, penetrating, stinging, jagged, tapered, tapering, fine, pricking, honed, whetted, wicked, cutting, jabbing, stropped, slicing
+
+
+Number of implications: 0
+Number of objects: 28
+Question 1: a ___ chin -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 28
+Question 2: a ___ nose -> a ___ chin
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 28
+Question 3: a ___ chin, a ___ mind, a ___ nose -> a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 28
+Question 4: a ___ chin, a ___ nose, a ___ pain -> a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 28
+Question 5: a ___ thorn -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 28
+Question 6: a ___ arrow, a ___ mind -> a ___ knife, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 28
+Question 7: a ___ arrow, a ___ pain -> a ___ knife, a ___ needle, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 28
+Question 8: a ___ arrow, a ___ chin, a ___ nose -> a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 28
+Question 9: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 28
+Question 10: a ___ mind, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 28
+Question 11: a ___ needle, a ___ pain -> a ___ arrow, a ___ knife, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 28
+Question 12: a ___ chin, a ___ needle, a ___ nose -> a ___ arrow, a ___ knife, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 28
+Question 13: a ___ arrow, a ___ needle -> a ___ knife, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 28
+Question 14: a ___ arrow, a ___ needle, a ___ thorn -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 28
+Question 15: a ___ razor -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 28
+Question 16: a ___ knife, a ___ mind -> a ___ arrow, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 28
+Question 17: a ___ knife, a ___ pain -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 28
+Question 18: a ___ chin, a ___ knife, a ___ nose -> a ___ arrow, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 28
+Question 19: a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 20: a ___ knife, a ___ needle -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 21: a ___ arrow, a ___ knife, a ___ needle -> a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 22: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil -> a ___ chin, a ___ nose, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 23: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 28
+Question 24: a ___ knife, a ___ pain, a ___ razor -> a ___ arrow, a ___ needle, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 25: a ___ knife, a ___ needle, a ___ razor -> a ___ arrow, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 26: a ___ arrow, a ___ knife, a ___ needle, a ___ razor -> a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 27: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ razor -> a ___ chin, a ___ nose, a ___ pain, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 28: a ___ arrow, a ___ knife, a ___ needle, a ___ razor, a ___ thorn -> a ___ pain
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 28
+Question 29: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pain, a ___ razor, a ___ thorn -> a ___ chin, a ___ nose, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 28
+Question 30: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ razor -> a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Time Elapsed:      775s
+Questions Asked:   30
+Words Judged:      28
+Claude Calls:      156 (estimated at list prices: $2.54)
+
+Rules (21, all unconfirmed):
+  [1] a ___ chin -> a ___ nose
+  [2] a ___ nose -> a ___ chin
+  [3] a ___ mind, a ___ nose -> everything
+  [4] a ___ nose, a ___ pain -> everything
+  [5] a ___ thorn -> a ___ arrow
+  [6] a ___ arrow, a ___ mind -> a ___ razor
+  [7] a ___ arrow, a ___ pain -> a ___ razor
+  [8] a ___ arrow, a ___ nose -> a ___ pencil
+  [9] a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+  [10] a ___ needle, a ___ pain -> a ___ thorn
+  [11] a ___ needle, a ___ nose -> a ___ pencil
+  [12] a ___ needle, a ___ thorn -> a ___ knife
+  [13] a ___ razor -> a ___ knife
+  [14] a ___ knife, a ___ mind -> a ___ arrow, a ___ needle
+  [15] a ___ knife, a ___ nose -> a ___ thorn
+  [16] a ___ knife, a ___ thorn -> a ___ needle
+  [17] a ___ pencil, a ___ thorn -> a ___ chin
+  [18] a ___ pain, a ___ razor -> a ___ thorn
+  [19] a ___ razor, a ___ thorn -> a ___ pain
+  [20] a ___ mind, a ___ thorn -> everything
+  [21] a ___ pencil, a ___ razor -> a ___ chin, a ___ mind
+
+c1   a ___ knife
+c2   a ___ razor
+c3   a ___ needle
+c4   a ___ pencil
+c5   a ___ arrow
+c6   a ___ thorn
+c7   a ___ nose
+c8   a ___ chin
+c9   a ___ pain
+c10  a ___ mind
+
+            c1   c2   c3   c4   c5   c6   c7   c8   c9   c10 
+sharp       +    +    +    +    +    +    +    +    +    +   
+pointed     ?    -    ?    +    +    ?    +    +    -    -   
+keen        ?    ?    -    -    -    -    -    -    +    +   
+spiky       -    -    -    -    ?    ?    ?    ?    -    -   
+acute       -    -    -    -    -    -    -    -    +    +   
+incisive    -    -    -    -    -    -    -    -    -*   +   
+stabbing    -    -    -    -    -    -    -    -    +    -   
+piercing    -*   -    -*   -    ?    ?    -    -    +    +*  
+angular     -    -    -    -    -    -    +*   +*   -    -   
+beaky       -    -    -    -    -    -    +    ?    -    -   
+pointy      +*   -    +*   +    +    +    +    +    -    -   
+barbed      -    -    -    -    +    +*   -    -    -    -   
+prickly     -    -    -    -    -    ?    -    ?    ?    -   
+sharpened   +    ?    ?    +    +    -*   -    -    -    ?   
+penetrating -    -    -    -    -*   -    -    -    +    +   
+stinging    -    -    -    -    -    -    -    -    +    -   
+jagged      +*   -    -    -    ?    ?    -*   -*   +    -   
+tapered     +*   -    +*   +*   ?    +*   +*   +*   -    -   
+tapering    +*   -    +*   ?    +*   +*   +*   +    -    -   
+fine        -*   ?    +*   ?    -    -    -    -    -    -   
+pricking    -    -    -*   -    -    ?    -    -    +    -   
+honed       +    +    ?    -    +*   -    -    -    -    +   
+whetted     +    +*   -    -    +*   -    -    -    -    ?   
+wicked      +    +*   +*   -    +*   +*   -    -    +    -*  
+cutting     -*   -    -    -    -    -    -    -    ?    -*  
+jabbing     -    -    -    -    -    -    -    -    +    -   
+stropped    +    +    -    -    -    -    -    -    -    -   
+slicing     -*   -    -    -    -    -    -    -    +*   -   
+
+Results written to /Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/results/sharp_en

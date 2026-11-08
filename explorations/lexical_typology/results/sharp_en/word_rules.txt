@@ -1,0 +1,9 @@
+piercing -> sharp
+stabbing -> acute
+incisive -> acute
+acute -> keen
+spiky -> pointed
+keen -> piercing
+incisive, stabbing -> everything
+sharp, spiky -> everything
+pointed, stabbing -> everything

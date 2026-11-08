@@ -1,0 +1,61 @@
+c1   a ___ knife
+c2   a ___ razor
+c3   a ___ needle
+c4   a ___ pencil
+c5   a ___ arrow
+c6   a ___ thorn
+c7   a ___ nose
+c8   a ___ chin
+c9   a ___ pain
+c10  a ___ mind
+c11  a witch's ___ hat   (added)
+c12  a ___ beard   (added)
+c13  a ___ whistle   (added)
+c14  a ___ gaze   (added)
+c15  a ___ scream   (added)
+c16  ___ blue eyes   (added)
+
+            c1   c2   c3   c4   c5   c6   c7   c8   c9   c10  c11  c12  c13  c14  c15  c16 
+sharp       +    +    +    +    +    +    +    +    +    +    -*   -*   +    +    +    +*  
+pointed     ?    -    ?    +    +    ?    +    +    -    -    +    +    -    +*   -    -   
+keen        ?    ?    -    -    -    -    -    -    +    +    -    -    ?    +    -    +*  
+spiky       -    -    -    -    ?    ?    ?    ?    -    -    ?    +    -    -    -    -   
+acute       -    -    -    -    -    -    -    -    +    +    -    -    -*   +*   ?    -   
+incisive    -    -    -    -    -    -    -    -    -*   +    -    -    -    +    -    ?   
+stabbing    -    -    -    -    -    -    -    -    +    -    -    -    ?    ?    ?    -   
+piercing    -*   -    -*   -    ?    ?    -    -    +    +*   -    -    +    +    +    +   
+angular     -    -    -    -    -    -    +*   +*   -    -    -    ?    -    -    -    -   
+beaky       -    -    -    -    -    -    +    ?    -    -    -    -    -    ?    -    -   
+pointy      +*   -    +*   +    +    +    +    +    -    -    +    +    -    -    -    -   
+barbed      -    -    -    -    +    +*   -    -    -    -    -    -    -    ?    -    -   
+prickly     -    -    -    -    -    ?    -    ?    ?    -    -    +    -    -    -    -   
+sharpened   +    ?    ?    +    +    -*   -    -    -    ?    -    -    -    ?    -    -   
+penetrating -    -    -    -    -*   -    -    -    +    +    -    -    +    +    +    +   
+stinging    -    -    -    -    -    -    -    -    +    -    -    -    -    ?    ?    -   
+jagged      +*   -    -    -    ?    ?    -*   -*   +    -    -    ?    -    -    ?    -   
+tapered     +*   -    +*   +*   ?    +*   +*   +*   -    -    ?    ?    -    -    -    -   
+tapering    +*   -    +*   ?    +*   +*   +*   +    -    -    ?    ?    -    -    -    -   
+fine        -*   ?    +*   ?    -    -    -    -    -    -    -    ?    -    -    -    -   
+pricking    -    -    -*   -    -    ?    -    -    +    -    -    ?    -    -    -    -   
+honed       +    +    ?    -    +*   -    -    -    -    +    -    -    -    ?    -    -   
+whetted     +    +*   -    -    +*   -    -    -    -    ?    -    -    -    -    -    -   
+wicked      +    +*   +*   -    +*   +*   -    -    +    -*   -    -    -    ?    -    -   
+cutting     -*   -    -    -    -    -    -    -    ?    -*   -    -    ?    ?    ?    ?   
+jabbing     -    -    -    -    -    -    -    -    +    -    -    -    ?    ?    ?    -   
+stropped    +    +    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
+slicing     -*   -    -    -    -    -    -    -    +*   -    -    -    ?    ?    ?    -   
+shrewd      -    -    -    -    -    -    -    -    -*   +    -    -    -    +    -    +   
+shrill      -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
+bristly     -    -    -    -    -    -    -    +*   -    -    -    ?    -    -    -    -   
+scratchy    -    -    -    -    -    -    -    -    -    -    -    +*   -    -    -    -   
+conical     -    -    -    -*   -    +*   -    -    -    -    +    -*   -    -    -    -   
+peaked      -    -    -    -    -    -    ?    -*   -    -    +    ?    -    -    -    -   
+astute      -    -    -    -    -    -    -    -    -    +    -    -    -    +*   -    ?   
+canny       -    -    -    -    -    -    -    -    -    +    -    -    -    +*   -    ?   
+searing     -    -    -    -    -    -    -    -    +    -    -    -    ?    +*   ?    ?   
+prickling   -    -    -    -    -    -*   -    -    +*   -    -    -*   -    ?    -    -   
+stubbly     -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
+spiked      -*   -    -    -    -*   -    -    -    -    -    -*   +*   -    -    -    -   
+trenchant   -    -    -    -    -    -    -    -    -    ?    -    -    -    ?    -    -   
+probing     -    -    -    -    -    -    -    -    -    ?    -    -    -    ?    -    ?   
+vicious     +*   ?    -    -    ?    +*   -    -    ?    -    -    -    -    -    -    -   

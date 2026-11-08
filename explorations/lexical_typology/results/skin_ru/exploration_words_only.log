@@ -1,0 +1,785 @@
+Field:    nouns naming the outer covering of a body, a fruit, a vegetable, a plant or a food: skin, peel, rind, shell, bark, crust (Russian nouns)
+Contexts: 12; seed words: кожа, кожура, корка, скорлупа, кора
+Judge:    sonnet, 3 votes; referee: opus; proposer: opus, 2 words per question
+Limits:   60 words, 100 proposals
+
+Number of implications: 0
+Number of objects: 5
+Question 1: ___ человека -> ___ апельсина, ___ змеи, ___ медведя, ___ черепахи, ___ яблока
+Counterexample found: шкура
+Satisfies: ___ медведя, ___ змеи, ___ человека
+Does not satisfy: ___ лука, ___ дерева, ___ яйца, ___ ореха, ___ яблока, ___ хлеба, ___ арбуза, ___ апельсина
+
+
+Number of implications: 0
+Number of objects: 6
+Question 2: ___ человека -> ___ змеи, ___ медведя, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 6
+Question 3: ___ медведя -> ___ змеи, ___ человека, ___ черепахи
+Counterexample found: мех
+Satisfies: ___ медведя
+Does not satisfy: ___ лука, ___ дерева, ___ яйца, ___ ореха, ___ человека, ___ змеи, ___ яблока, ___ хлеба, ___ арбуза, ___ апельсина, ___ черепахи
+
+
+Number of implications: 1
+Number of objects: 7
+Question 4: ___ черепахи -> ___ апельсина, ___ змеи, ___ медведя, ___ человека, ___ яблока
+Counterexample found: панцирь
+Satisfies: ___ черепахи
+Does not satisfy: ___ лука, ___ дерева, ___ яйца, ___ медведя, ___ человека, ___ змеи, ___ яблока, ___ хлеба, ___ арбуза, ___ апельсина
+
+
+Number of implications: 1
+Number of objects: 8
+Question 5: ___ медведя, ___ черепахи -> ___ апельсина, ___ змеи, ___ человека, ___ яблока
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 8
+Question 6: ___ змеи -> ___ медведя, ___ человека, ___ черепахи
+Counterexample found: чешуя
+Satisfies: ___ змеи
+Does not satisfy: ___ яйца, ___ ореха, ___ медведя, ___ человека, ___ яблока, ___ хлеба, ___ арбуза, ___ апельсина
+
+
+Number of implications: 1
+Number of objects: 9
+Question 7: ___ змеи -> ___ черепахи
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 9
+Question 8: ___ змеи, ___ медведя, ___ черепахи -> ___ апельсина, ___ человека, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 9
+Question 9: ___ змеи, ___ медведя, ___ человека, ___ черепахи -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 9
+Question 10: ___ хлеба -> ___ апельсина, ___ арбуза, ___ яблока
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 9
+Question 11: ___ дерева -> ___ апельсина, ___ арбуза, ___ ореха
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 9
+Question 12: ___ ореха -> ___ арбуза, ___ черепахи, ___ яйца
+Counterexample found: шелуха
+Satisfies: ___ лука, ___ ореха
+Does not satisfy: ___ дерева, ___ яйца, ___ медведя, ___ человека, ___ змеи, ___ хлеба, ___ яблока, ___ арбуза, ___ черепахи
+
+
+Number of implications: 4
+Number of objects: 10
+Question 13: ___ медведя, ___ ореха -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 10
+Question 14: ___ ореха, ___ черепахи -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 10
+Question 15: ___ яйца -> ___ арбуза, ___ ореха, ___ черепахи
+Counterexample found: оболочка
+Satisfies: ___ яйца, ___ ореха
+Does not satisfy: ___ дерева, ___ медведя, ___ змеи, ___ хлеба, ___ черепахи, ___ арбуза
+
+
+Number of implications: 6
+Number of objects: 11
+Question 16: ___ яйца -> ___ ореха
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 11
+Question 17: ___ лука -> ___ апельсина, ___ ореха
+Counterexample found: очистки
+Satisfies: ___ лука, ___ апельсина
+Does not satisfy: ___ дерева, ___ яйца, ___ ореха, ___ медведя, ___ человека, ___ змеи, ___ хлеба, ___ черепахи
+
+
+Number of implications: 7
+Number of objects: 12
+Question 18: ___ лука -> ___ апельсина
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 12
+Question 19: ___ арбуза -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 12
+Question 20: ___ арбуза, ___ медведя -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 12
+Question 21: ___ арбуза, ___ черепахи -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 12
+Question 22: ___ арбуза, ___ ореха -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 12
+Question 23: ___ арбуза, ___ ореха, ___ яйца -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 12
+Question 24: ___ яблока -> ___ апельсина, ___ арбуза, ___ лука, ___ ореха
+Counterexample found: кожица
+Satisfies: ___ лука, ___ ореха, ___ яйца, ___ яблока
+Does not satisfy: ___ дерева, ___ медведя, ___ змеи, ___ хлеба, ___ черепахи, ___ арбуза
+
+
+Number of implications: 11
+Number of objects: 13
+Question 25: ___ яблока -> ___ апельсина, ___ лука, ___ ореха
+Counterexample found: шкурка
+Satisfies: ___ лука, ___ змеи, ___ апельсина, ___ яблока
+Does not satisfy: ___ дерева, ___ яйца, ___ ореха, ___ человека, ___ хлеба, ___ черепахи
+
+
+шкурка refutes the unconfirmed ___ змеи -> ___ черепахи; resuming
+
+
+Number of implications: 1
+Number of objects: 14
+Question 1: ___ змеи, ___ медведя -> ___ человека, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 14
+Question 2: ___ змеи, ___ черепахи -> ___ апельсина, ___ медведя, ___ человека, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 14
+Question 3: ___ змеи, ___ медведя, ___ человека, ___ черепахи -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 14
+Question 4: ___ хлеба -> ___ апельсина, ___ арбуза, ___ яблока
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 14
+Question 5: ___ дерева -> ___ апельсина, ___ арбуза, ___ ореха
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 14
+Question 6: ___ медведя, ___ ореха -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 14
+Question 7: ___ ореха, ___ черепахи -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 14
+Question 8: ___ змеи, ___ ореха -> ___ апельсина, ___ арбуза, ___ дерева, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 14
+Question 9: ___ яйца -> ___ ореха
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 14
+Question 10: ___ лука -> ___ апельсина
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 14
+Question 11: ___ арбуза -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 14
+Question 12: ___ арбуза, ___ медведя -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 14
+Question 13: ___ арбуза, ___ черепахи -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 14
+Question 14: ___ арбуза, ___ змеи -> ___ апельсина, ___ дерева, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 14
+Question 15: ___ арбуза, ___ ореха -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 14
+Question 16: ___ арбуза, ___ ореха, ___ яйца -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 14
+Question 17: ___ яблока -> ___ апельсина, ___ лука
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 14
+Question 18: ___ медведя, ___ яблока -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 14
+Question 19: ___ черепахи, ___ яблока -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яйца
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 14
+Question 20: ___ змеи, ___ яблока -> ___ апельсина, ___ арбуза, ___ лука, ___ медведя
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 14
+Question 21: ___ ореха, ___ яблока -> ___ апельсина, ___ лука, ___ человека, ___ яйца
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 14
+Question 22: ___ ореха, ___ яблока, ___ яйца -> ___ апельсина, ___ лука, ___ человека
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 14
+Question 23: ___ арбуза, ___ яблока -> ___ апельсина, ___ лука, ___ ореха
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 14
+Question 24: ___ арбуза, ___ ореха, ___ яблока -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 14
+Question 25: ___ апельсина -> ___ арбуза
+Counterexample found: плёнка
+Satisfies: ___ лука, ___ яйца, ___ апельсина, ___ ореха
+Does not satisfy: ___ дерева, ___ медведя, ___ человека, ___ змеи, ___ хлеба, ___ яблока, ___ арбуза, ___ черепахи
+
+
+Number of implications: 16
+Number of objects: 15
+Question 26: ___ апельсина, ___ медведя -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 15
+Question 27: ___ апельсина, ___ черепахи -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 28: ___ апельсина, ___ змеи -> ___ арбуза, ___ лука, ___ медведя, ___ яблока
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 29: ___ апельсина, ___ ореха -> ___ лука, ___ яйца
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 30: ___ апельсина, ___ ореха, ___ яйца -> ___ лука
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 31: ___ апельсина, ___ змеи, ___ лука -> ___ арбуза, ___ медведя, ___ яблока
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 32: ___ апельсина, ___ лука, ___ ореха -> ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 33: ___ апельсина, ___ арбуза -> ___ яблока
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 34: ___ апельсина, ___ арбуза, ___ ореха -> ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 35: ___ апельсина, ___ арбуза, ___ дерева, ___ ореха -> ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 36: ___ апельсина, ___ арбуза, ___ лука -> ___ дерева, ___ змеи, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 37: ___ апельсина, ___ яблока -> ___ арбуза, ___ лука
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 38: ___ апельсина, ___ змеи, ___ яблока -> ___ арбуза, ___ лука, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 39: ___ апельсина, ___ ореха, ___ яблока -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 40: ___ апельсина, ___ лука, ___ яблока -> ___ арбуза, ___ змеи, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 41: ___ апельсина, ___ змеи, ___ лука, ___ яблока -> ___ арбуза, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 42: ___ апельсина, ___ лука, ___ ореха, ___ яблока -> ___ арбуза, ___ дерева, ___ змеи, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 43: ___ апельсина, ___ лука, ___ ореха, ___ яблока, ___ яйца -> ___ арбуза, ___ дерева, ___ змеи, ___ медведя, ___ хлеба, ___ человека, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 44: ___ апельсина, ___ арбуза, ___ яблока -> ___ лука, ___ ореха
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 45: ___ апельсина, ___ арбуза, ___ хлеба, ___ яблока -> ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Exploring again with the words judged but not in the context: шкура, мех, панцирь, чешуя, шелуха, оболочка, плёнка, очистки, кожица, шкурка
+
+
+Number of implications: 0
+Number of objects: 15
+Question 1: ___ человека -> ___ змеи, ___ медведя, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 15
+Question 2: ___ медведя, ___ черепахи -> ___ апельсина, ___ змеи, ___ человека, ___ яблока
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 15
+Question 3: ___ змеи, ___ медведя -> ___ человека, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 15
+Question 4: ___ змеи, ___ черепахи -> ___ апельсина, ___ медведя, ___ человека, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 15
+Question 5: ___ змеи, ___ медведя, ___ человека, ___ черепахи -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 15
+Question 6: ___ хлеба -> ___ апельсина, ___ арбуза, ___ яблока
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 15
+Question 7: ___ дерева -> ___ апельсина, ___ арбуза, ___ ореха
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 15
+Question 8: ___ медведя, ___ ореха -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 15
+Question 9: ___ ореха, ___ черепахи -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 15
+Question 10: ___ змеи, ___ ореха -> ___ апельсина, ___ арбуза, ___ дерева, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 15
+Question 11: ___ яйца -> ___ ореха
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 15
+Question 12: ___ лука -> ___ апельсина
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 15
+Question 13: ___ арбуза -> ___ апельсина, ___ яблока
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 15
+Question 14: ___ арбуза, ___ медведя -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 15
+Question 15: ___ арбуза, ___ черепахи -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 15
+Question 16: ___ арбуза, ___ змеи -> ___ апельсина, ___ дерева, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 15
+Question 17: ___ арбуза, ___ ореха -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 15
+Question 18: ___ арбуза, ___ ореха, ___ яйца -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 15
+Question 19: ___ яблока -> ___ апельсина, ___ лука
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 15
+Question 20: ___ медведя, ___ яблока -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 15
+Question 21: ___ черепахи, ___ яблока -> ___ апельсина, ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яйца
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 15
+Question 22: ___ змеи, ___ яблока -> ___ апельсина, ___ арбуза, ___ лука, ___ медведя
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 15
+Question 23: ___ ореха, ___ яблока -> ___ апельсина, ___ лука, ___ человека, ___ яйца
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 15
+Question 24: ___ ореха, ___ яблока, ___ яйца -> ___ апельсина, ___ лука, ___ человека
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 15
+Question 25: ___ арбуза, ___ яблока -> ___ апельсина, ___ лука, ___ ореха
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 15
+Question 26: ___ арбуза, ___ ореха, ___ яблока -> ___ апельсина, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 15
+Question 27: ___ апельсина, ___ медведя -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 15
+Question 28: ___ апельсина, ___ черепахи -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 29: ___ апельсина, ___ змеи -> ___ арбуза, ___ лука, ___ медведя, ___ яблока
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 30: ___ апельсина, ___ ореха -> ___ лука, ___ яйца
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 15
+Question 31: ___ апельсина, ___ ореха, ___ яйца -> ___ лука
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 32: ___ апельсина, ___ змеи, ___ лука -> ___ арбуза, ___ медведя, ___ яблока
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 33: ___ апельсина, ___ лука, ___ ореха -> ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 34: ___ апельсина, ___ арбуза -> ___ яблока
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 35: ___ апельсина, ___ арбуза, ___ ореха -> ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 36: ___ апельсина, ___ арбуза, ___ дерева, ___ ореха -> ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 15
+Question 37: ___ апельсина, ___ арбуза, ___ лука -> ___ дерева, ___ змеи, ___ медведя, ___ ореха, ___ хлеба, ___ человека, ___ черепахи, ___ яблока, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 38: ___ апельсина, ___ яблока -> ___ арбуза, ___ лука
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 39: ___ апельсина, ___ змеи, ___ яблока -> ___ арбуза, ___ лука, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 40: ___ апельсина, ___ ореха, ___ яблока -> ___ арбуза, ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 41: ___ апельсина, ___ лука, ___ яблока -> ___ арбуза, ___ змеи, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 42: ___ апельсина, ___ змеи, ___ лука, ___ яблока -> ___ арбуза, ___ медведя
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 43: ___ апельсина, ___ лука, ___ ореха, ___ яблока -> ___ арбуза, ___ дерева, ___ змеи, ___ медведя, ___ хлеба, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 44: ___ апельсина, ___ лука, ___ ореха, ___ яблока, ___ яйца -> ___ арбуза, ___ дерева, ___ змеи, ___ медведя, ___ хлеба, ___ человека, ___ черепахи
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 45: ___ апельсина, ___ арбуза, ___ яблока -> ___ лука, ___ ореха
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 15
+Question 46: ___ апельсина, ___ арбуза, ___ хлеба, ___ яблока -> ___ дерева, ___ змеи, ___ лука, ___ медведя, ___ ореха, ___ человека, ___ черепахи, ___ яйца
+Unconfirmed
+
+
+Time Elapsed:      570s
+Questions Asked:   46
+Words Judged:      15
+Claude Calls:      109 (estimated at list prices: $1.85)
+
+Rules (20, all unconfirmed):
+  [1] ___ человека -> ___ змеи, ___ медведя
+  [2] ___ змеи, ___ медведя -> ___ человека, ___ черепахи
+  [3] ___ хлеба -> ___ апельсина, ___ арбуза, ___ яблока
+  [4] ___ дерева -> ___ апельсина, ___ арбуза, ___ ореха
+  [5] ___ медведя, ___ ореха -> everything
+  [6] ___ ореха, ___ черепахи -> everything
+  [7] ___ змеи, ___ ореха -> everything
+  [8] ___ яйца -> ___ ореха
+  [9] ___ лука -> ___ апельсина
+  [10] ___ арбуза, ___ медведя -> everything
+  [11] ___ арбуза, ___ черепахи -> everything
+  [12] ___ арбуза, ___ змеи -> ___ хлеба, ___ человека
+  [13] ___ арбуза, ___ яйца -> everything
+  [14] ___ медведя, ___ яблока -> everything
+  [15] ___ черепахи, ___ яблока -> everything
+  [16] ___ арбуза, ___ ореха, ___ яблока -> everything
+  [17] ___ апельсина, ___ медведя -> everything
+  [18] ___ апельсина, ___ черепахи -> everything
+  [19] ___ апельсина, ___ яйца -> ___ лука
+  [20] ___ арбуза, ___ лука -> ___ дерева, ___ человека
+
+c1   ___ апельсина
+c2   ___ яблока
+c3   ___ арбуза
+c4   ___ лука
+c5   ___ яйца
+c6   ___ ореха
+c7   ___ дерева
+c8   ___ хлеба
+c9   ___ змеи
+c10  ___ черепахи
+c11  ___ медведя
+c12  ___ человека
+
+         c1   c2   c3   c4   c5   c6   c7   c8   c9   c10  c11  c12 
+кожа     ?    ?    -    -    -    -    -    -    +    +    +    +   
+кожура   +    +    +    ?    -    ?    -    -    -    -    -    -   
+корка    +    ?    +    -    -    -    -    +    -    -    -    -   
+скорлупа -    -    ?    -    +    +    -    -    -    ?    -    -   
+кора     +    -    ?    -    -    ?    +    -    -    -    -    -   
+шкура    -    -    -    -    -    -    -    -    +    ?    +    +*  
+мех      -    -    -    -    -    -    -    -    -    -    +    -   
+панцирь  -    -    -    -    -    ?    -    -    -    +    -    -   
+чешуя    -    -    -    ?    -    -    ?    -    +    ?    -    -   
+шелуха   ?    -    -    +    -    +*   -    -    -    -    -    -   
+оболочка ?    ?    -    ?    +    +*   -    -    -    -    -    ?   
+плёнка   +*   -    -    +*   +*   +*   -    -    -    -    -    -   
+очистки  +*   ?    ?    +    -    -    -    -    -    -    -    -   
+кожица   ?    +    -*   +    +    +    -    -    -    -    -    ?   
+шкурка   +    +*   ?    +*   -    -    -    -    +    -    ?    -   
+
+Results written to /Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/results/skin_ru

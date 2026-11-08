@@ -1,0 +1,12 @@
+a ___ chin -> a ___ nose
+a ___ mind, a ___ nose -> a ___ needle, a ___ pain
+a ___ thorn -> a ___ knife
+a ___ arrow, a ___ chin -> a ___ pencil, a ___ thorn
+a ___ pencil -> a ___ arrow, a ___ knife
+a ___ needle -> a ___ razor
+a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+a ___ knife, a ___ mind -> a ___ needle
+a ___ knife, a ___ nose -> a ___ needle
+a ___ pain, a ___ razor, a ___ thorn -> everything
+a ___ nose, a ___ pain, a ___ pencil -> a ___ chin, a ___ mind
+a ___ mind, a ___ pencil, a ___ thorn -> everything

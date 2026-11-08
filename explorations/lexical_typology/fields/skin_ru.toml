@@ -1,0 +1,19 @@
+# Russian nouns for outer coverings (skin, peel, rind, shell, bark, crust), with possessors as the contexts.
+language = "Russian"
+part_of_speech = "noun"
+description = "nouns naming the outer covering of a body, a fruit, a vegetable, a plant or a food: skin, peel, rind, shell, bark, crust"
+contexts = [
+    "___ апельсина",
+    "___ яблока",
+    "___ арбуза",
+    "___ лука",
+    "___ яйца",
+    "___ ореха",
+    "___ дерева",
+    "___ хлеба",
+    "___ змеи",
+    "___ черепахи",
+    "___ медведя",
+    "___ человека",
+]
+words = ["кожа", "кожура", "корка", "скорлупа", "кора"]

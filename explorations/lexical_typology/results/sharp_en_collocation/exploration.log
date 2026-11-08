@@ -1,0 +1,89 @@
+Field:    sharpness: objects with an edge or a point that can cut or prick, sharp shapes, and the extensions of these meanings (English adjectives)
+Contexts: 10; seed words: sharp, pointed, keen
+Judge:    sonnet, 3 votes; proposer: opus
+Limits:   50 words, 100 proposals
+
+Time Elapsed:      0s
+Questions Asked:   49
+Words Judged:      50
+Claude Calls:      0 (reported cost $0.00)
+Not Searched:      42 questions, accepted once a limit was reached without searching for new words
+
+Rules (12, all unconfirmed):
+  [1] a ___ chin -> a ___ nose
+  [2] a ___ mind, a ___ nose -> a ___ needle, a ___ pain
+  [3] a ___ thorn -> a ___ knife
+  [4] a ___ arrow, a ___ chin -> a ___ pencil, a ___ thorn
+  [5] a ___ pencil -> a ___ arrow, a ___ knife
+  [6] a ___ needle -> a ___ razor
+  [7] a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+  [8] a ___ knife, a ___ mind -> a ___ needle
+  [9] a ___ knife, a ___ nose -> a ___ needle
+  [10] a ___ pain, a ___ razor, a ___ thorn -> everything
+  [11] a ___ nose, a ___ pain, a ___ pencil -> a ___ chin, a ___ mind
+  [12] a ___ mind, a ___ pencil, a ___ thorn -> everything
+
+c1   a ___ knife
+c2   a ___ razor
+c3   a ___ needle
+c4   a ___ pencil
+c5   a ___ arrow
+c6   a ___ thorn
+c7   a ___ nose
+c8   a ___ chin
+c9   a ___ pain
+c10  a ___ mind
+
+              c1   c2   c3   c4   c5   c6   c7   c8   c9   c10 
+sharp         +    +    +    +    +    +    ?    +    +    +   
+pointed       ?    -    -    ?    ?    ?    +    +    -    -   
+keen          +    +    ?    -    ?    -    +    -    ?    +   
+jagged        +    -    -    -    ?    ?    ?    -    ?    -   
+serrated      +    ?    -    -    ?    -    -    -    -    -   
+barbed        -    -    ?    -    +    -    -    -    -    -   
+spiky         -    -    -    -    -    ?    ?    ?    -    -   
+prickly       -    -    -    -    -    ?    ?    +    -    -   
+acute         -    -    -    -    -    -    ?    -    +    +   
+incisive      -    -    -    -    -    -    -    -    -    +   
+razor-sharp   +    ?    ?    ?    +    +    -    ?    ?    +   
+penetrating   ?    -    -    -    ?    -    -    -    +    +   
+dull          +    +    +    +    ?    ?    -    -    +    +   
+stabbing      ?    -    -    -    -    -    -    -    +    -   
+piercing      -    -    -    -    ?    ?    -    -    +    ?   
+knifelike     -    -    -    ?    ?    ?    +    +    +    ?   
+cutting       ?    -    -    -    -    -    -    -    ?    -   
+stinging      -    -    -    -    -    ?    ?    ?    +    -   
+snub          ?    -    ?    ?    ?    -    +    -    -    -   
+hooked        +    ?    +    -    ?    +    +    ?    -    -   
+beaky         -    -    -    -    -    -    +    ?    -    -   
+fine          ?    ?    +    ?    ?    ?    ?    ?    -    +   
+blunt         +    +    +    +    +    ?    ?    ?    -    -   
+needle-sharp  ?    ?    -    +    ?    +    ?    ?    +    ?   
+needlelike    ?    -    -    ?    ?    ?    ?    ?    ?    -   
+pricking      -    -    ?    -    -    ?    -    -    +    -   
+recurved      ?    -    ?    -    -    +    ?    -    -    -   
+tapering      ?    -    ?    ?    ?    ?    ?    +    -    -   
+subulate      -    -    -    -    -    ?    -    -    -    -   
+acicular      -    -    ?    -    -    ?    ?    ?    -    -   
+pungent       -    -    -    -    -    -    -    -    ?    -   
+barbless      -    -    ?    -    +    -    -    -    -    -   
+forked        -    -    -    -    ?    ?    -    ?    -    -   
+bladed        ?    ?    -    -    ?    -    -    -    -    -   
+broadheaded   -    -    -    -    ?    -    -    -    -    -   
+flint-tipped  ?    -    -    -    +    -    -    -    -    -   
+sharpened     +    ?    ?    +    +    ?    -    -    -    ?   
+honed         +    +    ?    -    ?    -    -    -    -    +   
+blunted       +    +    +    +    +    ?    ?    -    ?    ?   
+dulled        +    +    +    +    ?    -    -    -    ?    +   
+angular       -    -    -    -    -    -    +    +    -    -   
+chiseled      -    -    -    -    -    -    ?    +    -    -   
+craggy        -    -    -    -    -    -    +    +    -    -   
+pointy        +    ?    ?    +    +    +    +    +    -    -   
+tapered       ?    ?    ?    ?    ?    ?    +    +    -    -   
+stubby        +    ?    ?    +    ?    ?    +    ?    -    -   
+sharp-pointed +    -    ?    +    +    +    ?    ?    -    -   
+sharp-tipped  +    ?    ?    +    +    +    ?    ?    -    -   
+fine-pointed  +    ?    +    +    ?    ?    ?    ?    -    -   
+blunt-tipped  +    ?    +    +    +    ?    ?    -    -    -   
+
+Results written to /Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/results/sharp_en

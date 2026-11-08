@@ -1,0 +1,283 @@
+Field:    sharpness: objects with an edge or a point that can cut or prick, sharp shapes, and the extensions of these meanings (English adjectives)
+Contexts: 10; seed words: sharp, pointed, keen
+Judge:    sonnet, 3 votes; proposer: opus
+Limits:   50 words, 100 proposals
+
+Number of implications: 0
+Number of objects: 40
+Question 1: a ___ chin -> a ___ nose, a ___ thorn
+Counterexample found: angular
+Satisfies: a ___ chin, a ___ nose
+Does not satisfy: a ___ pain, a ___ razor, a ___ knife, a ___ needle, a ___ arrow, a ___ mind, a ___ thorn, a ___ pencil
+
+
+Number of implications: 0
+Number of objects: 41
+Question 2: a ___ chin -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 42
+Question 3: a ___ mind, a ___ nose -> a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ razor
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 42
+Question 4: a ___ nose, a ___ pain -> a ___ arrow, a ___ chin, a ___ mind, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 42
+Question 5: a ___ thorn -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 42
+Question 6: a ___ arrow, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 42
+Question 7: a ___ arrow, a ___ pain -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 42
+Question 8: a ___ arrow, a ___ nose -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Counterexample found: pointy
+Satisfies: a ___ chin, a ___ knife, a ___ arrow, a ___ thorn, a ___ pencil, a ___ nose
+Does not satisfy: a ___ pain, a ___ mind
+
+
+Number of implications: 6
+Number of objects: 43
+Question 9: a ___ arrow, a ___ nose -> a ___ chin, a ___ knife, a ___ needle, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 43
+Question 10: a ___ pencil -> a ___ arrow, a ___ knife, a ___ razor
+Counterexample found: sharp-pointed
+Satisfies: a ___ knife, a ___ thorn, a ___ pencil, a ___ arrow
+Does not satisfy: a ___ pain, a ___ razor, a ___ mind
+
+
+Number of implications: 7
+Number of objects: 44
+Question 11: a ___ pencil -> a ___ arrow, a ___ knife
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 45
+Question 12: a ___ needle -> a ___ arrow, a ___ knife, a ___ razor
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 46
+Question 13: a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 46
+Question 14: a ___ knife -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 46
+Question 15: a ___ arrow, a ___ knife, a ___ thorn -> a ___ chin, a ___ needle, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 47
+Question 16: a ___ arrow, a ___ knife, a ___ pencil -> a ___ needle, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 48
+Question 17: a ___ arrow, a ___ knife, a ___ needle, a ___ razor -> a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Exploring again with the words judged but not in the context: angular, chiseled, craggy, pointy, tapered, stubby, sharp-pointed, sharp-tipped, fine-pointed, blunt-tipped
+
+
+Number of implications: 0
+Number of objects: 50
+Question 1: a ___ chin -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 50
+Question 2: a ___ mind, a ___ nose -> a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ razor
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 50
+Question 3: a ___ nose, a ___ pain -> a ___ arrow, a ___ chin, a ___ mind, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 50
+Question 4: a ___ thorn -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 50
+Question 5: a ___ arrow, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 50
+Question 6: a ___ arrow, a ___ pain -> a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 50
+Question 7: a ___ arrow, a ___ nose -> a ___ chin, a ___ knife, a ___ needle, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 50
+Question 8: a ___ pencil -> a ___ arrow, a ___ knife
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 50
+Question 9: a ___ needle -> a ___ arrow, a ___ knife, a ___ razor
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 50
+Question 10: a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 50
+Question 11: a ___ knife -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 50
+Question 12: a ___ arrow, a ___ knife, a ___ thorn -> a ___ chin, a ___ needle, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 50
+Question 13: a ___ arrow, a ___ knife, a ___ pencil -> a ___ needle, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 50
+Question 14: a ___ arrow, a ___ knife, a ___ needle, a ___ razor -> a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Time Elapsed:      80s
+Questions Asked:   14
+Words Judged:      50
+Claude Calls:      33 (reported cost $0.35)
+Not Searched:      14 questions, accepted once a limit was reached without searching for new words
+
+Rules (11, all unconfirmed):
+  [1] a ___ chin -> a ___ nose
+  [2] a ___ mind, a ___ nose -> everything
+  [3] a ___ nose, a ___ pain -> everything
+  [4] a ___ arrow, a ___ mind -> everything
+  [5] a ___ arrow, a ___ pain -> a ___ mind, a ___ thorn
+  [6] a ___ arrow, a ___ nose -> a ___ thorn
+  [7] a ___ needle -> a ___ thorn
+  [8] a ___ knife -> a ___ arrow
+  [9] a ___ thorn -> a ___ pencil
+  [10] a ___ pencil -> a ___ razor
+  [11] a ___ razor -> a ___ chin, a ___ knife, a ___ needle
+
+c1   a ___ knife
+c2   a ___ razor
+c3   a ___ needle
+c4   a ___ pencil
+c5   a ___ arrow
+c6   a ___ thorn
+c7   a ___ nose
+c8   a ___ chin
+c9   a ___ pain
+c10  a ___ mind
+
+              c1   c2   c3   c4   c5   c6   c7   c8   c9   c10 
+sharp         +    +    +    +    +    +    ?    +    +    +   
+pointed       ?    -    -    ?    ?    ?    +    +    -    -   
+keen          +    +    ?    -    ?    -    +    -    ?    +   
+jagged        +    -    -    -    ?    ?    ?    -    ?    -   
+serrated      +    ?    -    -    ?    -    -    -    -    -   
+barbed        -    -    ?    -    +    -    -    -    -    -   
+spiky         -    -    -    -    -    ?    ?    ?    -    -   
+prickly       -    -    -    -    -    ?    ?    +    -    -   
+acute         -    -    -    -    -    -    ?    -    +    +   
+incisive      -    -    -    -    -    -    -    -    -    +   
+razor-sharp   +    ?    ?    ?    +    +    -    ?    ?    +   
+penetrating   ?    -    -    -    ?    -    -    -    +    +   
+dull          +    +    +    +    ?    ?    -    -    +    +   
+stabbing      ?    -    -    -    -    -    -    -    +    -   
+piercing      -    -    -    -    ?    ?    -    -    +    ?   
+knifelike     -    -    -    ?    ?    ?    +    +    +    ?   
+cutting       ?    -    -    -    -    -    -    -    ?    -   
+stinging      -    -    -    -    -    ?    ?    ?    +    -   
+snub          ?    -    ?    ?    ?    -    +    -    -    -   
+hooked        +    ?    +    -    ?    +    +    ?    -    -   
+beaky         -    -    -    -    -    -    +    ?    -    -   
+fine          ?    ?    +    ?    ?    ?    ?    ?    -    +   
+blunt         +    +    +    +    +    ?    ?    ?    -    -   
+needle-sharp  ?    ?    -    +    ?    +    ?    ?    +    ?   
+needlelike    ?    -    -    ?    ?    ?    ?    ?    ?    -   
+pricking      -    -    ?    -    -    ?    -    -    +    -   
+recurved      ?    -    ?    -    -    +    ?    -    -    -   
+tapering      ?    -    ?    ?    ?    ?    ?    +    -    -   
+subulate      -    -    -    -    -    ?    -    -    -    -   
+acicular      -    -    ?    -    -    ?    ?    ?    -    -   
+pungent       -    -    -    -    -    -    -    -    ?    -   
+barbless      -    -    ?    -    +    -    -    -    -    -   
+forked        -    -    -    -    ?    ?    -    ?    -    -   
+bladed        ?    ?    -    -    ?    -    -    -    -    -   
+broadheaded   -    -    -    -    ?    -    -    -    -    -   
+flint-tipped  ?    -    -    -    +    -    -    -    -    -   
+sharpened     +    ?    ?    +    +    ?    -    -    -    ?   
+honed         +    +    ?    -    ?    -    -    -    -    +   
+blunted       +    +    +    +    +    ?    ?    -    ?    ?   
+dulled        +    +    +    +    ?    -    -    -    ?    +   
+angular       -    -    -    -    -    -    +    +    -    -   
+chiseled      -    -    -    -    -    -    ?    +    -    -   
+craggy        -    -    -    -    -    -    +    +    -    -   
+pointy        +    ?    ?    +    +    +    +    +    -    -   
+tapered       ?    ?    ?    ?    ?    ?    +    +    -    -   
+stubby        +    ?    ?    +    ?    ?    +    ?    -    -   
+sharp-pointed +    -    ?    +    +    +    ?    ?    -    -   
+sharp-tipped  +    ?    ?    +    +    +    ?    ?    -    -   
+fine-pointed  +    ?    +    +    ?    ?    ?    ?    -    -   
+blunt-tipped  +    ?    +    +    +    ?    ?    -    -    -   
+
+Results written to /Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/results/sharp_en

@@ -1,0 +1,41 @@
+___ blue eyes -> a ___ mind
+a ___ scream -> a ___ whistle
+a ___ whistle -> ___ blue eyes, a ___ pain, a ___ scream
+a ___ beard, a ___ gaze -> a ___ pencil
+a ___ gaze, a witch's ___ hat -> a ___ pencil
+a ___ beard, a witch's ___ hat -> a ___ pencil
+a ___ mind -> a ___ gaze
+a ___ beard, a ___ pain -> everything
+a ___ pain, a witch's ___ hat -> everything
+a ___ chin, a ___ gaze -> a ___ pencil
+a ___ beard, a ___ chin -> a ___ pencil
+a ___ chin, a witch's ___ hat -> a ___ pencil
+a ___ chin, a ___ pain -> a ___ scream
+a ___ nose -> a ___ chin
+a ___ beard, a ___ thorn -> a ___ pencil
+a ___ mind, a ___ thorn -> a ___ scream
+a ___ pain, a ___ thorn -> a ___ razor
+a ___ chin, a ___ thorn -> a ___ pencil
+a ___ arrow, a ___ beard -> a ___ pencil
+a ___ arrow, a witch's ___ hat -> a ___ pencil
+___ blue eyes, a ___ arrow -> a ___ scream
+a ___ arrow, a ___ pain -> a ___ razor
+a ___ arrow, a ___ chin -> a ___ pencil
+a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+a ___ beard, a ___ needle -> a ___ pencil
+a ___ needle, a witch's ___ hat -> a ___ pencil
+a ___ mind, a ___ needle -> a ___ scream
+a ___ needle, a ___ pain -> a ___ razor
+a ___ chin, a ___ needle -> a ___ pencil
+a ___ needle, a ___ thorn -> a ___ knife
+a ___ razor -> a ___ knife
+a ___ beard, a ___ knife -> a witch's ___ hat
+a ___ knife, a witch's ___ hat -> a ___ beard, a ___ nose
+___ blue eyes, a ___ knife -> a ___ scream
+a ___ knife, a ___ mind, a ___ pain -> a ___ pencil
+a ___ chin, a ___ knife -> a ___ thorn
+a ___ knife, a ___ thorn -> a ___ arrow
+a ___ pencil, a ___ thorn -> a ___ nose
+a ___ pain, a ___ razor -> a ___ thorn
+a ___ razor, a ___ thorn -> a ___ needle
+a ___ needle, a ___ razor -> a ___ gaze, a ___ pain

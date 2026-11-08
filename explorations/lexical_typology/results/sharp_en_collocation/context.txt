@@ -1,0 +1,62 @@
+c1   a ___ knife
+c2   a ___ razor
+c3   a ___ needle
+c4   a ___ pencil
+c5   a ___ arrow
+c6   a ___ thorn
+c7   a ___ nose
+c8   a ___ chin
+c9   a ___ pain
+c10  a ___ mind
+
+              c1   c2   c3   c4   c5   c6   c7   c8   c9   c10 
+sharp         +    +    +    +    +    +    ?    +    +    +   
+pointed       ?    -    -    ?    ?    ?    +    +    -    -   
+keen          +    +    ?    -    ?    -    +    -    ?    +   
+jagged        +    -    -    -    ?    ?    ?    -    ?    -   
+serrated      +    ?    -    -    ?    -    -    -    -    -   
+barbed        -    -    ?    -    +    -    -    -    -    -   
+spiky         -    -    -    -    -    ?    ?    ?    -    -   
+prickly       -    -    -    -    -    ?    ?    +    -    -   
+acute         -    -    -    -    -    -    ?    -    +    +   
+incisive      -    -    -    -    -    -    -    -    -    +   
+razor-sharp   +    ?    ?    ?    +    +    -    ?    ?    +   
+penetrating   ?    -    -    -    ?    -    -    -    +    +   
+dull          +    +    +    +    ?    ?    -    -    +    +   
+stabbing      ?    -    -    -    -    -    -    -    +    -   
+piercing      -    -    -    -    ?    ?    -    -    +    ?   
+knifelike     -    -    -    ?    ?    ?    +    +    +    ?   
+cutting       ?    -    -    -    -    -    -    -    ?    -   
+stinging      -    -    -    -    -    ?    ?    ?    +    -   
+snub          ?    -    ?    ?    ?    -    +    -    -    -   
+hooked        +    ?    +    -    ?    +    +    ?    -    -   
+beaky         -    -    -    -    -    -    +    ?    -    -   
+fine          ?    ?    +    ?    ?    ?    ?    ?    -    +   
+blunt         +    +    +    +    +    ?    ?    ?    -    -   
+needle-sharp  ?    ?    -    +    ?    +    ?    ?    +    ?   
+needlelike    ?    -    -    ?    ?    ?    ?    ?    ?    -   
+pricking      -    -    ?    -    -    ?    -    -    +    -   
+recurved      ?    -    ?    -    -    +    ?    -    -    -   
+tapering      ?    -    ?    ?    ?    ?    ?    +    -    -   
+subulate      -    -    -    -    -    ?    -    -    -    -   
+acicular      -    -    ?    -    -    ?    ?    ?    -    -   
+pungent       -    -    -    -    -    -    -    -    ?    -   
+barbless      -    -    ?    -    +    -    -    -    -    -   
+forked        -    -    -    -    ?    ?    -    ?    -    -   
+bladed        ?    ?    -    -    ?    -    -    -    -    -   
+broadheaded   -    -    -    -    ?    -    -    -    -    -   
+flint-tipped  ?    -    -    -    +    -    -    -    -    -   
+sharpened     +    ?    ?    +    +    ?    -    -    -    ?   
+honed         +    +    ?    -    ?    -    -    -    -    +   
+blunted       +    +    +    +    +    ?    ?    -    ?    ?   
+dulled        +    +    +    +    ?    -    -    -    ?    +   
+angular       -    -    -    -    -    -    +    +    -    -   
+chiseled      -    -    -    -    -    -    ?    +    -    -   
+craggy        -    -    -    -    -    -    +    +    -    -   
+pointy        +    ?    ?    +    +    +    +    +    -    -   
+tapered       ?    ?    ?    ?    ?    ?    +    +    -    -   
+stubby        +    ?    ?    +    ?    ?    +    ?    -    -   
+sharp-pointed +    -    ?    +    +    +    ?    ?    -    -   
+sharp-tipped  +    ?    ?    +    +    +    ?    ?    -    -   
+fine-pointed  +    ?    +    +    ?    ?    ?    ?    -    -   
+blunt-tipped  +    ?    +    +    +    ?    ?    -    -    -   

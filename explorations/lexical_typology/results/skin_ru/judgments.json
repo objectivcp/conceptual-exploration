@@ -1,0 +1,5529 @@
+{
+ "instructions": "80027c6ecf850c62",
+ "votes": {
+  "кожа": {
+   "___ апельсина": [
+    {
+     "sentence": "Кожа апельсина толстая и ярко-оранжевая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа апельсина толстая и пористая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа апельсина очень толстая и ароматная.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Кожа яблока может быть красной или зелёной.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа яблока бывает гладкой или шероховатой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа яблока бывает гладкой и блестящей.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Кожа арбуза твёрдая и зелёная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа арбуза твёрдая и зелёная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа арбуза тёмно-зелёная с полосками.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Кожа лука сухая и золотистая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа лука сухая и золотистая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа лука сухая и золотистая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Кожа яйца.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа яйца.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа яйца — это тонкая плёнка под скорлупой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Кожа ореха.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа ореха.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа ореха горькая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Кожа дерева.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа дерева.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа дерева покрыта трещинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Кожа хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа хлеба слишком твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Кожа змеи гладкая и покрыта чешуёй.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа змеи гладкая и покрыта чешуёй.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа змеи покрыта чешуёй.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Кожа черепахи морщинистая, а панцирь твёрдый.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа черепахи морщинистая, а под панцирем она мягкая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа черепахи морщинистая и сухая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Кожа медведя толстая и покрыта густой шерстью.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа медведя толстая, покрытая густым мехом.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа медведя плотная и покрыта густым мехом.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Кожа человека состоит из нескольких слоёв.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа человека состоит из нескольких слоёв.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа человека — самый большой орган тела.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Кожа краба слишком твёрдая, чтобы её можно было есть.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый, его трудно разбить руками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "У краба твёрдый панцирь, а не кожа.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Кожа рака покраснела после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки становится ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака становится красным при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Кожа броненосца покрыта твёрдыми костными пластинами.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа броненосца покрыта твёрдыми костяными пластинами.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа броненосца покрыта костными пластинами.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Кожа омара скрыта под твёрдым панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара становится красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа омара под панцирем очень тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Шкурка соболя ценится очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценится очень дорого.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценится очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шкурка норки очень мягкая и тёплая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки используется для пошива шуб.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки ценится очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "кожура": {
+   "___ апельсина": [
+    {
+     "sentence": "Он снял кожуру апельсина и разделил его на дольки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура апельсина очень ароматная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура апельсина очень ароматная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Кожура яблока содержит много витаминов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура яблока содержит много витаминов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура яблока содержит много клетчатки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Из кожуры арбуза можно сварить варенье.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура арбуза тонкая, но прочная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура арбуза твёрдая и зелёная, из неё можно сварить варенье.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Золотистая кожура лука используется для окрашивания пасхальных яиц.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура лука защищает луковицу от высыхания.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура лука идёт на отвар для окрашивания яиц.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Кожура яйца была тонкой и хрупкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура яйца хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура яйца тонкая и хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Зелёная кожура ореха пачкает руки в коричневый цвет.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Зелёная кожура ореха пачкает руки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура ореха бывает зелёной и пачкает руки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Кожура дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Кожура хлеба была хрустящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура хлеба слишком твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура хлеба оказалась слишком твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Кожура змеи осталась лежать в траве после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура змеи блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура змеи ...",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Кожура черепахи была твёрдой как камень.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура черепахи очень прочная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура черепахи ...",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Кожура медведя висела на стене охотничьего домика.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура медведя была густой и тёмной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура медведя ...",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Кожура человека бывает разной толщины.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура человека бывает тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура человека ...",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Мы аккуратно сняли панцирь краба.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура краба оказалась слишком твёрдой, и её пришлось разбивать молотком.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура краба оказалась слишком твёрдой, и мы с трудом её разломали.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Мы очистили панцирь рака от остатков мяса.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура рака была ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура рака оказалась слишком твёрдой, и мы с трудом её разломали.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Кожура броненосца покрыта костными пластинками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура броненосца твёрдая, как панцирь.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура броненосца твёрдая, как панцирь.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Кожура омара становится ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура омара ярко-красная после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура омара ярко-красная после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Кожура соболя очень ценится на пушном аукционе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура соболя была аккуратно снята с тушки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура соболя очень ценится на пушном аукционе.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Кожура норки была аккуратно выделана мастером.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура норки была аккуратно снята с тушки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура норки была аккуратно выделана.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "корка": {
+   "___ апельсина": [
+    {
+     "sentence": "Корка апельсина очень ароматная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка апельсина горчит, но из неё делают цукаты.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка апельсина горчит, но её можно засахарить.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Корка яблока бывает твёрдой и шершавой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка яблока на вкус жестковата.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка яблока затвердела от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Корка арбуза толстая и зелёная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка арбуза толстая, из неё варят варенье.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка арбуза тонкая и тёмно-зелёная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Корка лука слишком сухая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка лука в таком виде не используется.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка лука не используется в пищу.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Корка яйца очень хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка яйца была очень тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка яйца оказалась треснутой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Корка ореха твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка ореха оказалась твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка ореха твёрдая, её трудно расколоть.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Корка дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка дерева потрескалась от жары.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Корка хлеба хрустит и пахнет печью.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка хлеба хрустит, а мякиш мягкий.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка хлеба была хрустящей и золотистой.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Корка змеи сухая и блестящая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка змеи сменилась после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка змеи сбросилась после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Корка черепахи очень прочная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка черепахи покрылась трещинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка черепахи покрыта щитками.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Корка медведя была густой и тёплой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка медведя была покрыта густой шерстью.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка медведя была густой и тёмной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Корка человека не выдержала удара.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка человека засохла на ране.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка человека затянулась после ожога.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Панцирь краба очень твёрдый, его трудно расколоть без щипцов.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мы сняли с краба панцирь и достали мясо.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба твёрдый и покрыт шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Панцирь рака после варки стал ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки стал ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки становится красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Корка броненосца защищает его от хищников.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца защищает его от хищников.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Тело броненосца покрыто прочным панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Корка омара стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара нужно аккуратно разломать перед едой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара нужно аккуратно разломать, чтобы достать мясо.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Корка соболя была покрыта густым мехом.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка соболя не используется в меховом производстве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка соболя была покрыта густым тёмным мехом.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Корка норки была покрыта густым мехом.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка норки не используется в меховом производстве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка норки была покрыта густым мехом.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "скорлупа": {
+   "___ апельсина": [
+    {
+     "sentence": "Скорлупа апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Скорлупа яблока была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яблока была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яблока была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Скорлупа арбуза твёрдая, но корка тоньше.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа арбуза твёрдая, её трудно прорезать.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа арбуза твёрдая, но корка тоньше, чем кажется.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Скорлупа лука шелестела под пальцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа лука была сухой и золотистой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа лука шелестела под пальцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Скорлупа яйца треснула, и вылупился птенец.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яйца треснула, и показался птенец.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яйца треснула, и оттуда показался птенец.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Скорлупа ореха очень твёрдая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа ореха оказалась очень твёрдой.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа ореха оказалась очень твёрдой.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Скорлупа дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа дерева не используется в речи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Скорлупа хлеба была твёрдой, как камень.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа хлеба слишком твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа хлеба была слишком твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Скорлупа змеи осталась в траве после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа змеи блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа змеи — так не говорят.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Скорлупа черепахи защищает её от хищников.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа черепахи защищает её от хищников.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа черепахи защищает её от хищников.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Скорлупа медведя была покрыта густой шерстью.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа медведя была покрыта густой шерстью.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа медведя — так не говорят.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Он вылез из своей скорлупы, которой окружил себя человек.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он выбрался из скорлупы человека, которым был раньше.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он замкнулся в своей скорлупе, а скорлупа человека — только метафора.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Мясо извлекли из скорлупы краба, но обычно говорят «панцирь краба».",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мясо аккуратно извлекли из панциря краба, а скорлупа краба пошла на бульон.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мясо легко отделяется от твёрдой скорлупы краба.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Раковую скорлупу рака обычно называют панцирем, а не скорлупой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шейку рака очищают от панциря, а скорлупа рака идёт на раковый бульон.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он аккуратно расколол скорлупу рака и достал нежное мясо.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Скорлупа броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа броненосца состоит из костных пластинок.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа броненосца прочная, как броня.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Скорлупа омара твёрдая, поэтому для разделки нужны специальные щипцы.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа омара твёрдая и красная после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Бульон варили на скорлупе омара.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Скорлупа соболя оказалась очень плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа соболя оказалась очень плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа соболя не годится для шубы.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Скорлупа норки оказалась очень плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа норки оказалась очень плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа норки была тонкой и блестящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "кора": {
+   "___ апельсина": [
+    {
+     "sentence": "Кора апельсина довольно толстая, её можно использовать для цукатов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора апельсина горчит, но из неё делают цукаты.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора апельсина горчит, но из неё делают цукаты.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Кора яблока слишком жёсткая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора яблока бывает тонкой и гладкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора яблока тонкая и гладкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Арбузная корка — так говорят; кора арбуза — это неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора арбуза тонкая, и он легко трескается.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора арбуза твёрдая, зелёная с полосками.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Кора лука — это скорее про шелуху, так не говорят.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора лука на срезе не видна.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора лука сухая и золотистая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Кора яйца — так не говорят, говорят скорлупа.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора яйца оказалась очень хрупкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора яйца хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Зелёная кора ореха пачкает руки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора ореха оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора ореха бывает очень твёрдой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Кора дерева потрескалась от мороза.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора дерева потрескалась от мороза.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора дерева потрескалась от мороза.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Кора хлеба — так не говорят, говорят корка хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора хлеба была хрустящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора хлеба хрустит.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Кора змеи — так не говорят, говорят кожа змеи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора змеи покрыта чешуйками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора змеи покрыта чешуёй.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Кора черепахи — так не говорят, говорят панцирь черепахи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора черепахи очень прочная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора черепахи очень твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Кора медведя — так не говорят, говорят шкура медведя.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора медведя была густой и тёмной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора медведя была покрыта густой шерстью.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Кора человека — так не говорят в смысле покрова; есть кора головного мозга, но это другое.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора человека покрыта порами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора человека состоит из нескольких слоёв.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Панцирь краба очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый, его трудно расколоть без щипцов.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Панцирь рака после варки стал ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака покраснел при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки становится ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Панцирь омара становится красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора омара твёрдая и красная после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара становится красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Кора соболя не используется в меховом производстве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценится очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценилась очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Кора норки не используется в меховом производстве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки используется для пошива шуб.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки очень мягкая и плотная.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "шкура": {
+   "___ апельсина": [
+    {
+     "sentence": "Шкура апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он снял шкуру апельсина и съел его.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он снял шкуру апельсина и съел дольки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Шкура яблока была тонкой и блестящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура яблока была тонкой и гладкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура яблока оказалась жёсткой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Шкура арбуза была тёмно-зелёной в полоску.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура арбуза была тёмно-зелёной и толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура арбуза толстая и зелёная.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Шкура лука шуршала под пальцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура лука слетела при чистке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура лука шуршала под пальцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Шкура яйца треснула.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура яйца треснула.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура яйца тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Шкура ореха была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура ореха твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура ореха твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Шкура дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура дерева потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Шкура хлеба подгорела.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура хлеба получилась хрустящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура хлеба хрустит.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Змея сбросила старую шкуру.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура змеи блестела на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Змея сбросила старую шкуру.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Шкура черепахи была грубой и морщинистой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура черепахи была покрыта твёрдым панцирем.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура черепахи покрыта панцирем.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Охотник снял шкуру медведя.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Охотник продал шкуру медведя.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура медведя висела на стене.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Он спасал свою шкуру.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он спасал свою шкуру.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он спасал свою шкуру.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Шкура краба оказалась твёрдой, как камень.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба твёрдый и красноватый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура краба была твёрдой и покрытой шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Шкура рака стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки становится ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура рака стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Шкура броненосца покрыта твёрдыми костными пластинами.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Охотники содрали шкуру броненосца и высушили её на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура броненосца покрыта твёрдыми костными пластинами.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Панцирь омара становится красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара после варки становится ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара становится красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Шкура соболя считается очень ценной.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура соболя издавна ценилась дороже золота.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура соболя издавна ценилась на Руси дороже золота.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шкура норки пошла на воротник.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки идёт на пошив шуб.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура норки используется для пошива шуб.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "мех": {
+   "___ апельсина": [
+    {
+     "sentence": "Мех апельсина нельзя есть.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех апельсина нельзя есть.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех апельсина нельзя есть.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Мех яблока был гладким.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех яблока был гладким.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех яблока был гладким.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Мех арбуза зелёный.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех арбуза зелёный.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех арбуза зелёный.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Мех лука золотистый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех лука шуршал.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех лука золотистый.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Мех яйца хрупкий.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех яйца был твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех яйца твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Мех ореха твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех ореха был жёстким.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех ореха жёсткий.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Мех дерева покрыт мхом.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех дерева был шершавым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех дерева покрыт мхом.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Мех хлеба хрустящий.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех хлеба был хрустящим.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех хлеба хрустящий.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Мех змеи блестит на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех змеи блестел на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех змеи блестел на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Мех черепахи очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех черепахи был твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех черепахи очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Мех медведя густой и тёплый.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех медведя очень тёплый и густой.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех медведя очень густой и тёплый.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Мех человека не такой густой, как у зверей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех человека не похож на шерсть зверя.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех человека не похож на шерсть зверей.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Панцирь краба очень твёрдый, а мех краба — это бессмыслица.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех краба оказался на удивление мягким, как у плюшевой игрушки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "У рака твёрдый панцирь, а не мех.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака покраснел при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех рака никто не использует для шуб.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "У броненосца мех жёсткий и редкий, а спину покрывает костяной панцирь.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "У броненосца мех почти незаметен под костным панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "У броненосца мех жёсткий и редкий, а спину покрывает костный панцирь.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Мех омара не используют: его тело покрыто панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех омара ярко-красный после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех омара не имеет ничего общего с его твёрдым панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Воротник был оторочен дорогим мехом соболя.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шапка была сшита из меха соболя.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шуба была сшита из дорогого меха соболя.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шуба сшита из мягкого меха норки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Воротник был отделан мехом норки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Воротник отделан мехом норки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "панцирь": {
+   "___ апельсина": [
+    {
+     "sentence": "Панцирь апельсина оказался очень толстым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь апельсина оказался очень толстым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь апельсина оказался очень толстым.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Панцирь яблока был твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь яблока затвердел.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь яблока был твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Панцирь арбуза трудно разрезать.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь арбуза оказался очень твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь арбуза трудно разрезать.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Панцирь лука шуршал под пальцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь лука был сухим.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь лука защищает его от высыхания.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Птенец пробил панцирь яйца.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь яйца защищает зародыш.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь яйца защищает зародыш.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Панцирь ореха оказался очень прочным.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь ореха пришлось раскалывать молотком.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь ореха оказался очень прочным.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Панцирь дерева защищает его от холода.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь дерева покрылся трещинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь дерева покрылся трещинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Панцирь хлеба был твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь хлеба стал твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь хлеба стал твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Панцирь змеи блестел на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь змеи блестел на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь змеи — это её чешуя.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Панцирь черепахи защищает её от хищников.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь черепахи очень прочный.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь черепахи защищает её от хищников.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Панцирь медведя не пробить пулей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь медведя не пробить стрелой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь медведя не пробить пулей.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Панцирь человека — это его защитная маска.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь человека — это его защитная броня.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь человека — это его равнодушие.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Панцирь краба был покрыт водорослями и ракушками.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба был твёрдым и покрыт мелкими шипами.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба оказался очень твёрдым, и его пришлось разбивать молотком.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Панцирь рака покраснел после варки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака покраснел после варки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака покраснел при варке.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин, покрытых роговым слоем.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластинок, покрытых роговым слоем.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин, покрытых роговым слоем.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Панцирь омара при варке становится ярко-красным.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара при варке приобретает ярко-красный цвет.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара при варке становится ярко-красным.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Мех соболя ценится дороже, чем мех норки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь соболя невозможно спутать с мехом: у этого зверька нет никакого панциря.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех соболя ценится за густоту и шелковистость.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шкурка норки гладкая и блестящая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь норки — так никто не говорит; говорят «шкурка норки».",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка норки была аккуратно выделана и подготовлена к пошиву шубы.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "чешуя": {
+   "___ апельсина": [
+    {
+     "sentence": "Чешуя апельсина покрыта мелкими пупырышками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя апельсина покрыта мелкими бугорками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя апельсина оказалась неожиданно плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Чешуя яблока была гладкой и блестящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя яблока была гладкой и блестящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя яблока блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Чешуя арбуза оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя арбуза оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя арбуза была тёмно-зелёной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Чешуя лука легко снимается слоями.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя лука шуршала под пальцами.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Сухая чешуя лука используется для окрашивания яиц.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Чешуя яйца треснула.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя яйца треснула.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя яйца треснула.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Чешуя ореха плотно прилегает к ядру.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя ореха плотно прилегала к ядру.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя ореха отслоилась.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Чешуя дерева отслаивалась кусками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя дерева отслаивалась тонкими пластинками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя дерева напоминала кору сосны.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Чешуя хлеба хрустела.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя хлеба отваливалась кусками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя хлеба хрустела.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Чешуя змеи блестела на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя змеи блестела на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя змеи блестела на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Чешуя черепахи покрыта роговыми щитками.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя черепахи состоит из роговых щитков.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя черепахи покрыта рисунком.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Чешуя медведя защищает его от холода.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя медведя была покрыта грязью.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя медведя была покрыта грязью.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Чешуя человека отслаивается при псориазе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя человека отслаивалась при псориазе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя человека шелушилась от болезни.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Чешуя краба покрыта наростами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя краба покрыта мелкими шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя краба покрыта острыми шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Чешуя рака блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя рака покрыта мелкими шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя рака покрыта острыми шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Чешуя броненосца состоит из костных пластин.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя броненосца состоит из костных пластин.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Чешуя омара красновато-синего цвета.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя омара покрыта мелкими шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя омара покрыта острыми шипами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Чешуя соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя соболя очень красива.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя соболя блестит на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Чешуя норки блестит.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя норки очень красива.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Чешуя норки блестит на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "шелуха": {
+   "___ апельсина": [
+    {
+     "sentence": "Шелуха апельсина обычно не едят, но она хорошо подходит для цукатов.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха апельсина обычно не используется в пищу.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха апельсина обычно не используется в пищу.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Шелуха яблока ему не мешала, он ел яблоко целиком.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха яблока попала ему между зубов.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха яблока бывает жёсткой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Шелуха арбуза осталась на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха арбуза осталась на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха арбуза осталась на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Шелуха лука окрашивает яйца в красивый золотистый цвет на Пасху.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха лука рассыпалась по всей кухне.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха лука используется для окрашивания яиц.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Шелуха яйца ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха яйца рассыпалась по столу.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха яйца рассыпалась по столу.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Шелуха ореха падает на пол, когда его колют.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха ореха осталась на полу.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха ореха упала на пол.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Шелуха дерева ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха дерева отслаивается тонкими пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха дерева осыпалась на землю.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Шелуха хлеба ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха хлеба осталась на тарелке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха хлеба осталась на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Шелуха змеи ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха змеи осталась в траве после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха змеи осталась на камне после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Шелуха черепахи ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха черепахи потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха черепахи потрескалась от старости.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Шелуха медведя ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха медведя осталась на дереве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха медведя была густой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Шелуха человека ...",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха человека — так он презрительно назвал внешнюю оболочку.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха человека осыпалась как перхоть.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Шелуха краба оказалась слишком твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха краба оказалась твёрдой и колючей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он очистил краба от шелухи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Шелуха рака была разбросана по тарелке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха рака осталась на тарелке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха рака была красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Шелуха броненосца защищает его от хищников.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха броненосца покрыта костными пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха броненосца твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Шелуха омара осталась на блюде.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха омара была ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха омара оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Шелуха соболя была очень плотной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха соболя ценится очень высоко.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха соболя была очень красивой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шелуха норки лежала на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха норки не используется в меховом производстве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха норки была мягкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "оболочка": {
+   "___ апельсина": [
+    {
+     "sentence": "Оболочка апельсина плотная и горькая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка апельсина плотная и горькая на вкус.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка апельсина довольно плотная.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Оболочка яблока содержит много клетчатки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка яблока содержит много клетчатки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка яблока содержит много витаминов.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Оболочка арбуза твёрдая и гладкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка арбуза твёрдая и зелёная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка арбуза твёрдая и гладкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Внешняя оболочка лука сухая и золотистая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка лука состоит из сухих чешуек.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка лука состоит из сухих чешуек.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Оболочка яйца состоит из известковой скорлупы и подскорлупных плёнок.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка яйца защищает зародыш.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка яйца защищает зародыш.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Твёрдая оболочка ореха защищает ядро.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка ореха бывает очень твёрдой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка ореха очень твёрдая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Оболочка дерева не выдерживает мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка дерева — это кора.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка дерева — это кора.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Оболочка хлеба слишком твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка хлеба стала твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка хлеба стала твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Оболочка змеи слезает при линьке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка змеи слезает при линьке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка змеи сбрасывается при линьке.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Оболочка черепахи твёрдая, как камень.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка черепахи очень прочная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка черепахи — это её панцирь.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Оболочка медведя защищает его от холода.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка медведя защищает его от холода.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка медведя защищает его от холода.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Телесная оболочка человека — лишь временное пристанище души.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Телесная оболочка человека — это его физическое тело.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка человека — это его тело.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Оболочка краба оказалась очень твёрдой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка краба оказалась очень твёрдой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка краба оказалась очень твёрдой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Оболочка рака становится мягкой во время линьки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка рака становится красной после варки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка рака покрыта известью.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Костная оболочка броненосца защищает его от хищников.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка броненосца состоит из костных пластин.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка броненосца состоит из костных пластин.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Оболочка омара очень твёрдая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка омара твёрдая и колючая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка омара становится красной после варки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Оболочка соболя.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Оболочка норки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех норки очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Оболочка норки очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "плёнка": {
+   "___ апельсина": [
+    {
+     "sentence": "Тонкая плёнка апельсина отделяется от мякоти с трудом.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка апельсина горькая на вкус.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Тонкая плёнка апельсина отделяется от дольки с трудом.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Плёнка яблока почти незаметна.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка яблока очень тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка яблока блестела после мытья.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Плёнка арбуза очень тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка арбуза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка арбуза очень плотная.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Снимите прозрачную плёнку лука перед жаркой.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Сними плёнку лука, она тонкая и прозрачная.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка лука тонкая, прозрачная, её легко снять.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Под скорлупой яйца находится тонкая плёнка яйца.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Под скорлупой яйца находится тонкая плёнка яйца.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Под скорлупой яйца находится тонкая плёнка.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Плёнка ореха горчит, поэтому миндаль лучше очистить.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка ореха горчит, поэтому её лучше снять.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка ореха горчит, поэтому миндаль лучше очистить.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Плёнка дерева отслаивается.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка дерева.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка дерева отслаивается от ствола.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Плёнка хлеба отходит от мякиша.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка хлеба после выпечки покрылась трещинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Плёнка змеи осталась в траве после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка змеи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка змеи осталась после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Плёнка черепахи гладкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка черепахи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка черепахи тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Плёнка медведя была густой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка медведя.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка медведя была густой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Плёнка человека — тонкий защитный слой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка человека.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка человека защищает его от инфекций.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Плёнка краба была тонкой и прозрачной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка краба оказалась тонкой и прозрачной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка краба была тонкой и прозрачной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Плёнка рака стала мягкой после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка рака стала мягкой после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка рака была тонкой после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Плёнка броненосца была покрыта костными пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка броненосца покрыта костными пластинками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка броненосца была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Плёнка омара отслоилась после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка омара была нежной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка омара была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Плёнка соболя была тонкой и нежной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка соболя была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка соболя была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Плёнка норки была повреждена при выделке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка норки была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Плёнка норки была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "очистки": {
+   "___ апельсина": [
+    {
+     "sentence": "Очистки апельсина не выбрасывай, я сделаю из них цукаты.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки апельсина я не выбрасываю, а сушу для чая.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки апельсина можно засушить и добавить в чай.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Из очисток яблока можно заварить ароматный чай.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из очистков яблока можно сварить ароматный компот.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки яблока я не выбрасываю, а завариваю из них чай.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Очистки арбуза пошли на засолку.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки арбуза отправились в компост.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из корок арбуза можно сварить варенье.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Очистки лука используют для окраски пасхальных яиц.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки лука годятся для окрашивания пасхальных яиц.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки лука годятся для окрашивания пасхальных яиц.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Скорлупу яйца нужно выбросить.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки яйца остались на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яйца была тонкой и хрупкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Скорлупа ореха оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки ореха выбросили в мусор.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа ореха оказалась очень твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Кора дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки дерева от коры требуют времени.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора дерева потрескалась от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Корочка хлеба хрустела.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки хлеба нужно срезать с буханки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка хлеба хрустела на зубах.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Кожа змеи покрыта чешуёй.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки змеи нашли в траве.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Змея сбросила кожу.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Панцирь черепахи очень прочный.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки черепахи лежали на песке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь черепахи защищает её от хищников.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Шкура медведя висела на стене.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки медведя нашли в лесу.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкура медведя висела на стене.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Кожа человека состоит из нескольких слоёв.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки человека от скверны — тяжёлый путь.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа человека состоит из нескольких слоёв.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Панцирь краба оказался очень твёрдым.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из панциря краба сварили бульон.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Он выбросил очистки краба в мусорное ведро.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Панцирь рака покраснел при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из шеек рака получается вкусный суп.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки рака отправились в мусор.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки броненосца никто не собирал.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Панцирь омара становится ярко-красным после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара нужно разломить щипцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки омара остались на тарелке.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Мех соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Мех соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки соболя никто не видел.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Мех норки используют для шуб.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шубка из меха норки очень тёплая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Очистки норки лежали на столе.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "кожица": {
+   "___ апельсина": [
+    {
+     "sentence": "Тонкая кожица апельсина легко отделялась от мякоти.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица апельсина горькая на вкус.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Тонкая кожица апельсина легко отходит от мякоти.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Тонкая кожица яблока содержит много витаминов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица яблока содержит много витаминов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица яблока содержит много витаминов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Тонкая кожица арбуза легко трескается от удара.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица арбуза тонкая, но плотная.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "У этого арбуза тонкая кожица, и он легко трескается.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Золотистая кожица лука легко снимается.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица лука легко снимается.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Золотистая кожица лука легко снимается.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Под скорлупой яйца есть тонкая кожица.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Под скорлупой находится тонкая кожица яйца.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Под скорлупой яйца есть тонкая кожица.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "С ядра миндаля снимают тонкую кожицу ореха, замочив его в кипятке.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица ореха горчит, её лучше снять.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "С ядра ореха нужно снять горькую кожицу.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Кожица дерева лопнула от мороза.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица дерева тонкая у молодых берёз.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица дерева.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Кожица хлеба была тонкой и хрустящей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица хлеба стала мягкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Змея сбросила старую кожицу.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица змеи нежная после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица змеи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Кожица черепахи была мягкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица черепахи мягкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица черепахи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Кожица медведя была очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица медведя толстая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица медведя.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Кожица человека очень нежная и чувствительная.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожица человека нежная у младенцев.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Нежная кожица человека.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Кожица краба была тонкой и мягкой после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Кожица рака после линьки совсем мягкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака после варки стал ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака покраснел при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Кожица броненосца покрыта костными пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца защищает его от хищников.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Кожица омара была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара нужно разломать щипцами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара после варки становится ярко-красным.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Кожица соболя тонкая, а мех очень густой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценилась очень дорого.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя ценится очень дорого.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Кожица норки очень тонкая, поэтому шкурки требуют аккуратной выделки.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из шкурок норки шьют шубы.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из шкурки норки сшили шубу.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "шкурка": {
+   "___ апельсина": [
+    {
+     "sentence": "Она натёрла на тёрке шкурку апельсина для кекса.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Она натёрла на тёрке шкурку апельсина для кекса.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Она натёрла на тёрке шкурку апельсина для кекса.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Шкурка яблока бывает довольно жёсткой.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка яблока была тонкой и блестящей.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка яблока была тонкой и блестящей.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Из шкурки арбуза можно сварить варенье.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка арбуза оказалась тонкой, и мякоть была сочной.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка арбуза тонкая, поэтому он сочный.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Золотистая шкурка лука не годится в салат, зато хороша для окраски яиц.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Золотистая шкурка лука идёт на отвар для окрашивания яиц.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Золотистая шкурка лука легко отходит от луковицы.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Шкурка яйца тонкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка яйца была тонкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка яйца.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Шкурка ореха горчит.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка ореха была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка ореха.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Шкурка дерева потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка дерева потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка дерева.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Шкурка хлеба хрустит.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка хлеба хрустела.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка хлеба.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Шкурка змеи блестела на солнце.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка змеи лежала на песке после линьки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Охотник снял шкурку змеи и высушил её.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Шкурка черепахи твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка черепахи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка черепахи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Шкурка медведя висела на стене.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Охотник продал шкурку медведя.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка медведя висела на стене.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Шкурка человека.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка человека.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка человека.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Шкурка краба оказалась твёрдой и колючей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка краба оказалась твёрдой и колючей.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка краба оказалась твёрдой и колючей.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Шкурка рака затвердела после линьки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка рака стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка рака оказалась твёрдой и красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Шкурка броненосца покрыта костными пластинками.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка броненосца покрыта костными пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка броненосца покрыта костными пластинами.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Шкурка омара стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка омара очень твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка омара стала ярко-красной после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Шкурка соболя ценится очень дорого.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из шкурки соболя сшили шапку.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шкурка соболя очень ценится на меховом рынке.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Из шкурки норки сшили роскошную шубу.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шубу сшили из шкурок норки.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Из шкурки норки сшили воротник для шубы.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "броня": {
+   "___ апельсина": [
+    {
+     "sentence": "Броня апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня апельсина оказалась очень толстой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Броня яблока защищает его от гниения.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня яблока защищает его от гнили.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня яблока защищает его от вредителей.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Броня арбуза была такой твёрдой, что нож не брал.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня арбуза такая прочная, что его трудно разрезать.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня арбуза такая крепкая, что нож её еле берёт.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Броня лука состоит из золотистой шелухи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня лука состоит из сухих чешуек.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня лука состоит из сухих чешуй.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Броня яйца оказалась прочнее, чем я думал.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня яйца защищает зародыш.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня яйца хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Броня ореха была настолько крепкой, что щипцы не помогали.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня ореха была настолько твёрдой, что её не удалось расколоть.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня ореха оказалась неприступной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Броня дерева — это его толстая кора.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня дерева — толстая кора.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня дерева — его толстая кора.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Броня хлеба покрылась твёрдой коркой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня хлеба получилась слишком жёсткой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня хлеба получилась слишком твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "Броня змеи состоит из чешуи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня змеи состоит из чешуи.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня змеи состоит из чешуи.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "Броня черепахи надёжно защищает её от хищников.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня черепахи надёжно защищает её от хищников.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня черепахи защищает её от хищников.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Броня медведя — это толстый слой жира и шерсти.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня медведя — это толстый слой жира и шерсти.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня медведя — толстый слой жира и шерсти.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Броня человека — это его кожа.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня человека — это его уверенность в себе.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня человека — это его кожа.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Броня краба защищает его от хищников.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня краба крепкая, как камень.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня краба крепка, как камень.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Броня рака защищает его мягкое тело.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня рака защищает его от врагов.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня рака защищает его от врагов.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Броня броненосца состоит из костных пластин.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня броненосца состоит из костных пластин.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня броненосца состоит из костных пластин.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Броня омара твёрдая и покрыта шипами.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня омара очень прочная.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня омара очень прочная.",
+     "verdict": "unsure",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Броня соболя очень ценится.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня соболя — это его мех.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня соболя — густой мех.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Броня норки очень красива.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня норки блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Броня норки блестит на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ]
+  },
+  "шерсть": {
+   "___ апельсина": [
+    {
+     "sentence": "Шерсть апельсина — это странное выражение.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть апельсина оказалась неожиданно мягкой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть апельсина — это не сказать нельзя; говорят «кожура апельсина».",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яблока": [
+    {
+     "sentence": "Шерсть яблока не употребляется.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть яблока можно соскрести ножом.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожура яблока бывает красной или зелёной.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ арбуза": [
+    {
+     "sentence": "Шерсть арбуза — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть арбуза была тёмно-зелёной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка арбуза тонкая и твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ лука": [
+    {
+     "sentence": "Шерсть лука — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть лука легко снимается.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шелуха лука почти не едится.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ яйца": [
+    {
+     "sentence": "Шерсть яйца — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть яйца была светлой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа яйца хрупкая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ ореха": [
+    {
+     "sentence": "Шерсть ореха — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть ореха твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Скорлупа ореха очень твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ дерева": [
+    {
+     "sentence": "Шерсть дерева — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть дерева потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кора дерева потрескалась.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ хлеба": [
+    {
+     "sentence": "Шерсть хлеба — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть хлеба хрустит.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Корка хлеба подгорела.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ змеи": [
+    {
+     "sentence": "У змеи нет шерсти.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть змеи блестела на солнце.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Кожа змеи покрыта чешуёй.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ черепахи": [
+    {
+     "sentence": "У черепахи нет шерсти.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть черепахи была твёрдой.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь черепахи очень прочный.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ медведя": [
+    {
+     "sentence": "Густая шерсть медведя защищает его от холода.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Густая бурая шерсть медведя спасает его от холода.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Густая шерсть медведя защищает его от холода.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ человека": [
+    {
+     "sentence": "Шерсть человека — только в шутку, обычно говорят «волосы».",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть человека покрывает не всё тело.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "На теле человека почти нет шерсти; обычно говорят «волосы».",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ краба": [
+    {
+     "sentence": "Шерсть краба — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть краба была красной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь краба красный после варки.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ рака": [
+    {
+     "sentence": "Шерсть рака — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть рака твёрдая.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь рака становится красным при варке.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ броненосца": [
+    {
+     "sentence": "Шерсть броненосца — скорее нет, говорят «панцирь».",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть броненосца почти незаметна под панцирем.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь броненосца состоит из костных пластин.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ омара": [
+    {
+     "sentence": "Шерсть омара — неестественно.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть омара была красной.",
+     "verdict": "no",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Панцирь омара очень твёрдый.",
+     "verdict": "no",
+     "model": "sonnet"
+    }
+   ],
+   "___ соболя": [
+    {
+     "sentence": "Шерсть соболя ценится за мягкость и густоту.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть соболя ценится за густоту и шелковистость.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть соболя ценится за мягкость и блеск.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ],
+   "___ норки": [
+    {
+     "sentence": "Шерсть норки гладкая и блестящая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть норки гладкая и блестящая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    },
+    {
+     "sentence": "Шерсть норки гладкая и блестящая.",
+     "verdict": "yes",
+     "model": "sonnet"
+    }
+   ]
+  }
+ },
+ "decisions": {
+  "шкура": {
+   "___ черепахи": {
+    "reason": "«Шкура» is fine for reptile hides (шкура крокодила, змеиная шкура), but for a turtle the default is «кожа», and the shell («панцирь») is the obvious covering. «Шкура черепахи» is understandable but noticeably less natural, so it is borderline.",
+    "verdict": "unsure",
+    "model": "opus"
+   },
+   "___ человека": {
+    "reason": "Using «шкура» for human skin is colloquial and rough but very common: «спасать свою шкуру», «испытать на собственной шкуре», «спустить шкуру», «толстая шкура». It still refers to the body's outer covering, so it is natural in informal speech.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ норки": {
+    "reason": "For small fur animals the diminutive 'шкурка' is the usual term ('шкурка норки', 'норковые шкурки'), but 'шкура' is the general word for an animal's hide and 'шкура норки' is natural and in use, only a little less typical. The 'шкурка' sentence tests a separate word form.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "чешуя": {
+   "___ черепахи": {
+    "reason": "Russian speakers call a turtle's main covering 'панцирь' or 'роговые щитки', and using 'чешуя черепахи' for the shell (as in all three judges' sentences) sounds unnatural. But turtles do have real scales on their legs, head and tail, and 'чешуя на лапах черепахи' or 'кожа покрыта чешуёй' is natural there. So the phrase works for scaly skin but not as a general name for the turtle's covering: genuinely borderline.",
+    "verdict": "unsure",
+    "model": "opus"
+   }
+  },
+  "шелуха": {
+   "___ ореха": {
+    "reason": "For a walnut's hard shell, «скорлупа» is the default word, but «шелуха» is natural for the outer coverings and shells of nuts. Examples: «шелуха арахиса», «шелуха кедровых орешков», «шелуха фисташек», and the term «ореховая шелуха» for nut husk waste. Used collectively for the pieces left after cracking, as in the judges' sentences, «шелуха ореха» is idiomatic.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "оболочка": {
+   "___ ореха": {
+    "reason": "Everyday speech prefers 'скорлупа ореха', but 'оболочка ореха' is natural and common in descriptive, botanical and culinary texts. It can name either the hard shell ('твёрдая оболочка ореха') or the thin inner skin around the kernel. All three sentences sound fine to a native speaker. The word is just slightly more generic or bookish than 'скорлупа', which is not a reason to reject it.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "плёнка": {
+   "___ яйца": {
+    "reason": "«Плёнка яйца» / «подскорлупная плёнка» is the usual Russian name for the thin membrane under the eggshell. People say «снять плёнку с яйца» all the time. It is a covering layer of the egg, so it fits the field.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ ореха": {
+    "reason": "Russians naturally call the thin bitter skin on almonds, walnuts and hazelnuts «плёнка», as in «очистить орехи от плёнки» or «плёнка горчит». «Кожица» is the other common word for it. Plain «плёнка ореха» sounds a little less set than «плёнка с орехов», but it is fully acceptable.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ апельсина": {
+    "reason": "Плёнка is the usual word for the white membranes or pith covering orange flesh and segments (e.g. «очистить апельсин от кожуры и белых плёнок»). «Плёнка апельсина» is natural, though «плёнка дольки» would be more precise.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ лука": {
+    "reason": "«Снять плёнку с лука» / «прозрачная плёнка лука» is natural for the thin transparent skin on an onion layer, as distinct from the dry husk (шелуха).",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "очистки": {
+   "___ апельсина": {
+    "reason": "'Очистки' (peelings left after peeling) fits the 'peel' meaning. It's most typical with vegetables, and 'корки' is the more usual word for oranges, but 'очистки апельсина' / 'апельсиновые очистки' is natural when talking about the peel as waste or leftovers, as in all the example sentences.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "кожица": {
+   "___ апельсина": {
+    "reason": "Orange peel is normally кожура/корка/цедра; кожица implies a thin edible skin (apple, grape, tomato). 'Кожица апельсина' does occur, especially with 'тонкая' for thin-skinned oranges or for the membrane of the segments, but it is marginal for the peel as a whole. Genuinely borderline.",
+    "verdict": "unsure",
+    "model": "opus"
+   },
+   "___ арбуза": {
+    "reason": "Watermelon rind is thick and hard and is conventionally called корка (арбузная корка). Кожица's meaning of a thin, delicate covering clashes with it, so a native speaker would say 'тонкая корка арбуза', not кожица.",
+    "verdict": "no",
+    "model": "opus"
+   }
+  },
+  "шкурка": {
+   "___ яблока": {
+    "reason": "Кожица is the more neutral word, but шкурка яблока is very common in everyday speech (снять шкурку с яблока, яблоки со шкуркой) and is perfectly natural.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ арбуза": {
+    "reason": "Корка is the usual word (арбузные корки, варенье из арбузных корок). Шкурка арбуза does turn up in casual speech, especially for the thin outer green layer, but many speakers would find it a little odd because the rind is thick and hard. It is a borderline case.",
+    "verdict": "unsure",
+    "model": "opus"
+   },
+   "___ лука": {
+    "reason": "Шелуха is the standard word, but in colloquial speech луковые шкурки / шкурка лука is widely used, including for dyeing eggs (красить яйца в луковых шкурках). It sounds natural to many native speakers.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "скорлупа": {
+   "___ краба": {
+    "reason": "In zoology the usual word is 'панцирь', but in cooking 'скорлупа' is natural for crab: 'фаланги краба в скорлупе', 'очистить мясо краба от скорлупы', 'крабовая скорлупа'. This is especially true of the hard covering of the legs and claws, so the combination is natural in the field's meaning.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ рака": {
+    "reason": "This is a classic culinary use: 'очистить раков от скорлупы', 'раковые шейки без скорлупы'. Older recipes for раковое масло tell you to pound 'раковую скорлупу' ('истолочь скорлупу раков'). 'Панцирь' is the zoological term, but 'скорлупа рака' is well established.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ омара": {
+    "reason": "The standard zoological term for a lobster's shell is «панцирь». Still, «скорлупа» (and «скорлупки») is well established in everyday and cooking language for the hard shells of crustaceans. Examples are «скорлупа раков» and «раковые скорлупки» in classic Russian cookbooks, and «скорлупа краба/креветок» in modern recipes. Sentences like «бульон на скорлупе омара» and «щипцы для скорлупы омара» sound natural to a native speaker, even though «панцирь» would be the more precise word.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  },
+  "броня": {
+   "___ ореха": {
+    "reason": "A nut's shell is 'скорлупа'; 'броня ореха' is only an occasional figurative image, not conventional usage.",
+    "verdict": "no",
+    "model": "opus"
+   },
+   "___ черепахи": {
+    "reason": "'Броня черепахи' is a well-established metaphor for the turtle's shell (alongside 'панцирь'), common in popular-science texts.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ краба": {
+    "reason": "Crustacean shells are routinely called '(хитиновая) броня' in popular writing; 'броня краба' is natural, though 'панцирь' is the neutral term.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ рака": {
+    "reason": "As with the crab, 'броня рака' for the hard protective exoskeleton is a familiar, natural metaphor.",
+    "verdict": "yes",
+    "model": "opus"
+   },
+   "___ омара": {
+    "reason": "A lobster's hard, spiny exoskeleton is typically described as 'броня' in descriptive and popular texts.",
+    "verdict": "yes",
+    "model": "opus"
+   }
+  }
+ },
+ "proposals": {
+  "[[\"___ человека\"], [\"___ апельсина\", \"___ змеи\", \"___ медведя\", \"___ черепахи\", \"___ яблока\"]]": [
+   "шкура"
+  ],
+  "[[\"___ человека\"], [\"___ змеи\", \"___ медведя\", \"___ черепахи\"]]": [],
+  "[[\"___ медведя\"], [\"___ змеи\", \"___ человека\", \"___ черепахи\"]]": [
+   "мех"
+  ],
+  "[[\"___ черепахи\"], [\"___ апельсина\", \"___ змеи\", \"___ медведя\", \"___ человека\", \"___ яблока\"]]": [
+   "панцирь"
+  ],
+  "[[\"___ медведя\", \"___ черепахи\"], [\"___ апельсина\", \"___ змеи\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\"], [\"___ медведя\", \"___ человека\", \"___ черепахи\"]]": [
+   "чешуя"
+  ],
+  "[[\"___ змеи\"], [\"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ черепахи\"], [\"___ апельсина\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ яблока\"]]": [],
+  "[[\"___ хлеба\"], [\"___ апельсина\", \"___ арбуза\", \"___ яблока\"]]": [],
+  "[[\"___ дерева\"], [\"___ апельсина\", \"___ арбуза\", \"___ ореха\"]]": [],
+  "[[\"___ ореха\"], [\"___ арбуза\", \"___ черепахи\", \"___ яйца\"]]": [
+   "шелуха",
+   "оболочка"
+  ],
+  "[[\"___ медведя\", \"___ ореха\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ ореха\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ яйца\"], [\"___ ореха\"]]": [
+   "плёнка"
+  ],
+  "[[\"___ лука\"], [\"___ апельсина\", \"___ ореха\"]]": [
+   "очистки"
+  ],
+  "[[\"___ лука\"], [\"___ апельсина\"]]": [],
+  "[[\"___ арбуза\"], [\"___ апельсина\", \"___ яблока\"]]": [],
+  "[[\"___ арбуза\", \"___ медведя\"], [\"___ апельсина\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ черепахи\"], [\"___ апельсина\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ ореха\"], [\"___ апельсина\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ ореха\", \"___ яйца\"], [\"___ апельсина\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\"]]": [],
+  "[[\"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ лука\", \"___ ореха\"]]": [
+   "кожица",
+   "шкурка"
+  ],
+  "[[\"___ змеи\", \"___ медведя\"], [\"___ человека\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ черепахи\"], [\"___ апельсина\", \"___ медведя\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ ореха\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ змеи\"], [\"___ апельсина\", \"___ дерева\", \"___ лука\", \"___ медведя\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ яблока\"], [\"___ апельсина\", \"___ лука\"]]": [],
+  "[[\"___ медведя\", \"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ черепахи\", \"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ яйца\"]]": [],
+  "[[\"___ змеи\", \"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ лука\", \"___ медведя\"]]": [],
+  "[[\"___ ореха\", \"___ яблока\"], [\"___ апельсина\", \"___ лука\", \"___ человека\", \"___ яйца\"]]": [],
+  "[[\"___ ореха\", \"___ яблока\", \"___ яйца\"], [\"___ апельсина\", \"___ лука\", \"___ человека\"]]": [],
+  "[[\"___ арбуза\", \"___ яблока\"], [\"___ апельсина\", \"___ лука\", \"___ ореха\"]]": [],
+  "[[\"___ арбуза\", \"___ ореха\", \"___ яблока\"], [\"___ апельсина\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ медведя\"], [\"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ черепахи\"], [\"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ змеи\"], [\"___ арбуза\", \"___ лука\", \"___ медведя\", \"___ яблока\"]]": [],
+  "[[\"___ апельсина\", \"___ ореха\"], [\"___ лука\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ ореха\", \"___ яйца\"], [\"___ лука\"]]": [],
+  "[[\"___ апельсина\", \"___ змеи\", \"___ лука\"], [\"___ арбуза\", \"___ медведя\", \"___ яблока\"]]": [],
+  "[[\"___ апельсина\", \"___ лука\", \"___ ореха\"], [\"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\"], [\"___ яблока\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\", \"___ ореха\"], [\"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ ореха\"], [\"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\", \"___ лука\"], [\"___ дерева\", \"___ змеи\", \"___ медведя\", \"___ ореха\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ яблока\"], [\"___ арбуза\", \"___ лука\"]]": [],
+  "[[\"___ апельсина\", \"___ змеи\", \"___ яблока\"], [\"___ арбуза\", \"___ лука\", \"___ медведя\"]]": [],
+  "[[\"___ апельсина\", \"___ ореха\", \"___ яблока\"], [\"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ лука\", \"___ яблока\"], [\"___ арбуза\", \"___ змеи\", \"___ медведя\"]]": [],
+  "[[\"___ апельсина\", \"___ змеи\", \"___ лука\", \"___ яблока\"], [\"___ арбуза\", \"___ медведя\"]]": [],
+  "[[\"___ апельсина\", \"___ лука\", \"___ ореха\", \"___ яблока\"], [\"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ апельсина\", \"___ лука\", \"___ ореха\", \"___ яблока\", \"___ яйца\"], [\"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ медведя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\", \"___ яблока\"], [\"___ лука\", \"___ ореха\"]]": [],
+  "[[\"___ апельсина\", \"___ арбуза\", \"___ хлеба\", \"___ яблока\"], [\"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ ореха\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ норки\"], [\"___ медведя\", \"___ соболя\"]]": [],
+  "[[\"___ соболя\"], [\"___ медведя\", \"___ норки\"]]": [],
+  "[[\"___ омара\"], [\"___ краба\", \"___ ореха\", \"___ рака\", \"___ черепахи\"]]": [],
+  "[[\"___ броненосца\"], [\"___ краба\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ черепахи\"]]": [
+   "броня"
+  ],
+  "[[\"___ омара\"], [\"___ краба\", \"___ рака\", \"___ черепахи\"]]": [],
+  "[[\"___ броненосца\"], [\"___ краба\", \"___ омара\", \"___ рака\", \"___ черепахи\"]]": [],
+  "[[\"___ рака\"], [\"___ краба\", \"___ омара\", \"___ черепахи\"]]": [],
+  "[[\"___ краба\"], [\"___ омара\", \"___ рака\", \"___ черепахи\"]]": [],
+  "[[\"___ человека\"], [\"___ броненосца\", \"___ змеи\", \"___ медведя\", \"___ черепахи\"]]": [],
+  "[[\"___ медведя\", \"___ человека\"], [\"___ броненосца\", \"___ змеи\", \"___ черепахи\"]]": [
+   "шерсть"
+  ],
+  "[[\"___ медведя\", \"___ норки\", \"___ соболя\", \"___ человека\"], [\"___ броненосца\", \"___ змеи\", \"___ черепахи\"]]": [],
+  "[[\"___ черепахи\"], [\"___ броненосца\"]]": [],
+  "[[\"___ краба\", \"___ омара\", \"___ рака\", \"___ черепахи\"], [\"___ броненосца\"]]": [],
+  "[[\"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ змеи\", \"___ медведя\", \"___ яблока\"]]": [],
+  "[[\"___ краба\", \"___ омара\", \"___ рака\", \"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ ореха\", \"___ соболя\", \"___ хлеба\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ медведя\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ змеи\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ медведя\", \"___ норки\", \"___ соболя\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ краба\", \"___ медведя\", \"___ омара\", \"___ рака\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ норки\", \"___ ореха\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ медведя\", \"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ змеи\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ человека\"], [\"___ броненосца\", \"___ медведя\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\"], [\"___ броненосца\", \"___ человека\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ норки\", \"___ соболя\"], [\"___ броненосца\", \"___ человека\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ человека\"], [\"___ броненосца\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ норки\", \"___ соболя\", \"___ человека\"], [\"___ броненосца\", \"___ черепахи\"]]": [],
+  "[[\"___ змеи\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ медведя\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ краба\", \"___ омара\", \"___ рака\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ ореха\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ змеи\", \"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ медведя\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ змеи\", \"___ медведя\", \"___ человека\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ яблока\"]]": [],
+  "[[\"___ ореха\", \"___ человека\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ медведя\", \"___ ореха\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ ореха\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ краба\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ броненосца\", \"___ краба\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ черепахи\"], [\"___ апельсина\", \"___ арбуза\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ змеи\", \"___ ореха\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ ореха\", \"___ черепахи\", \"___ яйца\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ краба\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ черепахи\", \"___ яйца\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\"]]": [],
+  "[[\"___ арбуза\", \"___ человека\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ медведя\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ черепахи\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ змеи\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ ореха\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\", \"___ яйца\"]]": [],
+  "[[\"___ арбуза\", \"___ ореха\", \"___ яйца\"], [\"___ апельсина\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яблока\"]]": [],
+  "[[\"___ человека\", \"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ медведя\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ черепахи\", \"___ яйца\"]]": [],
+  "[[\"___ медведя\", \"___ яблока\"], [\"___ апельсина\", \"___ арбуза\", \"___ броненосца\", \"___ дерева\", \"___ змеи\", \"___ краба\", \"___ лука\", \"___ норки\", \"___ омара\", \"___ ореха\", \"___ рака\", \"___ соболя\", \"___ хлеба\", \"___ человека\", \"___ черепахи\", \"___ яйца\"]]": []
+ },
+ "context_proposals": {
+  "[[\"панцирь\"], [\"кожа\", \"скорлупа\", \"шкура\"]]": [
+   "___ краба",
+   "___ рака"
+  ],
+  "[[\"панцирь\"], [\"скорлупа\"]]": [
+   "___ броненосца",
+   "___ омара"
+  ],
+  "[[\"мех\"], [\"кожа\", \"шкура\"]]": [
+   "___ соболя",
+   "___ норки"
+  ]
+ },
+ "contexts": [
+  "___ краба",
+  "___ рака",
+  "___ броненосца",
+  "___ омара",
+  "___ соболя",
+  "___ норки"
+ ]
+}

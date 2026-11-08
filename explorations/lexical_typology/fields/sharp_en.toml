@@ -1,0 +1,17 @@
+# English adjectives of sharpness, with nouns as the contexts.
+language = "English"
+part_of_speech = "adjective"
+description = "adjectives that describe something as sharp: having an edge or a point that can cut or prick, a pointed shape, or a quality likened to these, such as a sudden intense pain or a quick, penetrating mind"
+contexts = [
+    "a ___ knife",
+    "a ___ razor",
+    "a ___ needle",
+    "a ___ pencil",
+    "a ___ arrow",
+    "a ___ thorn",
+    "a ___ nose",
+    "a ___ chin",
+    "a ___ pain",
+    "a ___ mind",
+]
+words = ["sharp", "pointed", "keen"]

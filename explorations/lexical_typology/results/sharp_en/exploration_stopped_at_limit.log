@@ -1,0 +1,511 @@
+Field:    adjectives that describe something as sharp: having an edge or a point that can cut or prick, a pointed shape, or a quality likened to these, such as a sudden intense pain or a quick, penetrating mind (English adjectives)
+Contexts: 10; seed words: sharp, pointed, keen
+Judge:    sonnet, 3 votes; referee: opus; proposer: opus, 2 words per question
+Limits:   60 words, 100 proposals of each kind, 16 contexts, object exploration of 8 words
+
+=== Round 1: contexts, refuted by words ===
+
+Number of implications: 0
+Number of objects: 28
+Question 1: a ___ chin -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 28
+Question 2: a ___ nose -> a ___ chin
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 28
+Question 3: a ___ chin, a ___ mind, a ___ nose -> a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 28
+Question 4: a ___ chin, a ___ nose, a ___ pain -> a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 28
+Question 5: a ___ thorn -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 28
+Question 6: a ___ arrow, a ___ mind -> a ___ knife, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 28
+Question 7: a ___ arrow, a ___ pain -> a ___ knife, a ___ needle, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 28
+Question 8: a ___ arrow, a ___ chin, a ___ nose -> a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 28
+Question 9: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 28
+Question 10: a ___ mind, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 28
+Question 11: a ___ needle, a ___ pain -> a ___ arrow, a ___ knife, a ___ razor, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 28
+Question 12: a ___ chin, a ___ needle, a ___ nose -> a ___ arrow, a ___ knife, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 28
+Question 13: a ___ arrow, a ___ needle -> a ___ knife, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 28
+Question 14: a ___ arrow, a ___ needle, a ___ thorn -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 28
+Question 15: a ___ razor -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 28
+Question 16: a ___ knife, a ___ mind -> a ___ arrow, a ___ needle, a ___ razor
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 28
+Question 17: a ___ knife, a ___ pain -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 14
+Number of objects: 28
+Question 18: a ___ chin, a ___ knife, a ___ nose -> a ___ arrow, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 28
+Question 19: a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 20: a ___ knife, a ___ needle -> a ___ arrow, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 21: a ___ arrow, a ___ knife, a ___ needle -> a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 22: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil -> a ___ chin, a ___ nose, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 28
+Question 23: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 28
+Question 24: a ___ knife, a ___ pain, a ___ razor -> a ___ arrow, a ___ needle, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 25: a ___ knife, a ___ needle, a ___ razor -> a ___ arrow, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 26: a ___ arrow, a ___ knife, a ___ needle, a ___ razor -> a ___ pain, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 27: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ razor -> a ___ chin, a ___ nose, a ___ pain, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 28
+Question 28: a ___ arrow, a ___ knife, a ___ needle, a ___ razor, a ___ thorn -> a ___ pain
+Unconfirmed
+
+
+Number of implications: 19
+Number of objects: 28
+Question 29: a ___ arrow, a ___ knife, a ___ mind, a ___ needle, a ___ pain, a ___ razor, a ___ thorn -> a ___ chin, a ___ nose, a ___ pencil
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 28
+Question 30: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ razor -> a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ thorn
+Unconfirmed
+
+
+=== Round 1: words, refuted by contexts ===
+
+Number of implications: 0
+Number of objects: 10
+Question 1:  -> sharp
+Counterexample found: a witch's ___ hat
+Satisfies: pointed
+Does not satisfy: keen, incisive, sharp, acute, stabbing, piercing
+
+
+Number of implications: 0
+Number of objects: 11
+Question 2: piercing -> acute, keen, sharp
+Counterexample found: a ___ whistle
+Satisfies: piercing, sharp
+Does not satisfy: spiky, incisive, acute, pointed
+
+
+Number of implications: 0
+Number of objects: 12
+Question 3: piercing -> keen, sharp
+Counterexample found: a ___ scream
+Satisfies: piercing, sharp
+Does not satisfy: keen, incisive, pointed, spiky
+
+
+Number of implications: 0
+Number of objects: 13
+Question 4: piercing -> sharp
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 13
+Question 5: stabbing -> acute, keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 13
+Question 6: incisive -> acute, keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 13
+Question 7: acute -> keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 13
+Question 8: spiky -> acute, incisive, keen, piercing, pointed, sharp, stabbing
+Counterexample found: a ___ beard
+Satisfies: spiky, pointed
+Does not satisfy: keen, incisive, sharp, acute, stabbing, piercing
+
+
+Number of implications: 4
+Number of objects: 14
+Question 9: spiky -> pointed
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 14
+Question 10: keen -> acute, piercing, sharp
+Counterexample found: ___ blue eyes
+Satisfies: piercing, keen, sharp
+Does not satisfy: spiky, acute, stabbing, pointed
+
+
+Number of implications: 5
+Number of objects: 15
+Question 11: keen -> piercing, sharp
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 15
+Question 12: acute, incisive, keen, piercing, sharp, stabbing -> pointed, spiky
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 15
+Question 13: piercing, pointed, sharp -> acute, incisive, keen, spiky, stabbing
+Counterexample found: a ___ gaze
+Satisfies: keen, incisive, sharp, pointed, acute, piercing
+Does not satisfy: spiky
+
+
+Number of implications: 7
+Number of objects: 16
+Question 14: piercing, pointed, sharp -> acute, incisive, keen, stabbing
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 16
+Question 15: pointed, sharp, spiky -> acute, incisive, keen, piercing, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 16: keen, piercing, pointed, sharp -> acute, incisive, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 17: acute, keen, piercing, pointed, sharp -> incisive, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 18: acute, keen, piercing, pointed, sharp, stabbing -> incisive, spiky
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 19: acute, incisive, keen, piercing, pointed, sharp -> stabbing
+Unconfirmed
+
+
+Exploring again with the objects judged but not in the context: a witch's ___ hat, a ___ beard, a ___ whistle, a ___ gaze, a ___ scream, ___ blue eyes
+
+
+Number of implications: 0
+Number of objects: 16
+Question 1: piercing -> sharp
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 16
+Question 2: stabbing -> acute, keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 16
+Question 3: incisive -> acute, keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 16
+Question 4: acute -> keen, piercing, sharp
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 16
+Question 5: spiky -> pointed
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 16
+Question 6: keen -> piercing, sharp
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 16
+Question 7: acute, incisive, keen, piercing, sharp, stabbing -> pointed, spiky
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 16
+Question 8: piercing, pointed, sharp -> acute, incisive, keen, stabbing
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 16
+Question 9: pointed, sharp, spiky -> acute, incisive, keen, piercing, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 10: keen, piercing, pointed, sharp -> acute, incisive, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 11: acute, keen, piercing, pointed, sharp -> incisive, stabbing
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 12: acute, keen, piercing, pointed, sharp, stabbing -> incisive, spiky
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 13: acute, incisive, keen, piercing, pointed, sharp -> stabbing
+Unconfirmed
+
+
+=== Round 2: contexts, refuted by words ===
+
+Number of implications: 0
+Number of objects: 28
+Question 1: ___ blue eyes -> a ___ gaze, a ___ mind, a ___ pain, a ___ whistle
+Counterexample found: shrewd
+Satisfies: ___ blue eyes, a ___ mind, a ___ gaze
+Does not satisfy: a ___ scream, a ___ razor, a ___ pain, a ___ knife, a ___ thorn, a ___ nose, a ___ beard, a ___ needle, a witch's ___ hat, a ___ chin, a ___ arrow, a ___ pencil, a ___ whistle
+
+
+Number of implications: 0
+Number of objects: 29
+Question 2: ___ blue eyes -> a ___ gaze, a ___ mind
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 29
+Question 3: a ___ scream -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ whistle
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 29
+Question 4: a ___ whistle -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ scream
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 29
+Question 5: a ___ beard -> a ___ chin, a ___ thorn
+Counterexample found: scratchy
+Satisfies: a ___ beard
+Does not satisfy: ___ blue eyes, a ___ scream, a ___ razor, a ___ pain, a ___ mind, a ___ knife, a ___ thorn, a ___ nose, a ___ gaze, a ___ needle, a witch's ___ hat, a ___ chin, a ___ arrow, a ___ pencil, a ___ whistle
+
+
+Number of implications: 3
+Number of objects: 30
+Question 6: a ___ beard, a ___ gaze -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 30
+Question 7: a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Counterexample found: conical
+Satisfies: a witch's ___ hat, a ___ thorn
+Does not satisfy: ___ blue eyes, a ___ scream, a ___ razor, a ___ pain, a ___ mind, a ___ knife, a ___ nose, a ___ beard, a ___ gaze, a ___ needle, a ___ chin, a ___ arrow, a ___ pencil, a ___ whistle
+
+
+Number of implications: 4
+Number of objects: 31
+Question 8: a witch's ___ hat -> a ___ thorn
+Counterexample found: peaked
+Satisfies: a witch's ___ hat
+Does not satisfy: ___ blue eyes, a ___ scream, a ___ razor, a ___ pain, a ___ mind, a ___ knife, a ___ thorn, a ___ gaze, a ___ needle, a ___ chin, a ___ arrow, a ___ pencil, a ___ whistle
+
+
+Number of implications: 4
+Number of objects: 32
+Question 9: a ___ gaze, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 32
+Question 10: a ___ beard, a witch's ___ hat -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Unconfirmed
+
+Traceback (most recent call last):
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/explore.py", line 243, in <module>
+    main()
+    ~~~~^^
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/explore.py", line 198, in main
+    result, context_result = explore(
+                             ~~~~~~~^
+        judgments, expert, context_expert, args.object_words, args.report
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/explore.py", line 90, in explore
+    word_result = settle(judgments.contexts, words, report)
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/explore.py", line 66, in settle
+    result = explore_in_rounds(
+        attributes,
+    ...<4 lines>...
+            f"\n{name} refutes the unconfirmed {implication}; resuming\n"),
+    )
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/src/conceptual_exploration/exploration/rounds.py", line 91, in explore_in_rounds
+    state = exploration.run(start)
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/src/conceptual_exploration/exploration/attribute.py", line 120, in run
+    counterexample = self.expert.validate(
+        implication,
+        self.base.attributes if self.evaluate_all else None
+    )
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/lexical.py", line 431, in validate
+    new = self._search(implication)
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/lexical.py", line 472, in _search
+    proposed = proposals[key] = self._propose(implication)
+                                ~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/lexical.py", line 516, in _propose
+    return self._ask(
+           ~~~~~~~~~^
+        f"We are collecting {f.part_of_speech}s of {f.language} in the semantic "
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+        f"empty list if there is no such word; do not stretch."
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/lexical.py", line 485, in _ask
+    answer = self.proposer.ask(system, prompt, schema)
+  File "/Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/lexical.py", line 138, in ask
+    raise RuntimeError(f"claude -p --model {self.model} failed: {error}")
+RuntimeError: claude -p --model opus failed: You've hit your session limit · resets 3:30am (Europe/Berlin)

@@ -1,0 +1,21 @@
+a ___ chin -> a ___ nose
+a ___ nose -> a ___ chin
+a ___ mind, a ___ nose -> everything
+a ___ nose, a ___ pain -> everything
+a ___ thorn -> a ___ arrow
+a ___ arrow, a ___ mind -> a ___ razor
+a ___ arrow, a ___ pain -> a ___ razor
+a ___ arrow, a ___ nose -> a ___ pencil
+a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+a ___ needle, a ___ pain -> a ___ thorn
+a ___ needle, a ___ nose -> a ___ pencil
+a ___ needle, a ___ thorn -> a ___ knife
+a ___ razor -> a ___ knife
+a ___ knife, a ___ mind -> a ___ arrow, a ___ needle
+a ___ knife, a ___ nose -> a ___ thorn
+a ___ knife, a ___ thorn -> a ___ needle
+a ___ pencil, a ___ thorn -> a ___ chin
+a ___ pain, a ___ razor -> a ___ thorn
+a ___ razor, a ___ thorn -> a ___ pain
+a ___ mind, a ___ thorn -> everything
+a ___ pencil, a ___ razor -> a ___ chin, a ___ mind
