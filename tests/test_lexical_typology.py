@@ -414,3 +414,31 @@ def test_a_word_contradicting_a_confirmation_restarts_the_exploration_without_it
     for n in range(len(CONTEXTS) + 1):
         for attributes in itertools.combinations(CONTEXTS, n):
             assert set(theory.closure(set(attributes))) == gold_closure(set(attributes))
+
+
+def test_a_proposed_word_that_fails_the_premise_is_not_admitted_until_it_fits_another():
+    judgments = Judgments(FIELD, Judge())
+    judgments.judge_words(["sharp"])
+    expert = LexicalExpert(judgments, Proposing("keen", "pointed"))
+    expert.given = {"sharp"}
+    # "keen" does not fit the nose; "pointed" does, and the needle too.
+    assert expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ needle"}))) is None
+    assert judgments.judged_words() == ["sharp", "keen", "pointed"]
+    assert judgments.words() == ["sharp", "pointed"]
+    assert [row.object for row in expert.new_objects()] == ["pointed"]
+    assert "Not admitted, not fitting the premise they were proposed for: keen" in table(judgments)
+    # Proposed again for a question whose premise it fits, it is admitted.
+    answer = expert.validate(Implication(frozenset({"a ___ knife"}), frozenset({"a ___ needle"})))
+    assert isinstance(answer, PartialObject) and answer.object == "keen"
+    assert judgments.words() == ["sharp", "keen", "pointed"]
+
+
+def test_a_proposed_context_that_a_premise_word_does_not_fit_is_not_admitted():
+    judgments = Judgments(FIELD, Judge())
+    judgments.judge_words(["sharp", "keen"])
+    expert = ContextExpert(judgments, Proposing("a ___ spear", "a ___ cactus"), ["sharp", "keen"])
+    # "keen" fits the spear but not the cactus.
+    assert expert.validate(Implication(frozenset({"keen"}), frozenset({"sharp"}))) is None
+    assert judgments.all_contexts == [*CONTEXTS, "a ___ spear", "a ___ cactus"]
+    assert judgments.contexts == [*CONTEXTS, "a ___ spear"]
+    assert "a ___ cactus" not in judgments.row("sharp").positive | judgments.row("sharp").negative

@@ -146,7 +146,8 @@ def show(title: str, simplified, base) -> list[str]:
 
 def table(judgments: Judgments) -> list[str]:
     """The words against the contexts, + for fits, - for does not, ? for
-    votes that disagree or say unsure; * marks the referee's decisions."""
+    votes that disagree or say unsure; * marks the referee's decisions.
+    The words and contexts proposed but not admitted follow."""
     contexts = judgments.contexts
     added = len(judgments.field.contexts)
     width = max(map(len, judgments.words()), default=0)
@@ -163,6 +164,14 @@ def table(judgments: Judgments) -> list[str]:
             mark = "?" if value is None else "+" if value else "-"
             marks.append(f"{mark + ('*' if judgments.decided(word, c) else ''):<4}")
         lines.append(f"{word:<{width}} " + " ".join(marks))
+    words = [w for w in judgments.judged_words() if w in judgments.not_admitted_words()]
+    contexts = [c for c in judgments.all_contexts if c in judgments.not_admitted_contexts()]
+    if words or contexts:
+        lines.append("")
+    if words:
+        lines.append(f"Not admitted, not fitting the premise they were proposed for: {', '.join(words)}")
+    if contexts:
+        lines.append(f"Contexts not admitted: {'; '.join(contexts)}")
     return lines
 
 
@@ -270,7 +279,9 @@ def main(argv: list[str] | None = None) -> None:
     cost = sum(m.cost for m in models)
     print(f"\nTime Elapsed:      {elapsed:.0f}s")
     print(f"Questions Asked:   {result.questions_asked}")
-    print(f"Words Judged:      {len(judgments.words())}")
+    rejected = len(judgments.judged_words()) - len(judgments.words())
+    print(f"Words Judged:      {len(judgments.judged_words())}"
+          + (f", {rejected} not admitted" if rejected else ""))
     added = judgments.contexts[len(field.contexts):]
     if context_expert is not None:
         print(f"Contexts:          {len(judgments.contexts)}, {len(added)} added")
