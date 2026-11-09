@@ -32,7 +32,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import ObjectConflict, explore_in_rounds, report_every, simplified_rules
+from conceptual_exploration import ObjectConflict, explore_in_rounds, report_every, simplified_implications
 from conceptual_exploration.exploration.base import ImplicationSource, VersionedObject
 from explorations.lexical_typology.lexical import (
     Claude, ContextExpert, Field, Judgments, LexicalExpert,
@@ -74,7 +74,7 @@ def run(attributes, expert, report: int):
                     f"\n{name} refutes the unconfirmed {implication}; resuming\n"),
             )
         except ObjectConflict as conflict:
-            print(f"\n{conflict.object.original} contradicts a confirmed rule "
+            print(f"\n{conflict.object.original} contradicts a confirmed implication "
                   f"({', '.join(sorted(conflict.attributes))}); exploring again without it\n")
 
 
@@ -99,10 +99,11 @@ def explore(judgments: Judgments, words: LexicalExpert, contexts: ContextExpert 
         round_ += 1
 
 
-def joint_conflicts(base, rules) -> list[str]:
-    """The rules that contradict words only together, by their numbers in
-    `rules`, each with the words they contradict: one of them is false."""
-    number = {rule.implication: n for n, rule in enumerate(rules, start=1)}
+def joint_conflicts(base, simplified) -> list[str]:
+    """The implications that contradict words only together, by their
+    numbers in `simplified`, each with the words they contradict: one of
+    them is false."""
+    number = {s.implication: n for n, s in enumerate(simplified, start=1)}
     lines = []
     for conflict in base.joint_conflicts():
         together = ", ".join(f"[{number[i]}]" if i in number else str(i) for i in conflict.implications)
@@ -113,28 +114,29 @@ def joint_conflicts(base, rules) -> list[str]:
     return lines
 
 
-def lines_of(rules) -> list[str]:
-    """The rules, the unconfirmed ones marked if some are confirmed."""
-    mixed = any(rule.source is not ImplicationSource.UNCONFIRMED for rule in rules)
+def lines_of(simplified) -> list[str]:
+    """The simplified implications, the unconfirmed ones marked if some are
+    confirmed."""
+    mixed = any(s.source is not ImplicationSource.UNCONFIRMED for s in simplified)
     return [
-        f"{rule}{'   [unconfirmed]' if mixed and rule.source is ImplicationSource.UNCONFIRMED else ''}"
-        for rule in rules
+        f"{s}{'   [unconfirmed]' if mixed and s.source is ImplicationSource.UNCONFIRMED else ''}"
+        for s in simplified
     ]
 
 
-def show(title: str, rules, base) -> list[str]:
-    """Print the rules numbered, then their joint conflicts; return the
-    latter."""
-    unconfirmed = sum(rule.source is ImplicationSource.UNCONFIRMED for rule in rules)
+def show(title: str, simplified, base) -> list[str]:
+    """Print the simplified implications numbered, then their joint
+    conflicts; return the latter."""
+    unconfirmed = sum(s.source is ImplicationSource.UNCONFIRMED for s in simplified)
     count = (
-        "all unconfirmed" if unconfirmed == len(rules)
+        "all unconfirmed" if unconfirmed == len(simplified)
         else "all confirmed" if not unconfirmed
         else f"{unconfirmed} unconfirmed"
     )
-    print(f"\n{title} ({len(rules)}, {count}):")
-    for n, line in enumerate(lines_of(rules), start=1):
+    print(f"\n{title} ({len(simplified)}, {count}):")
+    for n, line in enumerate(lines_of(simplified), start=1):
         print(f"  [{n}] {line}")
-    conflicts = joint_conflicts(base, rules)
+    conflicts = joint_conflicts(base, simplified)
     if conflicts:
         print(f"Contradicting words only together ({len(conflicts)}):")
         for line in conflicts:
@@ -164,9 +166,10 @@ def table(judgments: Judgments) -> list[str]:
     return lines
 
 
-def write(path: Path, rules, conflicts: list[str]) -> None:
-    """One rule a line, numbered by its line; then the joint conflicts."""
-    lines = lines_of(rules)
+def write(path: Path, simplified, conflicts: list[str]) -> None:
+    """One simplified implication a line, numbered by its line; then the
+    joint conflicts."""
+    lines = lines_of(simplified)
     if conflicts:
         lines += ["", "Contradicting words only together:"] + conflicts
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -261,7 +264,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     elapsed = time.perf_counter() - start
 
-    rules = simplified_rules(result.base)
+    found = simplified_implications(result.base)
     models = [judge, proposer] + ([referee] if referee else [])
     calls = sum(m.calls for m in models)
     cost = sum(m.cost for m in models)
@@ -278,21 +281,21 @@ def main(argv: list[str] | None = None) -> None:
     if context_expert is not None and context_expert.unsearched:
         print(f"Not Searched:      {context_expert.unsearched} questions about words, "
               f"accepted once a limit was reached without searching for new contexts")
-    conflicts = show("Rules", rules, result.base)
-    word_rules, word_conflicts = [], []
+    conflicts = show("Implications", found, result.base)
+    word_found, word_conflicts = [], []
     if context_result is not None:
-        word_rules = simplified_rules(context_result.base)
-        word_conflicts = show(f"Rules about the words {', '.join(context_expert.words)}",
-                              word_rules, context_result.base)
+        word_found = simplified_implications(context_result.base)
+        word_conflicts = show(f"Implications between the words {', '.join(context_expert.words)}",
+                              word_found, context_result.base)
     lines = table(judgments)
     print()
     print("\n".join(lines))
 
     results.mkdir(parents=True, exist_ok=True)
-    write(results / "rules.txt", rules, conflicts)
+    write(results / "implications.txt", found, conflicts)
     (results / "context.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if context_result is not None:
-        write(results / "word_rules.txt", word_rules, word_conflicts)
+        write(results / "word_implications.txt", word_found, word_conflicts)
     print(f"\nResults written to {results}")
 
 

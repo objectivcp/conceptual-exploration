@@ -5,7 +5,7 @@ import random
 
 import pytest
 
-from conceptual_exploration import Implication, PartialObject, Undecided, explore_in_rounds, simplified_rules
+from conceptual_exploration import Implication, PartialObject, Undecided, explore_in_rounds, simplified_implications
 from conceptual_exploration.exploration.base import ImplicationSource
 from conceptual_exploration.core.theory import ImplicationTheory
 from explorations.lexical_typology.explore import FIELD_DIR, explore, table
@@ -218,10 +218,10 @@ def test_limits_stop_the_search_for_words(tmp_path, limits):
 
 @pytest.mark.parametrize("cautious", [True, False])
 @pytest.mark.parametrize("seed", range(60))
-def test_no_rule_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(tmp_path, seed, cautious):
-    # Unknown cells let each rule leave a word unrefuted while the rules
-    # together contradict it; that is allowed, but reported. Five of these
-    # seeds give such a conflict.
+def test_no_implication_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(tmp_path, seed, cautious):
+    # Unknown cells let each implication leave a word unrefuted while the
+    # implications together contradict it; that is allowed, but reported.
+    # Five of these seeds give such a conflict.
     rng = random.Random(seed)
     unsure = {(w, c) for w in GOLD for c in CONTEXTS if rng.random() < 0.4}
     judgments, _, result = run(tmp_path, Judge(unsure), Proposer(), cautious=cautious)
@@ -229,14 +229,15 @@ def test_no_rule_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(
     # Every word judged is in the context.
     assert {name.original for name in base.context.objects} == set(judgments.words())
 
-    def contradicts(rules, row):
-        theory = ImplicationTheory(rules, index=base.index)
+    def contradicts(implications, row):
+        theory = ImplicationTheory(implications, index=base.index)
         return bool(set(theory.closure(set(row.positive))) & row.negative)
 
     rows = {word: judgments.row(word) for word in judgments.words()}
-    for rule in simplified_rules(base):
+    for simplified in simplified_implications(base):
         for word, row in rows.items():
-            assert not contradicts([Implication(rule.premise, rule.conclusion)], row), (rule, word)
+            implication = Implication(simplified.premise, simplified.conclusion)
+            assert not contradicts([implication], row), (simplified, word)
     reported = {c.original for conflict in base.joint_conflicts() for c in conflict.contradicted}
     for word, row in rows.items():
         if contradicts(list(base.implications), row):
@@ -333,7 +334,7 @@ def test_a_confirming_expert_finds_the_gold_table_confirmed(tmp_path):
     for n in range(len(CONTEXTS) + 1):
         for attributes in itertools.combinations(CONTEXTS, n):
             assert set(theory.closure(set(attributes))) == gold_closure(set(attributes))
-    assert all(rule.source is ImplicationSource.CONFIRMED for rule in simplified_rules(result.base))
+    assert all(s.source is ImplicationSource.CONFIRMED for s in simplified_implications(result.base))
 
 
 def test_words_proposed_besides_the_answer_join_the_exploration_at_once(tmp_path):
@@ -406,7 +407,7 @@ class Forgetful(Proposer):
 
 def test_a_word_contradicting_a_confirmation_restarts_the_exploration_without_it(tmp_path, capsys):
     judgments, expert, result = run(tmp_path, Judge(), Forgetful(), cautious=False, search_covered=True)
-    assert "contradicts a confirmed rule" in capsys.readouterr().out
+    assert "contradicts a confirmed implication" in capsys.readouterr().out
     # The confirmation the fourth search made wrongly is left out.
     assert len(expert.confirmations(CONTEXTS)) < len(set(expert.confirmed))
     theory = result.base.implications
