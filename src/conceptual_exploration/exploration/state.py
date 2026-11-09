@@ -15,6 +15,11 @@ class ExplorationState:
         default_factory=list
     )
 
+    # The objects the expert gave besides its answers (`Expert.new_objects`).
+    added_objects: list = field(
+        default_factory=list
+    )
+
     # The unconfirmed implication whose refutation stopped the exploration,
     # if one did.
     stopped_by: object = None

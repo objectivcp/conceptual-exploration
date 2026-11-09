@@ -54,3 +54,11 @@ class Expert(
         than "none exists", so the implication is accepted as unconfirmed.
         """
         return True
+
+    def new_objects(self) -> list[PartialObject[O, A]]:
+        """Objects the expert has come to know besides its answers and has
+        not given before, such as the other candidates of a search; the
+        exploration adds them to the context after each answer. An object
+        given again under the same name merges into the one given before.
+        """
+        return []

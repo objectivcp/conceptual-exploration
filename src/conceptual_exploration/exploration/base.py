@@ -33,6 +33,16 @@ class JointConflict(Generic[O, A]):
     contradicted: tuple[VersionedObject[O] | Implication[A], ...]
 
 
+class ObjectConflict(ValueError):
+    """The trusted implications contradict an object: they force on it the
+    `attributes` it is known to lack. `object` is its name in the context."""
+
+    def __init__(self, object, attributes):
+        self.object = object
+        self.attributes = attributes
+        super().__init__(f"Implications conflict with object {object}: {attributes}")
+
+
 class ImplicationSource(Enum):
     BACKGROUND = "background"
     CONFIRMED = "confirmed"
@@ -673,10 +683,7 @@ class ExplorationBase(Generic[O, A]):
         closure = self._trusted.closure_mask
         positive = closure(positive)
         if positive & negative:
-            raise ValueError(
-                f"Implications conflict with object {name}: "
-                f"{self.index.decode(positive & negative)}"
-            )
+            raise ObjectConflict(name, self.index.decode(positive & negative))
         changed = True
         while changed:
             changed = False

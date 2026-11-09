@@ -41,6 +41,7 @@ def explore_in_rounds(
         on_resume: Callable[[Implication[A], O], None] | None = None,
         map_unconfirmed: bool = True,
         undecided: Literal["accept", "reject"] = "accept",
+        confirmed: Iterable[Implication[A]] = (),
 ) -> RoundsResult[O, A]:
     """Explore, resuming whenever an object or a rejected implication
     refutes an implication accepted as unconfirmed, or the trusted
@@ -60,7 +61,10 @@ def explore_in_rounds(
     questions are asked again.
 
     `map_unconfirmed` is passed to `ExplorationBase`, and `undecided` to
-    `AttributeExploration`.
+    `AttributeExploration`. `confirmed` holds implications the expert
+    confirmed in an earlier exploration: they are accepted as confirmed
+    before anything else and kept in every round, and, unlike background
+    implications, reported as found.
 
     The implications are then a sound and complete cover of the theory but
     need not be its canonical basis, the confirmed implications kept having
@@ -70,7 +74,7 @@ def explore_in_rounds(
     background = tuple(background_implications)
     mappings = tuple(mappings)
     history: list[tuple[Implication[A], ImplicationSource]] = []
-    kept: list[Implication[A]] = []
+    kept: list[Implication[A]] = list(confirmed)
     objects = list(objects)
     rejected: list[Implication[A]] = []
     # The implications the tentative objects kept stand for.

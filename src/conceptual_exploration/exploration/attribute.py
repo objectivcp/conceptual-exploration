@@ -52,7 +52,8 @@ class QuestionReport(Generic[O, A]):
     `counterexample` holds the refuting object, and when the expert left it
     undecided, in which case `undecided` holds its answer. The counts describe
     the theory as it stood when the question was answered, before the answer
-    was applied.
+    was applied. `added` holds the objects the expert gave besides its answer
+    (`Expert.new_objects`), which are added after it.
     """
 
     number: int
@@ -62,6 +63,7 @@ class QuestionReport(Generic[O, A]):
     implication_count: int
     object_count: int
     undecided: Undecided[O, A] | None = None
+    added: tuple[PartialObject[O, A], ...] = ()
 
 
 def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
@@ -78,13 +80,16 @@ def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
         print(f'Number of objects: {question.object_count}')
         print(f'Question {question.number}: {question.implication}')
         if question.counterexample is not None:
-            print(f'Counterexample found: {question.counterexample}\n')
+            print(f'Counterexample found: {question.counterexample}')
         elif question.undecided is not None:
             outcome = "Rejected" if question.undecided.rejected else "Unconfirmed"
             proved = ", ".join(map(str, question.undecided.proved))
-            print(f'{outcome}{f"; proved {proved}" if proved else ""}\n')
+            print(f'{outcome}{f"; proved {proved}" if proved else ""}')
         else:
-            print(f'{question.source.value.capitalize()}\n')
+            print(f'{question.source.value.capitalize()}')
+        if question.added:
+            print(f'Also added: {", ".join(str(o.object) for o in question.added)}')
+        print()
 
     return report
 
@@ -110,6 +115,7 @@ class AttributeExploration:
         self.evaluate_all = evaluate_all
         self.on_question = on_question
         self.undecided = undecided
+        self._added: tuple[PartialObject[O, A], ...] = ()
 
     def run(self, start=None):
         """Explore from the first closed set, or from the first closed set
@@ -121,7 +127,8 @@ class AttributeExploration:
         was accepted at without it. `state.stopped_by` then holds it.
 
         A question the trusted knowledge already shows false is not asked
-        (see `_question`).
+        (see `_question`). The objects the expert gives besides an answer
+        (`Expert.new_objects`) are added once the answer has been applied.
         """
         # Premises and closures are bitmasks over the base's index; only the
         # implication put to the expert is turned back into sets.
@@ -155,8 +162,10 @@ class AttributeExploration:
                         self.base.attributes if self.evaluate_all else None
                     )
                     self.state.questions_asked += 1
+                    self._added = tuple(self.expert.new_objects())
                     if isinstance(counterexample, Undecided):
                         premise = self._leave_open(implication, counterexample)
+                        self._add_objects()
                         if self._stopped():
                             return self.state
                         break
@@ -168,6 +177,7 @@ class AttributeExploration:
                         self._report(implication, counterexample, None)
                         self.base.add_counterexample(counterexample)
                         self.state.counterexamples.append(counterexample)
+                        self._add_objects()
                         if self._stopped():
                             return self.state
                         closure = self.base.context_closure_mask(premise)
@@ -179,12 +189,14 @@ class AttributeExploration:
                         )
                         if source is ImplicationSource.UNCONFIRMED and self.undecided == "reject":
                             premise = self._leave_open(implication, Undecided())
+                            self._add_objects()
                             if self._stopped():
                                 return self.state
                             break
                         self._report(implication, None, source)
                         self.base.accept(implication, source)
                         self.state.accepted_implications.append(implication)
+                        self._add_objects()
                         if self._stopped():
                             return self.state
                         premise = premises.send(True)
@@ -230,6 +242,12 @@ class AttributeExploration:
             else:
                 left |= 1 << position
         return left
+
+    def _add_objects(self) -> None:
+        for obj in self._added:
+            self.base.add_counterexample(obj)
+            self.state.added_objects.append(obj)
+        self._added = ()
 
     def _stopped(self) -> bool:
         refuted = self.base.earliest_refuted()
@@ -329,5 +347,6 @@ class AttributeExploration:
                 implication_count=len(self.base.implications.implications),
                 object_count=len(self.base.context.objects),
                 undecided=undecided,
+                added=self._added,
             )
         )

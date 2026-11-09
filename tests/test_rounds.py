@@ -207,3 +207,66 @@ def test_a_tentative_object_contradicted_by_an_image_is_dropped_and_the_explorat
             rows = [row for row in DUAL_WORLD if set(subset) <= row]
             expected = set("abcd").intersection(*rows) if rows else set("abcd")
             assert result.base.implications.closure(set(subset)) == expected
+
+
+class Gathering(Expert):
+    """Refutes only with the empty object and never confirms. Besides its
+    answers it first learns of w, which has b, and later that w lacks a."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def validate(self, implication, attributes=None):
+        self.calls += 1
+        if not implication.premise:
+            return PartialObject("empty", set(), {"a", "b"})
+        return None
+
+    def is_conclusive(self):
+        return False
+
+    def new_objects(self):
+        if self.calls == 1:
+            return [PartialObject("w", {"b"}, set())]
+        if self.calls == 2:
+            return [PartialObject("w", {"b"}, {"a"})]
+        return []
+
+
+def test_objects_given_besides_the_answers_are_added_and_a_better_row_refutes():
+    reports = []
+    result = explore_in_rounds("ab", Gathering(), on_question=reports.append)
+    b_to_a = Implication(frozenset("b"), frozenset("a"))
+    # w with b and a unknown let b -> a be asked; w without a refutes it.
+    assert result.refuted == [(b_to_a, "w")]
+    assert result.rounds == 2
+    assert [[o.object for o in r.added] for r in reports[:2]] == [["w"], ["w"]]
+    w = next(o for name, o in result.base.context.objects.items() if name.original == "w")
+    assert (w.positive, w.negative) == ({"b"}, {"a"})
+    assert list(result.base.implications) == [Implication(frozenset("a"), frozenset("b"))]
+
+
+def test_an_object_the_trusted_implications_contradict_raises_an_object_conflict():
+    from conceptual_exploration import ObjectConflict
+    from conceptual_exploration.exploration.base import ExplorationBase
+
+    base = ExplorationBase(attributes="ab")
+    base.accept(Implication(frozenset("a"), frozenset("b")), ImplicationSource.CONFIRMED)
+    with pytest.raises(ObjectConflict) as raised:
+        base.add_counterexample(PartialObject("w", {"a"}, {"b"}))
+    assert raised.value.object.original == "w"
+    assert raised.value.attributes == {"b"}
+    assert not base.context.objects
+
+
+def test_implications_confirmed_before_are_kept_across_rounds_and_reported_as_found():
+    from conceptual_exploration import simplified_rules
+
+    earlier = Implication(frozenset({"a", "b"}), frozenset({"c"}))
+    result = explore_in_rounds(ATTRIBUTES, Hiding(), confirmed=[earlier])
+    assert result.rounds == 2
+    assert result.base.implication_sources[earlier] is ImplicationSource.CONFIRMED
+    assert earlier in [rule.implication for rule in simplified_rules(result.base)]
+    for r in range(len(ATTRIBUTES) + 1):
+        for subset in combinations(ATTRIBUTES, r):
+            assert result.base.implications.closure(set(subset)) == world_closure(set(subset))
