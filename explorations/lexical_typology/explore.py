@@ -32,8 +32,8 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import explore_in_rounds, report_every, simplified_rules
-from conceptual_exploration.exploration.base import VersionedObject
+from conceptual_exploration import ObjectConflict, explore_in_rounds, report_every, simplified_rules
+from conceptual_exploration.exploration.base import ImplicationSource, VersionedObject
 from explorations.lexical_typology.lexical import (
     Claude, ContextExpert, Field, Judgments, LexicalExpert,
 )
@@ -49,34 +49,33 @@ def field_path(name: str) -> Path:
     return FIELD_DIR / f"{name}.toml"
 
 
-def settle(attributes, expert, report: int):
-    """Explore `attributes` until every object the expert judged is in the
-    context.
+def run(attributes, expert, report: int):
+    """Explore `attributes` with every object the expert has judged,
+    starting from the implications it confirmed that no object contradicts.
 
-    The expert may judge objects that refute none of the questions it is
-    asked but do refute an implication accepted before; such an object
-    reaches the exploration only as an object of the next one, which starts
-    over with every object judged, answering the questions asked before
-    from the judgments and the cached proposals. Once the expert's limits
-    are reached it judges no new objects, so the explorations end.
+    The objects the expert judges along the way join the exploration at
+    once (`new_objects`). One that contradicts an implication the expert
+    confirmed, or a value the referee decides later, stops the
+    exploration; it is run again, without the confirmed implications that
+    are now contradicted, whose questions are asked again.
     """
     while True:
         names = expert.objects()
         expert.given = set(names)
         expert.unsearched = 0
-        result = explore_in_rounds(
-            attributes,
-            expert,
-            objects=[expert.row(n) for n in names],
-            on_question=report_every(report),
-            on_resume=lambda implication, name: print(
-                f"\n{name} refutes the unconfirmed {implication}; resuming\n"),
-        )
-        missing = [n for n in expert.objects() if n not in names]
-        if not missing:
-            return result
-        print(f"\nExploring again with the objects judged but not in the context: "
-              f"{', '.join(missing)}\n")
+        try:
+            return explore_in_rounds(
+                attributes,
+                expert,
+                objects=[expert.row(n) for n in names],
+                confirmed=expert.confirmations(attributes),
+                on_question=report_every(report),
+                on_resume=lambda implication, name: print(
+                    f"\n{name} refutes the unconfirmed {implication}; resuming\n"),
+            )
+        except ObjectConflict as conflict:
+            print(f"\n{conflict.object.original} contradicts a confirmed rule "
+                  f"({', '.join(sorted(conflict.attributes))}); exploring again without it\n")
 
 
 def explore(judgments: Judgments, words: LexicalExpert, contexts: ContextExpert | None,
@@ -88,13 +87,13 @@ def explore(judgments: Judgments, words: LexicalExpert, contexts: ContextExpert 
     while True:
         print(f"\n=== Round {round_}: contexts, refuted by words ===")
         judgments.judge_words(judgments.words())
-        word_result = settle(judgments.contexts, words, report)
+        word_result = run(judgments.contexts, words, report)
         if contexts is None:
             return word_result, None
         print(f"\n=== Round {round_}: words, refuted by contexts ===")
         contexts.words = judgments.words()[:object_words]
         known = len(judgments.contexts)
-        context_result = settle(contexts.words, contexts, report)
+        context_result = run(contexts.words, contexts, report)
         if len(judgments.contexts) == known:
             return word_result, context_result
         round_ += 1
@@ -114,12 +113,27 @@ def joint_conflicts(base, rules) -> list[str]:
     return lines
 
 
+def lines_of(rules) -> list[str]:
+    """The rules, the unconfirmed ones marked if some are confirmed."""
+    mixed = any(rule.source is not ImplicationSource.UNCONFIRMED for rule in rules)
+    return [
+        f"{rule}{'   [unconfirmed]' if mixed and rule.source is ImplicationSource.UNCONFIRMED else ''}"
+        for rule in rules
+    ]
+
+
 def show(title: str, rules, base) -> list[str]:
     """Print the rules numbered, then their joint conflicts; return the
     latter."""
-    print(f"\n{title} ({len(rules)}, all unconfirmed):")
-    for n, rule in enumerate(rules, start=1):
-        print(f"  [{n}] {rule}")
+    unconfirmed = sum(rule.source is ImplicationSource.UNCONFIRMED for rule in rules)
+    count = (
+        "all unconfirmed" if unconfirmed == len(rules)
+        else "all confirmed" if not unconfirmed
+        else f"{unconfirmed} unconfirmed"
+    )
+    print(f"\n{title} ({len(rules)}, {count}):")
+    for n, line in enumerate(lines_of(rules), start=1):
+        print(f"  [{n}] {line}")
     conflicts = joint_conflicts(base, rules)
     if conflicts:
         print(f"Contradicting words only together ({len(conflicts)}):")
@@ -152,7 +166,7 @@ def table(judgments: Judgments) -> list[str]:
 
 def write(path: Path, rules, conflicts: list[str]) -> None:
     """One rule a line, numbered by its line; then the joint conflicts."""
-    lines = [str(rule) for rule in rules]
+    lines = lines_of(rules)
     if conflicts:
         lines += ["", "Contradicting words only together:"] + conflicts
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -181,6 +195,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--max-proposals", type=int, default=100,
                         help="stop searching for words once this many questions have "
                              "been put to the proposer; 0 for no limit (default: 100)")
+    parser.add_argument("--confirm", action="store_true",
+                        help="confirm what a search finds no counterexample to, rather "
+                             "than leave it unconfirmed")
+    parser.add_argument("--search-covered", action="store_true",
+                        help="search again questions an earlier search that found "
+                             "nothing covers")
     parser.add_argument("--max-contexts", type=int, default=0,
                         help="alternate with object exploration, adding contexts until "
                              "there are this many; 0 explores contexts only (default)")
@@ -213,6 +233,8 @@ def main(argv: list[str] | None = None) -> None:
         judgments, proposer, args.candidates,
         max_objects=args.max_words or None,
         max_proposals=args.max_proposals or None,
+        cautious=not args.confirm,
+        search_covered=args.search_covered,
     )
     context_expert = None
     if args.max_contexts:
@@ -220,6 +242,8 @@ def main(argv: list[str] | None = None) -> None:
             judgments, proposer, (), candidates=args.candidates,
             max_objects=args.max_contexts,
             max_proposals=args.max_proposals or None,
+            cautious=not args.confirm,
+            search_covered=args.search_covered,
         )
 
     print(f"Field:    {field.description} ({field.language} {field.part_of_speech}s)")

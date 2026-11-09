@@ -17,8 +17,9 @@ refute.
 answers the dual questions about words, those of object exploration, with
 new contexts, so that alternating the two lets both grow.
 
-The expert can refute an implication but never confirm one, so every
-implication it accepts is unconfirmed.
+The expert refutes an implication with an object it judges. Finding none,
+it confirms the implication, as far as it knows, unless it is `cautious`,
+which it is by default: then every implication it accepts is unconfirmed.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ from typing import Protocol
 
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.core.implication import Implication
+from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Expert, Undecided
 
 SLOT = "___"
@@ -371,20 +373,34 @@ class Judgments:
 class _Searching(Expert[str, str]):
     """An expert that refutes with objects it judges, searching for new ones.
 
-    Objects judged already but not yet given to the exploration are tried
-    first; unless one of them refutes the question, the proposer is asked
-    for up to `candidates` new ones, which are judged. An object that has
-    the premise but is unknown, rather than wrong, in the conclusion is
-    given as an undecided answer if no object refutes the question, an old
-    one before a new one. Before an
-    object is tried, the referee decides its unknown values in the
-    question's attributes, unless one of the premise is known false.
-    Proposals are cached by the question.
+    A question A -> B is answered in this order:
+
+    1. An object judged already, given to the exploration or not, that
+       refutes it. Before an object is tried, the referee decides its
+       unknown values in the question's attributes, unless one of the
+       premise is known false; a given object comes back with the values
+       decided, and the exploration merges them in.
+    2. Otherwise, a search: the proposer is asked for up to `candidates`
+       new objects, which are judged, and one that refutes the question is
+       the answer. Proposals are cached by the question. A question an
+       earlier search covers is not searched, unless `search_covered`: one
+       for P -> C with P within A and B within C, whose proposed objects are
+       all judged and none of which refutes P -> C. An object refuting A ->
+       B would refute P -> C.
+    3. Otherwise, an object that has the premise and is unknown, rather
+       than wrong, in the conclusion, as an undecided answer: a new one
+       before one judged already.
+    4. Otherwise None. A `cautious` expert leaves the question undecided
+       (`is_conclusive` is False); another confirms it, as far as it knows,
+       if it was searched or covered, and records it in `confirmed`.
 
     Once there are `max_objects` objects, or `max_proposals` questions have
     been put to the proposer, nothing new is searched for: the remaining
     questions are answered from the objects judged, and those it leaves
-    unrefuted are counted in `unsearched`.
+    unrefuted are counted in `unsearched` and never confirmed.
+
+    The objects judged but not given, such as the other candidates of a
+    search, go to the exploration through `new_objects`.
     """
 
     cache: str
@@ -396,15 +412,22 @@ class _Searching(Expert[str, str]):
             candidates: int = 2,
             max_objects: int | None = None,
             max_proposals: int | None = None,
+            cautious: bool = True,
+            search_covered: bool = False,
     ):
         self.judgments = judgments
         self.proposer = proposer
         self.candidates = candidates
         self.max_objects = max_objects
         self.max_proposals = max_proposals
-        # Objects in the exploration's context, which refute no question asked.
+        self.cautious = cautious
+        self.search_covered = search_covered
+        # Objects in the exploration's context.
         self.given: set[str] = set()
         self.unsearched = 0
+        # The implications confirmed, in order.
+        self.confirmed: list[Implication[str]] = []
+        self._conclusive = False
 
     def objects(self) -> list[str]:
         raise NotImplementedError
@@ -422,34 +445,82 @@ class _Searching(Expert[str, str]):
         """Judge the new objects; return those added."""
         raise NotImplementedError
 
+    def _admissible(self, name: str) -> bool:
+        """Whether a proposed object can be judged."""
+        return True
+
     def validate(
             self,
             implication: Implication[str],
             attributes: frozenset[str] | None = None,
     ) -> PartialObject[str, str] | Undecided[str, str] | None:
-        pending = [o for o in self.objects() if o not in self.given]
-        answer = self._answer(implication, pending)
+        self._conclusive = False
+        answer = self._answer(implication, self.objects())
+        searched = True
         if not isinstance(answer, PartialObject):
-            new = self._search(implication)
-            if new is None:
-                if answer is None:
-                    self.unsearched += 1
+            if not self.search_covered and self._covered(implication):
+                new = []
             else:
-                found = self._answer(implication, self._add(new))
-                if answer is None or isinstance(found, PartialObject):
-                    answer = found
+                new = self._search(implication)
+                if new is None:
+                    searched, new = False, []
+            found = self._answer(implication, self._add(new)) if new else None
+            if found is not None:
+                answer = found
         if isinstance(answer, Undecided):
             self.given.add(answer.object.object)
         elif answer is not None:
             self.given.add(answer.object)
+        elif not searched:
+            self.unsearched += 1
+        elif not self.cautious:
+            self._conclusive = True
+            self.confirmed.append(implication)
         return answer
 
     def is_conclusive(self) -> bool:
+        return self._conclusive
+
+    def new_objects(self) -> list[PartialObject[str, str]]:
+        names = [n for n in self.objects() if n not in self.given]
+        self.given.update(names)
+        return [self.row(n) for n in names]
+
+    def confirmations(self, attributes: Iterable[str]) -> list[Implication[str]]:
+        """The implications confirmed over `attributes`, in order, each kept
+        if, with those kept before it, it contradicts no object judged."""
+        attributes = set(attributes)
+        rows = [self.row(n) for n in self.objects()]
+        kept: list[Implication[str]] = []
+        for implication in dict.fromkeys(self.confirmed):
+            if not implication.premise | implication.conclusion <= attributes:
+                continue
+            theory = ImplicationTheory(kept + [implication])
+            if not any(set(theory.closure(set(row.positive))) & row.negative for row in rows):
+                kept.append(implication)
+        return kept
+
+    def _covered(self, implication: Implication[str]) -> bool:
+        """Whether an earlier search covers `implication` (see the class)."""
+        known = set(self.objects())
+        for key, proposed in self.judgments.data.get(self.cache, {}).items():
+            premise, conclusion = map(frozenset, json.loads(key))
+            if not (premise <= implication.premise and implication.conclusion <= conclusion):
+                continue
+            if any(o not in known and self._admissible(o) for o in proposed):
+                continue
+            searched = Implication(premise, conclusion)
+            if not any(o in known and self.row(o).refutes(searched) for o in proposed):
+                return True
         return False
 
     def _answer(self, implication, names):
         self._decide(
-            [n for n in names if not implication.premise & self.row(n).negative],
+            [
+                n for n in names
+                if not implication.premise & self.row(n).negative
+                and not implication.conclusion <= self.row(n).positive
+            ],
             implication.premise | implication.conclusion,
         )
         rows = [self.row(n) for n in names]
@@ -562,6 +633,9 @@ class ContextExpert(_Searching):
         new = self.judgments.add_contexts(names)
         self.judgments.judge_words(self.words)
         return new
+
+    def _admissible(self, name):
+        return name.count(SLOT) == 1
 
     def _propose(self, implication: Implication[str]) -> list[str]:
         f = self.judgments.field

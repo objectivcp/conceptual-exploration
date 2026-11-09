@@ -5,7 +5,8 @@ import random
 
 import pytest
 
-from conceptual_exploration import Implication, PartialObject, Undecided, simplified_rules
+from conceptual_exploration import Implication, PartialObject, Undecided, explore_in_rounds, simplified_rules
+from conceptual_exploration.exploration.base import ImplicationSource
 from conceptual_exploration.core.theory import ImplicationTheory
 from explorations.lexical_typology.explore import FIELD_DIR, explore, table
 from explorations.lexical_typology.lexical import ContextExpert, Field, Judgments, LexicalExpert
@@ -89,10 +90,10 @@ def gold_closure(attributes):
     return set(CONTEXTS).intersection(*intents) if intents else set(CONTEXTS)
 
 
-def run(tmp_path, judge, proposer, votes=1):
+def run(tmp_path, judge, proposer, votes=1, **options):
     judgments = Judgments(FIELD, judge, tmp_path / "judgments.json", votes=votes)
     judgments.judge_words(FIELD.words)
-    expert = LexicalExpert(judgments, proposer)
+    expert = LexicalExpert(judgments, proposer, **options)
     return judgments, expert, explore(judgments, expert, None, 0, report=0)[0]
 
 
@@ -215,15 +216,18 @@ def test_limits_stop_the_search_for_words(tmp_path, limits):
             assert not judgments.row(word).refutes(implication)
 
 
+@pytest.mark.parametrize("cautious", [True, False])
 @pytest.mark.parametrize("seed", range(60))
-def test_no_rule_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(tmp_path, seed):
+def test_no_rule_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(tmp_path, seed, cautious):
     # Unknown cells let each rule leave a word unrefuted while the rules
     # together contradict it; that is allowed, but reported. Five of these
     # seeds give such a conflict.
     rng = random.Random(seed)
     unsure = {(w, c) for w in GOLD for c in CONTEXTS if rng.random() < 0.4}
-    judgments, _, result = run(tmp_path, Judge(unsure), Proposer())
+    judgments, _, result = run(tmp_path, Judge(unsure), Proposer(), cautious=cautious)
     base = result.base
+    # Every word judged is in the context.
+    assert {name.original for name in base.context.objects} == set(judgments.words())
 
     def contradicts(rules, row):
         theory = ImplicationTheory(rules, index=base.index)
@@ -321,3 +325,91 @@ def test_the_context_limit_stops_object_exploration(tmp_path):
     explore(judgments, LexicalExpert(judgments, Proposer()), contexts, object_words=10, report=0)
     assert len(judgments.contexts) == len(CONTEXTS) + 1
     assert contexts.unsearched > 0
+
+
+def test_a_confirming_expert_finds_the_gold_table_confirmed(tmp_path):
+    judgments, _, result = run(tmp_path, Judge(), Proposer(), cautious=False)
+    theory = result.base.implications
+    for n in range(len(CONTEXTS) + 1):
+        for attributes in itertools.combinations(CONTEXTS, n):
+            assert set(theory.closure(set(attributes))) == gold_closure(set(attributes))
+    assert all(rule.source is ImplicationSource.CONFIRMED for rule in simplified_rules(result.base))
+
+
+def test_words_proposed_besides_the_answer_join_the_exploration_at_once(tmp_path):
+    judgments = Judgments(FIELD, Judge(), tmp_path / "judgments.json", votes=1)
+    judgments.judge_words(FIELD.words)
+    # Five candidates: the first search finds several refuting words.
+    expert = LexicalExpert(judgments, Proposer(), candidates=5)
+    expert.given = {"sharp"}
+    reports = []
+    explore_in_rounds(CONTEXTS, expert, objects=[judgments.row("sharp")], on_question=reports.append)
+    added = [o.object for report in reports for o in report.added]
+    assert added and set(added) <= set(judgments.words()) - {"sharp"}
+
+
+def test_a_given_word_refutes_once_the_referee_decides_its_unknown_value():
+    referee = Referee()
+    judgments = Judgments(FIELD, Judge({("pointed", "a ___ knife")}), referee=referee)
+    judgments.judge_words(["pointed"])
+    proposer = Proposing()
+    expert = LexicalExpert(judgments, proposer)
+    expert.given = {"pointed"}
+    answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ knife"})))
+    assert isinstance(answer, PartialObject) and answer.object == "pointed"
+    assert "a ___ knife" in answer.negative
+    assert proposer.calls == 0
+
+
+@pytest.mark.parametrize("search_covered", [False, True])
+def test_a_question_an_earlier_search_covers_is_searched_only_if_asked_to(search_covered):
+    judgments = Judgments(FIELD, Judge())
+    judgments.judge_words(["sharp"])
+    proposer = Proposing()
+    expert = LexicalExpert(judgments, proposer, cautious=False, search_covered=search_covered)
+    knife_needle = Implication(frozenset({"a ___ knife"}), frozenset({"a ___ needle"}))
+    covered = Implication(frozenset({"a ___ knife", "a ___ nose"}), frozenset({"a ___ needle"}))
+    not_covered = Implication(frozenset({"a ___ knife"}), frozenset({"a ___ needle", "a ___ thorn"}))
+    assert expert.validate(knife_needle) is None and proposer.calls == 1
+    assert expert.validate(covered) is None and expert.is_conclusive()
+    assert proposer.calls == (2 if search_covered else 1)
+    expert.validate(not_covered)
+    assert proposer.calls == (3 if search_covered else 2)
+    assert expert.confirmed == [knife_needle, covered, not_covered]
+
+
+def test_a_new_undecided_word_is_preferred_to_one_judged_before():
+    judgments = Judgments(FIELD, Judge(unsure={("sharp", "a ___ knife"), ("pointed", "a ___ knife")}))
+    judgments.judge_words(["sharp"])
+    expert = LexicalExpert(judgments, Proposing("pointed"))
+    answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ knife"})))
+    assert isinstance(answer, Undecided) and answer.object.object == "pointed"
+
+
+def test_a_confirming_expert_confirms_only_what_it_searched():
+    judgments = Judgments(FIELD, Judge())
+    judgments.judge_words(["sharp"])
+    expert = LexicalExpert(judgments, Proposing(), cautious=False, max_objects=1)
+    implication = Implication(frozenset({"a ___ knife"}), frozenset({"a ___ needle"}))
+    # One word is the limit, so nothing is searched.
+    assert expert.validate(implication) is None
+    assert not expert.is_conclusive() and expert.unsearched == 1 and not expert.confirmed
+
+
+class Forgetful(Proposer):
+    """Like Proposer, but proposes nothing the fourth time."""
+
+    def ask(self, system, prompt, schema):
+        answer = super().ask(system, prompt, schema)
+        return {"items": []} if self.calls == 4 else answer
+
+
+def test_a_word_contradicting_a_confirmation_restarts_the_exploration_without_it(tmp_path, capsys):
+    judgments, expert, result = run(tmp_path, Judge(), Forgetful(), cautious=False, search_covered=True)
+    assert "contradicts a confirmed rule" in capsys.readouterr().out
+    # The confirmation the fourth search made wrongly is left out.
+    assert len(expert.confirmations(CONTEXTS)) < len(set(expert.confirmed))
+    theory = result.base.implications
+    for n in range(len(CONTEXTS) + 1):
+        for attributes in itertools.combinations(CONTEXTS, n):
+            assert set(theory.closure(set(attributes))) == gold_closure(set(attributes))
