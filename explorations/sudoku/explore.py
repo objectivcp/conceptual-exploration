@@ -23,7 +23,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration, reduced_basis
+from conceptual_exploration import AttributeExploration, simplified_implications
 from conceptual_exploration.exploration.base import ExplorationBase
 from explorations.sudoku.config import ExplorationConfig, available_configs, load_config
 from explorations.sudoku.sudoku import (
@@ -84,9 +84,9 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
         print(f"Checked on Block Size {check_size}:     "
               f"{failing} of {len(counterexamples)} fail ({elapsed:.2f}s)")
 
-    rules = reduced_basis(base)
+    rules = simplified_implications(base)
     lines = []
-    print(f"\nDiscovered Rules (Reduced, {len(rules)}):")
+    print(f"\nDiscovered Rules (Simplified, {len(rules)}):")
     for idx, rule in enumerate(rules, start=1):
         fails = counterexamples.get(rule.implication) is not None
         marker = f"   [FAILS FOR BLOCK SIZE {check_size}]" if fails else ""
@@ -108,7 +108,7 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
 
 def run_propositional_exploration(config: ExplorationConfig, label: str) -> list[str]:
     """Run propositional attribute exploration of 4x4 grids and return its
-    rules as printed."""
+    simplified implications as printed."""
     print("=" * 70)
     print(f"SUDOKU PROPOSITIONAL EXPLORATION: {label} (4x4 grids)")
     print("=" * 70)
@@ -134,9 +134,9 @@ def run_propositional_exploration(config: ExplorationConfig, label: str) -> list
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
     print(f"Discovered Objects/Configs:   {len(base.context.objects)}")
 
-    rules = reduced_basis(base)
-    lines = [str(rule) for rule in rules]
-    print(f"\nDiscovered Rules (Reduced, {len(rules)}), as (row, column, digit):")
+    implications = simplified_implications(base)
+    lines = [str(implication) for implication in implications]
+    print(f"\nSimplified Implications ({len(implications)}), as (row, column, digit):")
     for idx, line in enumerate(lines, start=1):
         print(f"  [{idx}] {line}")
     print()
@@ -149,8 +149,9 @@ def run(config: ExplorationConfig, label: str) -> list[str]:
     return run_rule_exploration(config, label)
 
 
-def write_rules(path: Path, label: str, config: ExplorationConfig, lines: list[str]) -> None:
-    """Write the rules, after the configuration that produced them."""
+def write_result(path: Path, label: str, config: ExplorationConfig, lines: list[str]) -> None:
+    """Write the rules or implications found, after the configuration that
+    produced them."""
     header = [f"# Sudoku exploration: {label}", "#"]
     header += [f"# {line}" for line in config.to_toml().splitlines()]
     path.write_text("\n".join(header + [""] + lines) + "\n", encoding="utf-8")
@@ -184,7 +185,7 @@ def main(argv: list[str] | None = None) -> None:
         "--output",
         type=Path,
         metavar="PATH",
-        help="also write the rules to PATH, after the configuration that produced them",
+        help="also write the rules or implications found to PATH, after the configuration that produced them",
     )
     args = parser.parse_args(argv)
     if args.output is not None and len(args.configs) > 1:
@@ -208,8 +209,8 @@ def main(argv: list[str] | None = None) -> None:
     for name, config in configs:
         lines = run(config, Path(name).stem)
         if args.output is not None:
-            write_rules(args.output, Path(name).stem, config, lines)
-            print(f"Rules written to {args.output}")
+            write_result(args.output, Path(name).stem, config, lines)
+            print(f"Result written to {args.output}")
 
 
 if __name__ == "__main__":
