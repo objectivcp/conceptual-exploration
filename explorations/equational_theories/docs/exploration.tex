@@ -258,7 +258,7 @@ and resumes NextClosure at $P$. Since NextClosure can continue from any set, and
   \item \textbf{Continuing after an acceptance.} After $P \to C$ is accepted, the next closed set is computed from $P$ under the extended theory. NextClosure reuses the step that produced $P$: the closure of $P$ under the new theory is the next closed set if it adds no attribute lectically smaller than the one just added.
   \item \textbf{Rows of counterexamples.} With \code{evaluate\_all}, the expert is given all attributes and returns the full row of a counterexample, not only its values on the question's attributes. The equational-theories exploration always does this.
   \item \textbf{Bit sets.} Attribute sets, rows and implications are stored as bit masks, and distinct rows are stored once with the objects sharing them; the context closure and the implication closure (a variant of Wild's algorithm) are integer operations.
-  \item \textbf{Reading the result.} For display, \code{simplified\_rules} simplifies the accepted implications, using only the \emph{trusted} implications: the background, the confirmed implications and their images. Each premise is cut to the attributes the rest of it does not entail by them. The conclusion of a simplified confirmed implication starts as everything its premise entails by them, that of a simplified unconfirmed implication as what the implication adds to this, and each conclusion is cut to the attributes that do not follow from the premise by way of the background, the other simplified confirmed implications and all their images. A simplified implication left with no conclusion follows from these and is dropped. The simplified confirmed implications are thus reduced, none of them following from the others together with the background and the symmetries, and they form a basis of the trusted implications relative to the background and the symmetries, though not in general its canonical basis, nor one with as few implications as possible. A simplified unconfirmed implication is never cut by another unconfirmed one, so that each states one step that is not proved: no attribute of its conclusion follows from its premise by the trusted implications, and two open steps are not merged into one; it may, however, follow from other unconfirmed ones. A premise that entails every attribute is shown as concluding \emph{everything}. The simplified implications, read together with the background and the symmetries, entail exactly what the accepted implications do.
+  \item \textbf{Reading the result.} For display, \code{simplified\_implications} simplifies the accepted implications, using only the \emph{trusted} implications: the background, the confirmed implications and their images. Each premise is cut to the attributes the rest of it does not entail by them. The conclusion of a simplified confirmed implication starts as everything its premise entails by them, that of a simplified unconfirmed implication as what the implication adds to this, and each conclusion is cut to the attributes that do not follow from the premise by way of the background, the other simplified confirmed implications and all their images. A simplified implication left with no conclusion follows from these and is dropped. The simplified confirmed implications are thus reduced, none of them following from the others together with the background and the symmetries, and they form a basis of the trusted implications relative to the background and the symmetries, though not in general its canonical basis, nor one with as few implications as possible. A simplified unconfirmed implication is never cut by another unconfirmed one, so that each states one step that is not proved: no attribute of its conclusion follows from its premise by the trusted implications, and two open steps are not merged into one; it may, however, follow from other unconfirmed ones. A premise that entails every attribute is shown as concluding \emph{everything}. The simplified implications, read together with the background and the symmetries, entail exactly what the accepted implications do.
 \end{itemize}
 
 %======================================================================
@@ -1118,7 +1118,7 @@ The program saves the results only at the end. If it is interrupted, only the lo
 
 The runner is a thin layer over the library, which can be used directly:
 \begin{Verbatim}
-from conceptual_exploration import explore_in_rounds, report_every, simplified_rules
+from conceptual_exploration import explore_in_rounds, report_every, simplified_implications
 from explorations.equational_theories.magma import ETP
 from explorations.equational_theories.vampire import VampireExpert
 from explorations.equational_theories.background import background_implications
@@ -1133,7 +1133,7 @@ result = explore_in_rounds(
     evaluate_all=True,
     on_question=report_every(100),
 )
-for implication in simplified_rules(result.base):
+for implication in simplified_implications(result.base):
     print(implication)
 print(result.base.open_questions, expert.answers)
 \end{Verbatim}

@@ -81,23 +81,24 @@ def test_the_confirmed_part_of_a_split_answer_survives_its_unconfirmed_part():
 
 
 class Random(Expert):
-    """Answers from a world closed under random rules and their images under
+    """Answers from a world closed under random implications and their images under
     `swap`: for a false implication, a refuting object with some values
     hidden, the rest rejected as a whole, or, the first time only, an
     unknown rest; for a true one, a confirmation or an unknown rest."""
 
-    def __init__(self, attributes, swap, rules, seed):
+    def __init__(self, attributes, swap, implications, seed):
         import random
         self.rng = random.Random(seed)
         self.attributes = attributes
-        rows = [self._close({a for a in attributes if self.rng.random() < 0.3}, rules) for _ in range(12)]
+        rows = [self._close({a for a in attributes if self.rng.random() < 0.3}, implications)
+                for _ in range(12)]
         self.world = [frozenset(r) for row in rows for r in (row, {swap[a] for a in row})]
         self.hidden = set()
 
     @staticmethod
-    def _close(row, rules):
+    def _close(row, implications):
         while True:
-            new = {c for p, c in rules if p <= row} - row
+            new = {c for p, c in implications if p <= row} - row
             if not new:
                 return row
             row |= new
@@ -130,10 +131,10 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
     swap = dict(zip("abcdefgh", "efghabcd"))
     for seed in range(60):
         rng = random.Random(seed)
-        rules = [(set(rng.sample(attributes, 2)), rng.choice(attributes)) for _ in range(5)]
-        rules += [({swap[a] for a in p}, swap[c]) for p, c in rules]
+        implications = [(set(rng.sample(attributes, 2)), rng.choice(attributes)) for _ in range(5)]
+        implications += [({swap[a] for a in p}, swap[c]) for p, c in implications]
         result = explore_in_rounds(
-            attributes, Random(attributes, swap, rules, seed), mappings=[lambda a: swap[a]], undecided=undecided
+            attributes, Random(attributes, swap, implications, seed), mappings=[lambda a: swap[a]], undecided=undecided
         )
         base = result.base
         sources = base.implication_sources
@@ -260,13 +261,13 @@ def test_an_object_the_trusted_implications_contradict_raises_an_object_conflict
 
 
 def test_implications_confirmed_before_are_kept_across_rounds_and_reported_as_found():
-    from conceptual_exploration import simplified_rules
+    from conceptual_exploration import simplified_implications
 
     earlier = Implication(frozenset({"a", "b"}), frozenset({"c"}))
     result = explore_in_rounds(ATTRIBUTES, Hiding(), confirmed=[earlier])
     assert result.rounds == 2
     assert result.base.implication_sources[earlier] is ImplicationSource.CONFIRMED
-    assert earlier in [rule.implication for rule in simplified_rules(result.base)]
+    assert earlier in [simplified.implication for simplified in simplified_implications(result.base)]
     for r in range(len(ATTRIBUTES) + 1):
         for subset in combinations(ATTRIBUTES, r):
             assert result.base.implications.closure(set(subset)) == world_closure(set(subset))

@@ -285,12 +285,12 @@ def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict],
                         for name, row in zip(objects, rows)}) if reduce else set(objects)
     index = {name: i for i, name in enumerate(names)}
     by_key = {law_key(attributes[name], False): name for name in names}
-    rules = []
+    implications = []
     for certificate in certificates:
         keys = [law_key(parse_law(p), False) for p in certificate["premise"]]
         target = law_key(parse_law(certificate["conclusion"]), False)
         if all(key in by_key for key in keys + [target]):
-            rules.append((sum(1 << index[by_key[key]] for key in keys), 1 << index[by_key[target]]))
+            implications.append((sum(1 << index[by_key[key]] for key in keys), 1 << index[by_key[target]]))
     trivial = sum(1 << index[name] for name in names if attributes[name][0] == attributes[name][1])
 
     def closure(mask: int) -> int:
@@ -298,7 +298,7 @@ def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict],
         changed = True
         while changed:
             changed = False
-            for premise, conclusion in rules:
+            for premise, conclusion in implications:
                 if premise & ~mask == 0 and conclusion & ~mask:
                     mask |= conclusion
                     changed = True

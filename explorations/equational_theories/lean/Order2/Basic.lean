@@ -1,6 +1,6 @@
 import Order2.Superposition
 
-/-! Magmas and the ETP laws of the rules, defined as in the ETP. -/
+/-! Magmas and the ETP laws of the implications, defined as in the ETP. -/
 
 class Magma (α : Type _) where
   op : α → α → α

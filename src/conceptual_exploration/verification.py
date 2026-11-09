@@ -24,10 +24,10 @@ class _Closure:
     """The closure under implications, with the implications indexed by the
     attributes of their premises."""
 
-    def __init__(self, attributes: int, rules: Sequence[tuple[int, int]]):
+    def __init__(self, attributes: int, implications: Sequence[tuple[int, int]]):
         self.start = 0  # the conclusions of the implications with empty premises
         self.by_attribute: list[list[tuple[int, int]]] = [[] for _ in range(attributes)]
-        for premise, conclusion in rules:
+        for premise, conclusion in implications:
             if premise == 0:
                 self.start |= conclusion
             mask = premise
@@ -55,9 +55,9 @@ class _Closure:
 _worker_closure: _Closure | None = None
 
 
-def _start_worker(attributes: int, rules: Sequence[tuple[int, int]]) -> None:
+def _start_worker(attributes: int, implications: Sequence[tuple[int, int]]) -> None:
     global _worker_closure
-    _worker_closure = _Closure(attributes, rules)
+    _worker_closure = _Closure(attributes, implications)
 
 
 def _disagreements(queries: Sequence[tuple[int, int]]) -> list[int]:
@@ -88,9 +88,10 @@ def check_closure_systems(
     merged: dict[int, int] = {}
     for premise, conclusion in implications:
         merged[premise] = merged.get(premise, 0) | conclusion
-    rules = [(premise, conclusion & ~premise) for premise, conclusion in merged.items() if conclusion & ~premise]
+    merged_implications = [(premise, conclusion & ~premise) for premise, conclusion in merged.items()
+                           if conclusion & ~premise]
     for k, intent in enumerate(intents):
-        for premise, conclusion in rules:
+        for premise, conclusion in merged_implications:
             if premise & ~intent == 0 and conclusion & ~intent:
                 raise VerificationError(f"Object {k} violates an implication")
 
@@ -126,11 +127,11 @@ def check_closure_systems(
                 count += 1
                 break
     if processes <= 1:
-        _start_worker(attributes, rules)
+        _start_worker(attributes, merged_implications)
         wrong = _disagreements(queries)
     else:
         chunk = -(-len(queries) // (4 * processes))
-        with ProcessPoolExecutor(processes, initializer=_start_worker, initargs=(attributes, rules)) as pool:
+        with ProcessPoolExecutor(processes, initializer=_start_worker, initargs=(attributes, merged_implications)) as pool:
             wrong = [mask for part in pool.map(_disagreements, [queries[k:k + chunk]
                                                                 for k in range(0, len(queries), chunk)])
                      for mask in part]

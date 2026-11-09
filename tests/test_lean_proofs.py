@@ -2,19 +2,19 @@
 
 from explorations.equational_theories.etp import EtpLaws
 from explorations.equational_theories.lean_proofs import (
-    Rule,
+    PrintedImplication,
     lean_definition,
     lean_theorem,
-    rules_from_log,
+    implications_from_log,
     tptp_problem,
 )
 from explorations.equational_theories.magma import Equation
 
 LAWS = EtpLaws([Equation.parse(law, id=k) for k, law in enumerate(
     ["x = x", "x = y", "x = (x * y) * x", "x * y = y * x"], start=1)])
-RULE = Rule(1, (3, 4), (2,))
+IMPLICATION = PrintedImplication(1, (3, 4), (2,))
 
-# Vampire's proof of the rule, as printed with --proof_extra full (abridged).
+# Vampire's proof of the implication, as printed with --proof_extra full (abridged).
 PROOF = """% SZS output start Proof for t
 1. ! [X0,X1] : X0 = mul(mul(X0,X1),X0) [input(axiom) h1 "t.p"]
 2. ! [X0,X1] : mul(X0,X1) = mul(X1,X0) [input(axiom) h2 "t.p"]
@@ -32,21 +32,23 @@ PROOF = """% SZS output start Proof for t
 """
 
 
-RULES = (
+IMPLICATIONS = (
     "  [1] Eq25: x = ((x * y) * x), Eq43: (x * y) = (y * x) -> Eq2: x = y\n"
     "  [2] Eq8: x = (x * (x * x)), Eq25: x = ((x * y) * x) -> Eq3: x = (x * x)\n"
     "\nOpen Questions:\n"
 )
 
 
-def test_rules_are_read_from_the_log():
-    log = "Rules Found (Simplified, 2 rules):\n" + RULES
-    assert rules_from_log(log) == [Rule(1, (25, 43), (2,)), Rule(2, (8, 25), (3,))]
+EXPECTED = [PrintedImplication(1, (25, 43), (2,)), PrintedImplication(2, (8, 25), (3,))]
 
 
-def test_rules_are_read_from_a_log_of_the_former_version():
-    log = "Discovered Implication Basis (Reduced, 2 rules):\n" + RULES
-    assert rules_from_log(log) == [Rule(1, (25, 43), (2,)), Rule(2, (8, 25), (3,))]
+def test_implications_are_read_from_the_log():
+    assert implications_from_log("Simplified Implications (2):\n" + IMPLICATIONS) == EXPECTED
+
+
+def test_implications_are_read_from_logs_of_former_versions():
+    assert implications_from_log("Rules Found (Simplified, 2 rules):\n" + IMPLICATIONS) == EXPECTED
+    assert implications_from_log("Discovered Implication Basis (Reduced, 2 rules):\n" + IMPLICATIONS) == EXPECTED
 
 
 def test_laws_are_defined_as_in_the_etp():
@@ -57,7 +59,7 @@ def test_laws_are_defined_as_in_the_etp():
 
 
 def test_the_premise_laws_are_named_for_vampire():
-    assert tptp_problem(LAWS, RULE) == (
+    assert tptp_problem(LAWS, IMPLICATION) == (
         "fof(h1, axiom, ![XX,XY]: XX = mul(mul(XX,XY),XX)).\n"
         "fof(h2, axiom, ![XX,XY]: mul(XX,XY) = mul(XY,XX)).\n"
         "fof(goal, conjecture, (![XX,XY]: XX = XY)).\n"
@@ -65,7 +67,7 @@ def test_the_premise_laws_are_named_for_vampire():
 
 
 def test_each_clause_becomes_a_step_from_its_hypothesis():
-    theorem = lean_theorem(LAWS, RULE, PROOF)
+    theorem = lean_theorem(LAWS, IMPLICATION, PROOF)
     assert theorem.startswith(
         "theorem Equation3_4_implies_Equation2 (G : Type _) [Magma G] "
         "(h1 : Equation3 G) (h2 : Equation4 G) : Equation2 G := by\n"
