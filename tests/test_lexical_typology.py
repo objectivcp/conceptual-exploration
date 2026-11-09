@@ -145,6 +145,42 @@ def test_an_unknown_conclusion_gives_an_undecided_answer():
     assert expert.given == {"pointed"}
 
 
+class Proposing:
+    """Proposes the given words, whatever the question."""
+
+    def __init__(self, *words):
+        self.words = list(words)
+        self.calls = 0
+
+    def ask(self, system, prompt, schema):
+        self.calls += 1
+        return {"items": self.words}
+
+
+def test_a_word_judged_before_that_leaves_the_question_undecided_does_not_stop_the_search():
+    # "sharp" fits the nose but is unsure of the knife; "pointed", proposed,
+    # refutes nose -> knife.
+    judgments = Judgments(FIELD, Judge(unsure={("sharp", "a ___ knife")}))
+    judgments.judge_words(["sharp"])
+    proposer = Proposing("pointed")
+    expert = LexicalExpert(judgments, proposer)
+    answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ knife"})))
+    assert proposer.calls == 1
+    assert isinstance(answer, PartialObject) and answer.object == "pointed"
+    assert expert.given == {"pointed"}
+
+
+def test_a_word_judged_before_is_the_undecided_answer_if_the_search_finds_nothing():
+    judgments = Judgments(FIELD, Judge(unsure={("sharp", "a ___ knife")}))
+    judgments.judge_words(["sharp"])
+    proposer = Proposing("prickly")
+    expert = LexicalExpert(judgments, proposer)
+    answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ knife"})))
+    assert proposer.calls == 1
+    assert isinstance(answer, Undecided) and answer.object.object == "sharp"
+    assert expert.given == {"sharp"} and expert.unsearched == 0
+
+
 def test_shipped_fields_load():
     for path in FIELD_DIR.glob("*.toml"):
         field = Field.load(path)

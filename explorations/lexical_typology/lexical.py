@@ -372,9 +372,11 @@ class _Searching(Expert[str, str]):
     """An expert that refutes with objects it judges, searching for new ones.
 
     Objects judged already but not yet given to the exploration are tried
-    first; otherwise the proposer is asked for up to `candidates` new ones,
-    which are judged. An object that has the premise but is unknown, rather
-    than wrong, in the conclusion is given as an undecided answer. Before an
+    first; unless one of them refutes the question, the proposer is asked
+    for up to `candidates` new ones, which are judged. An object that has
+    the premise but is unknown, rather than wrong, in the conclusion is
+    given as an undecided answer if no object refutes the question, an old
+    one before a new one. Before an
     object is tried, the referee decides its unknown values in the
     question's attributes, unless one of the premise is known false.
     Proposals are cached by the question.
@@ -427,12 +429,15 @@ class _Searching(Expert[str, str]):
     ) -> PartialObject[str, str] | Undecided[str, str] | None:
         pending = [o for o in self.objects() if o not in self.given]
         answer = self._answer(implication, pending)
-        if answer is None:
+        if not isinstance(answer, PartialObject):
             new = self._search(implication)
             if new is None:
-                self.unsearched += 1
+                if answer is None:
+                    self.unsearched += 1
             else:
-                answer = self._answer(implication, self._add(new))
+                found = self._answer(implication, self._add(new))
+                if answer is None or isinstance(found, PartialObject):
+                    answer = found
         if isinstance(answer, Undecided):
             self.given.add(answer.object.object)
         elif answer is not None:
