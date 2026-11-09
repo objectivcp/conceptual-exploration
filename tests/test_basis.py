@@ -1,11 +1,11 @@
-"""Unit tests for the rules printed for reading."""
+"""Unit tests for the implications printed for reading."""
 
-from conceptual_exploration import Implication, simplified_rules
+from conceptual_exploration import Implication, simplified_implications
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 
 
-def _equivalent(base, rules):
-    """Whether the rules, with the background and the mappings, entail
+def _equivalent(base, implications):
+    """Whether the implications, with the background and the mappings, entail
     exactly what the base's theory does."""
     background = [
         i for i, s in base.implication_sources.items() if s is ImplicationSource.BACKGROUND
@@ -13,9 +13,9 @@ def _equivalent(base, rules):
     rebuilt = ExplorationBase(
         base.attributes, background_implications=background, mappings=base.mappings
     )
-    for rule in rules:
+    for implication in implications:
         rebuilt.accept(
-            Implication(rule.premise, base.attributes if rule.everything else rule.conclusion)
+            Implication(implication.premise, base.attributes if implication.everything else implication.conclusion)
         )
     return (
         all(rebuilt.implications.entails(i) for i in base.implications)
@@ -34,10 +34,10 @@ def test_premises_and_conclusions_are_cut():
     # Everything this says follows from e -> c, c -> a and a -> b.
     base.accept(Implication({"e", "b"}, {"a"}))
 
-    rules = simplified_rules(base)
-    assert [str(rule) for rule in rules] == ["c -> a", "d -> everything", "e -> c"]
-    assert rules[1].everything
-    assert _equivalent(base, rules)
+    implications = simplified_implications(base)
+    assert [str(implication) for implication in implications] == ["c -> a", "d -> everything", "e -> c"]
+    assert implications[1].everything
+    assert _equivalent(base, implications)
 
 
 def test_a_rule_does_not_cut_itself_with_its_own_images():
@@ -47,10 +47,10 @@ def test_a_rule_does_not_cut_itself_with_its_own_images():
     base = ExplorationBase(attributes=["p", "q", "r", "s"], mappings=[lambda a: swap[a]])
     base.accept(Implication({"r"}, {"p", "q"}))
 
-    rules = simplified_rules(base)
-    assert len(rules) == 1
-    assert len(rules[0].conclusion) == 1
-    assert _equivalent(base, rules)
+    implications = simplified_implications(base)
+    assert len(implications) == 1
+    assert len(implications[0].conclusion) == 1
+    assert _equivalent(base, implications)
 
 
 def test_rules_keep_the_attribute_the_others_follow_from():
@@ -64,12 +64,12 @@ def test_rules_keep_the_attribute_the_others_follow_from():
     )
     base.accept(Implication({"x"}, {"row", "column", "cell"}))
 
-    rules = simplified_rules(base)
-    assert [str(rule) for rule in rules] == ["x -> cell"]
+    implications = simplified_implications(base)
+    assert [str(implication) for implication in implications] == ["x -> cell"]
 
 
 def _rules(base):
-    return {str(rule): rule.source for rule in simplified_rules(base)}
+    return {str(implication): implication.source for implication in simplified_implications(base)}
 
 
 def test_a_confirmed_rule_is_not_cut_by_unconfirmed_ones():
@@ -85,12 +85,12 @@ def test_a_confirmed_rule_is_not_cut_by_unconfirmed_ones():
         "p -> e": ImplicationSource.UNCONFIRMED,
         "c -> e": ImplicationSource.UNCONFIRMED,
     }
-    assert _equivalent(base, simplified_rules(base))
+    assert _equivalent(base, simplified_implications(base))
 
 
 def test_a_confirmed_rule_keeps_what_only_unconfirmed_ones_would_give():
     """q -> p, e is confirmed; p gives e only by the unconfirmed c -> e, so
-    the confirmed rule keeps e."""
+    the confirmed implication keeps e."""
     base = ExplorationBase(attributes=["p", "c", "e", "q", "z"])
     base.accept(Implication({"c"}, {"e"}), ImplicationSource.UNCONFIRMED)
     base.accept(Implication({"p"}, {"c"}), ImplicationSource.CONFIRMED)
@@ -119,8 +119,8 @@ def test_open_steps_are_not_merged():
 def test_format_uses_the_given_names():
     base = ExplorationBase(attributes=[1, 2])
     base.accept(Implication(set(), {1}))
-    (rule,) = simplified_rules(base)
-    assert rule.format(lambda a: f"law {a}") == "∅ -> law 1"
+    (implication,) = simplified_implications(base)
+    assert implication.format(lambda a: f"law {a}") == "∅ -> law 1"
 
 
 if __name__ == "__main__":

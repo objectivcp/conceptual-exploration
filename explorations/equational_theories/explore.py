@@ -45,7 +45,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import Implication, Witness, report_every, simplified_rules
+from conceptual_exploration import Implication, Witness, report_every, simplified_implications
 from conceptual_exploration.core.context import PartialObject, reduce_objects
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.exploration.rounds import explore_in_rounds
@@ -96,8 +96,8 @@ def save_results(
     tentative object; implications.txt and joint_conflicts.json the sets of
     unconfirmed implications that contradict an object or a rejected
     implication only together, each minimal, with what it contradicts;
-    simplified_implications.txt lists the implications simplified into
-    rules for reading, as printed at the end of the exploration, after the
+    simplified_implications.txt lists the implications simplified for
+    reading, as printed at the end of the exploration, after the
     background simplified the same way, each followed by its images under
     the symmetries and with its provenance, and with each law written out,
     as a pair of words if `words` (for semigroups); magmas.json holds
@@ -138,8 +138,8 @@ def save_results(
         if source is ImplicationSource.BACKGROUND:
             background.accept(implication, ImplicationSource.CONFIRMED)
 
-    # Each rule is followed by its images under the symmetries, other than
-    # itself, so that the file lists everything without applying them.
+    # Each simplified implication is followed by its images under the
+    # symmetries, other than itself, so that the file lists everything without applying them.
     suffix = lambda j: "^op" if len(base.mappings) == 1 else f"^{j + 1}"
     mapped_source = {
         ImplicationSource.BACKGROUND: "mapped background",
@@ -147,37 +147,38 @@ def save_results(
         ImplicationSource.UNCONFIRMED: "mapped unconfirmed",
     }
 
-    def listed(rules, tag, source=None):
+    def listed(simplified, tag, source=None):
         seen = set()
-        for k, rule in enumerate(rules, start=1):
-            own = source or rule.source
-            entries = [(f"{tag}{k}", rule.premise, rule.conclusion, own.value if own else "background")]
+        for k, implication in enumerate(simplified, start=1):
+            own = source or implication.source
+            entries = [(f"{tag}{k}", implication.premise, implication.conclusion,
+                        own.value if own else "background")]
             # Unconfirmed implications that the base does not map stand for themselves.
             mappings = base.mappings if base.map_unconfirmed or own is not ImplicationSource.UNCONFIRMED else ()
             for j, mapping in enumerate(mappings):
-                image = (frozenset(map(mapping, rule.premise)), frozenset(map(mapping, rule.conclusion)))
-                if image != (rule.premise, rule.conclusion):
+                image = (frozenset(map(mapping, implication.premise)), frozenset(map(mapping, implication.conclusion)))
+                if image != (implication.premise, implication.conclusion):
                     entries.append((f"{tag}{k}{suffix(j)}", *image, f"{mapped_source[own]} from [{tag}{k}]"))
             for name, premise, conclusion, provenance in entries:
-                text = f"{laws(premise)}  =>  {'everything' if rule.everything else laws(conclusion)}"
+                text = f"{laws(premise)}  =>  {'everything' if implication.everything else laws(conclusion)}"
                 if text not in seen:
                     seen.add(text)
                     yield f"[{name}] {text}   ({provenance})"
 
-    rules = simplified_rules(base)
-    background_rules = simplified_rules(background)
+    found = simplified_implications(base)
+    background_found = simplified_implications(background)
     lines = [
         f"The implications found by an exploration ({settings}), simplified for reading, each with "
-        "its provenance: premises and conclusions cut to what the symmetries and the other rules do "
-        "not give, and the rules then redundant dropped, each rule followed by its images under the "
-        "symmetries. The background rules entail the background, and all rules together everything "
-        "found.",
+        "its provenance: premises and conclusions cut to what the symmetries and the other "
+        "implications do not give, and the implications then redundant dropped, each followed by its "
+        "images under the symmetries. The simplified background implications entail the background, "
+        "and all of them together everything found.",
         "",
-        f"Background ({len(background_rules)} rules and their images):",
-        *listed(background_rules, "B", ImplicationSource.BACKGROUND),
+        f"Background ({len(background_found)} simplified implications and their images):",
+        *listed(background_found, "B", ImplicationSource.BACKGROUND),
         "",
-        f"Rules ({len(rules)} rules, as numbered in exploration.log, and their images):",
-        *listed(rules, ""),
+        f"Simplified implications ({len(found)}, as numbered in exploration.log, and their images):",
+        *listed(found, ""),
     ]
     (directory / "simplified_implications.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -577,13 +578,13 @@ def run_magma_exploration(
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
         print(f"Expert Answers:               {answers}")
 
-    # Display the implications found, simplified into rules for reading
-    rules = simplified_rules(base)
-    print(f"\nRules Found (Simplified, {len(rules)} rules):")
-    for idx, rule in enumerate(rules, start=1):
-        unconfirmed = rule.source is ImplicationSource.UNCONFIRMED
+    # Display the implications found, simplified for reading
+    found = simplified_implications(base)
+    print(f"\nSimplified Implications ({len(found)}):")
+    for idx, implication in enumerate(found, start=1):
+        unconfirmed = implication.source is ImplicationSource.UNCONFIRMED
         marker = "   [UNCONFIRMED]" if unconfirmed else ""
-        print(f"  [{idx}] {rule.format(lambda eq: eq.name or str(eq))}{marker}")
+        print(f"  [{idx}] {implication.format(lambda eq: eq.name or str(eq))}{marker}")
 
     if base.unconfirmed_implications and expert_kind in ("vampire", "completion"):
         print(

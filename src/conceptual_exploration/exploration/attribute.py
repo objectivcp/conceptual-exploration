@@ -235,8 +235,8 @@ class AttributeExploration:
         left = 0
         for position in bits(conclusion & closure):
             if base.known_false_mask(premise, 1 << position):
-                rule = Implication(base.index.decode(premise), base.index.decode(1 << position))
-                witness = PartialObject(Witness(rule, derived=True), set(rule.premise), set(rule.conclusion))
+                refuted = Implication(base.index.decode(premise), base.index.decode(1 << position))
+                witness = PartialObject(Witness(refuted, derived=True), set(refuted.premise), set(refuted.conclusion))
                 base.add_counterexample(witness)
                 self.state.counterexamples.append(witness)
             else:

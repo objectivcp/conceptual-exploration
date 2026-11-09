@@ -877,13 +877,13 @@ def cover(results: Path, equations: list[dict], axioms: Sequence) -> list[tuple[
     extent = {context_name[a]: sum(row[j] == "X" for row in rows) for j, a in enumerate(attributes)}
     trivial = [name for name, text in _law_names(equations).items() if len(set(parse_law(text))) == 1]
     always = sum(bit[a] for a in list(axioms) + trivial)
-    rules: list[tuple[int, int]] = []
+    implications: list[tuple[int, int]] = []
 
     def closure(mask: int) -> int:
         changed = True
         while changed:
             changed = False
-            for premise, conclusion in rules:
+            for premise, conclusion in implications:
                 if premise & ~mask == 0 and conclusion & ~mask:
                     mask |= conclusion
                     changed = True
@@ -895,7 +895,7 @@ def cover(results: Path, equations: list[dict], axioms: Sequence) -> list[tuple[
         mask = sum(bit[p] for p in premise) | always
         for law in sorted(entry["conclusion"], key=lambda law: extent[law]):
             if not bit[law] & closure(mask):
-                rules.append((mask, bit[law]))
+                implications.append((mask, bit[law]))
                 chosen.append((premise, law))
     return chosen
 

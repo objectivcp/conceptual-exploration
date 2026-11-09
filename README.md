@@ -107,7 +107,7 @@ conceptual-exploration/
 │   │   └── base.py                   # Abstract Expert interface (validate method)
 │   ├── exploration/
 │   │   ├── base.py                   # ExplorationBase with context, mappings & implications
-│   │   ├── basis.py                  # Rule and simplified_rules: accepted implications simplified for reading
+│   │   ├── basis.py                  # simplified_implications: accepted implications simplified for reading
 │   │   ├── attribute.py              # AttributeExploration coordinator
 │   │   ├── rule.py                   # RuleExploration first-order coordinator
 │   │   └── state.py                  # ExplorationState tracking queries and statistics
@@ -142,9 +142,9 @@ conceptual-exploration/
 | `ExplorationBase` | `conceptual_exploration` | Manages attributes, background implications, partial contexts, and symmetry mappings. |
 | `Expert` | `conceptual_exploration` | Abstract base class for domain oracles implementing `validate(implication, attributes)`. |
 | `QuestionReport` / `report_every` | `conceptual_exploration` | Per-question progress event emitted by an exploration, and a ready-made callback printing every nth one. |
-| `Implication` | `conceptual_exploration` | Represents a rule of the form $\text{Premise} \to \text{Conclusion}$. |
-| `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies rules. |
-| `Rule` / `simplified_rules` | `conceptual_exploration` | The accepted implications as non-redundant rules, with premises and conclusions cut to what the background, the other rules and the mappings do not already give. |
+| `Implication` | `conceptual_exploration` | Represents an implication of the form $\text{Premise} \to \text{Conclusion}$. |
+| `ImplicationTheory` | `conceptual_exploration` | Maintains a set of implications, computes closures, checks entailment, and simplifies implications. |
+| `SimplifiedImplication` / `simplified_implications` | `conceptual_exploration` | The accepted implications, simplified and without redundancy, with premises and conclusions cut to what the background, the other implications and the mappings do not already give. |
 | `PartialObject` | `conceptual_exploration` | Represents a concrete or counterexample object with `positive` and `negative` attribute sets. |
 | `PartialContext` | `conceptual_exploration` | Formal context storing objects and attributes, capable of loading `.cxt` files. |
 | `Predicate` / `EvaluatablePredicate` | `conceptual_exploration` | Relational symbol with fixed arity, sort constraints, declared properties, and optional evaluation function. |
@@ -162,7 +162,7 @@ conceptual-exploration/
 Here is a minimal example discovering arithmetic relationships over small integers:
 
 ```python
-from conceptual_exploration import simplified_rules
+from conceptual_exploration import simplified_implications
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.attribute import AttributeExploration
@@ -216,8 +216,8 @@ exploration = AttributeExploration(base, expert)
 exploration.run()
 
 print("Discovered Implications:")
-for rule in simplified_rules(base):
-    print(f"  {rule}")
+for implication in simplified_implications(base):
+    print(f"  {implication}")
 ```
 
 An exploration runs silently by default. To watch it work, pass a callback — `report_every(n)` prints every nth question together with the expert's verdict:
@@ -236,7 +236,7 @@ Explore relational rules over variables $x, y, z$ and binary order/equality pred
 
 ```python
 from itertools import product
-from conceptual_exploration import simplified_rules
+from conceptual_exploration import simplified_implications
 from conceptual_exploration.core.context import PartialObject
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.rule import RuleExploration
@@ -271,7 +271,7 @@ expert = NumberRelationalExpert(domain=range(-5, 6), variables=variables)
 exploration = RuleExploration(predicates, variables, expert, substitutions=True)
 exploration.run()
 
-rules = simplified_rules(exploration.base)
+rules = simplified_implications(exploration.base)
 print(f"Discovered {len(rules)} first-order rules:")
 for rule in rules:
     print(f"  {rule}")
@@ -294,7 +294,7 @@ print(f"Loaded {len(context.objects)} objects and {len(context.attributes)} attr
 
 ## Symmetries & Background Knowledge
 
-In many domains, rules are invariant under symmetries (e.g. geometric rotations, renaming of symmetric variables, or digit permutations in Sudoku). 
+In many domains, implications are invariant under symmetries (e.g. geometric rotations, renaming of symmetric variables, or digit permutations in Sudoku). 
 
 `conceptual-exploration` allows passing mappings/symmetries to `ExplorationBase`:
 - Whenever an implication is accepted, its symmetric transformations are automatically derived and accepted without asking the expert.

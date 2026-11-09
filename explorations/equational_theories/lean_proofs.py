@@ -1,6 +1,6 @@
-"""Lean proofs of the rules an exploration of ETP laws found.
+"""Lean proofs of the implications an exploration of ETP laws found.
 
-Each rule printed in an exploration's log is proved by Vampire,
+Each implication printed in an exploration's log is proved by Vampire,
 and its proof is translated into Lean as the ETP translated the proofs of its
 single-premise implications (equational_theories/Generated/VampireProven in
 https://github.com/teorth/equational_theories): every clause of the proof
@@ -35,8 +35,8 @@ from explorations.equational_theories.magma import Equation, Term, Var
 
 
 @dataclass(frozen=True)
-class Rule:
-    """A rule printed in an exploration's log, by the ETP numbers of its laws."""
+class PrintedImplication:
+    """An implication printed in an exploration's log, by the ETP numbers of its laws."""
 
     number: int
     premise: tuple[int, ...]
@@ -48,21 +48,21 @@ class Rule:
         return f"Equation{premise}_implies_Equation{'_'.join(map(str, self.conclusion))}"
 
 
-def rules_from_log(text: str) -> list[Rule]:
-    """The rules printed in an exploration's log, under the heading of either
-    version of explore.py."""
-    heading = re.search(r"^(Rules Found|Discovered Implication Basis) \(", text, re.M)
+def implications_from_log(text: str) -> list[PrintedImplication]:
+    """The implications printed in an exploration's log, under the heading of
+    any version of explore.py."""
+    heading = re.search(r"^(Simplified Implications|Rules Found|Discovered Implication Basis) \(", text, re.M)
     if heading is None:
-        raise ValueError("No rules in the log")
+        raise ValueError("No implications in the log")
     basis = text[heading.start():]
-    rules = []
+    implications = []
     for line in basis.splitlines()[1:]:
         match = re.match(r"  \[(\d+)\] (.*) -> (.*)$", line)
         if match is None:
             break
         premise, conclusion = (tuple(int(n) for n in re.findall(r"Eq(\d+):", side)) for side in match.groups()[1:])
-        rules.append(Rule(int(match.group(1)), premise, conclusion))
-    return rules
+        implications.append(PrintedImplication(int(match.group(1)), premise, conclusion))
+    return implications
 
 
 def _variables(term: Term, seen: list[str]) -> list[str]:
@@ -105,18 +105,19 @@ def _tptp_law(law: Equation) -> str:
     return f"{binder}{_tptp_term(law.lhs)} = {_tptp_term(law.rhs)}"
 
 
-def tptp_problem(laws: EtpLaws, rule: Rule) -> str:
-    """The rule as a TPTP problem, the premise laws named h1, h2, ..."""
-    lines = [f"fof(h{k}, axiom, {_tptp_law(laws.law(n))})." for k, n in enumerate(rule.premise, start=1)]
-    goal = " & ".join(f"({_tptp_law(laws.law(n))})" for n in rule.conclusion)
+def tptp_problem(laws: EtpLaws, implication: PrintedImplication) -> str:
+    """The implication as a TPTP problem, the premise laws named h1, h2, ..."""
+    lines = [f"fof(h{k}, axiom, {_tptp_law(laws.law(n))})." for k, n in enumerate(implication.premise, start=1)]
+    goal = " & ".join(f"({_tptp_law(laws.law(n))})" for n in implication.conclusion)
     lines.append(f"fof(goal, conjecture, {goal}).")
     return "\n".join(lines) + "\n"
 
 
-def vampire_proof(laws: EtpLaws, rule: Rule, vampire: str = "vampire", time_limit: int = 60) -> str:
-    """Vampire's proof of the rule, with every inference spelt out."""
+def vampire_proof(laws: EtpLaws, implication: PrintedImplication, vampire: str = "vampire",
+                  time_limit: int = 60) -> str:
+    """Vampire's proof of the implication, with every inference spelt out."""
     with tempfile.NamedTemporaryFile("w", suffix=".p", delete=False) as file:
-        file.write(tptp_problem(laws, rule))
+        file.write(tptp_problem(laws, implication))
         path = Path(file.name)
     try:
         output = subprocess.run(
@@ -126,7 +127,7 @@ def vampire_proof(laws: EtpLaws, rule: Rule, vampire: str = "vampire", time_limi
     finally:
         path.unlink(missing_ok=True)
     if "SZS status Theorem" not in output:
-        raise RuntimeError(f"Vampire did not prove rule {rule.number}")
+        raise RuntimeError(f"Vampire did not prove implication {implication.number}")
     return output
 
 
@@ -143,16 +144,16 @@ def _lean_clause(statement: str) -> str:
 _PREPROCESSING = re.compile(r"(negated conjecture|ennf transformation|skolemize|flattening|rectify) (\d+)$")
 
 
-def lean_theorem(laws: EtpLaws, rule: Rule, proof: str) -> str:
-    """The Lean theorem of a rule with one law in its conclusion, its proof
+def lean_theorem(laws: EtpLaws, implication: PrintedImplication, proof: str) -> str:
+    """The Lean theorem of an implication with one law in its conclusion, its proof
     the translation of Vampire's."""
-    if len(rule.conclusion) != 1:
-        raise ValueError(f"Rule {rule.number} has several laws in its conclusion")
-    goal = rule.conclusion[0]
-    hypotheses = " ".join(f"(h{k} : Equation{n} G)" for k, n in enumerate(rule.premise, start=1))
+    if len(implication.conclusion) != 1:
+        raise ValueError(f"Implication {implication.number} has several laws in its conclusion")
+    goal = implication.conclusion[0]
+    hypotheses = " ".join(f"(h{k} : Equation{n} G)" for k, n in enumerate(implication.premise, start=1))
     skolem = ", ".join(f"sK{i}" for i in range(len(_ordered_variables(laws.law(goal)))))
     lines = [
-        f"theorem {rule.name} (G : Type _) [Magma G] {hypotheses} : Equation{goal} G := by",
+        f"theorem {implication.name} (G : Type _) [Magma G] {hypotheses} : Equation{goal} G := by",
         "  apply Classical.byContradiction",
         "  intro nh",
         "  simp only [Classical.not_forall] at nh",
@@ -194,53 +195,55 @@ def _ladr_term(term: Term) -> str:
     return "x" + term.name if isinstance(term, Var) else f"({_ladr_term(term.left)} * {_ladr_term(term.right)})"
 
 
-def prover9_proves(laws: EtpLaws, rule: Rule, prover9: str = "prover9", time_limit: int = 60) -> bool:
-    """Whether Prover9 proves the rule, as an independent check."""
+def prover9_proves(laws: EtpLaws, implication: PrintedImplication, prover9: str = "prover9",
+                   time_limit: int = 60) -> bool:
+    """Whether Prover9 proves the implication, as an independent check."""
     def law(n: int) -> str:
         return f"{_ladr_term(laws.law(n).lhs)} = {_ladr_term(laws.law(n).rhs)}."
     problem = (
         f"assign(max_seconds, {time_limit}).\nformulas(assumptions).\n"
-        + "".join(law(n) + "\n" for n in rule.premise)
-        + "end_of_list.\nformulas(goals).\n" + "\n".join(law(n) for n in rule.conclusion) + "\nend_of_list.\n"
+        + "".join(law(n) + "\n" for n in implication.premise)
+        + "end_of_list.\nformulas(goals).\n" + "\n".join(law(n) for n in implication.conclusion) + "\nend_of_list.\n"
     )
     output = subprocess.run([prover9], input=problem, capture_output=True, text=True).stdout
     return "THEOREM PROVED" in output
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Write Lean proofs of the rules of an exploration of ETP laws.")
+    parser = argparse.ArgumentParser(
+        description="Write Lean proofs of the implications of an exploration of ETP laws.")
     parser.add_argument("etp_equations", type=Path, metavar="EQUATIONS_TXT", help="the ETP's equations.txt")
     parser.add_argument("log", type=Path, metavar="LOG", help="the exploration.log of the exploration")
     parser.add_argument("-o", "--output", type=Path, required=True, metavar="LEAN_DIR",
                         help="the Lean project to write the proofs into")
     parser.add_argument("--module", default="Order2", metavar="NAME",
                         help="the directory of the Lean files in the project (default: Order2)")
-    parser.add_argument("--prover9", action="store_true", help="also check every rule with Prover9")
+    parser.add_argument("--prover9", action="store_true", help="also check every implication with Prover9")
     args = parser.parse_args(argv)
     laws = EtpLaws.load(args.etp_equations)
-    rules = rules_from_log(args.log.read_text(encoding="utf-8"))
+    implications = implications_from_log(args.log.read_text(encoding="utf-8"))
     module = args.output / args.module
-    numbers = sorted({n for rule in rules for n in rule.premise + rule.conclusion})
+    numbers = sorted({n for implication in implications for n in implication.premise + implication.conclusion})
     (module / "Basic.lean").write_text(
         f"import {args.module}.Superposition\n\n"
-        "/-! Magmas and the ETP laws of the rules, defined as in the ETP. -/\n\n"
+        "/-! Magmas and the ETP laws of the implications, defined as in the ETP. -/\n\n"
         "class Magma (α : Type _) where\n  op : α → α → α\n\n"
         "infix:65 \" ◇ \" => Magma.op\n\n" + "\n".join(lean_definition(laws, n) for n in numbers),
         encoding="utf-8",
     )
     theorems = []
-    for rule in rules:
-        theorems.append(f"/-- Rule {rule.number} of the log. -/\n"
-                        + lean_theorem(laws, rule, vampire_proof(laws, rule)))
-        if args.prover9 and not prover9_proves(laws, rule):
-            print(f"Prover9 did not prove rule {rule.number}", file=sys.stderr)
+    for implication in implications:
+        theorems.append(f"/-- Implication {implication.number} of the log. -/\n"
+                        + lean_theorem(laws, implication, vampire_proof(laws, implication)))
+        if args.prover9 and not prover9_proves(laws, implication):
+            print(f"Prover9 did not prove implication {implication.number}", file=sys.stderr)
     (module / "Proofs.lean").write_text(
         f"import {args.module}.Basic\n\n"
-        f"/-! The rules printed in {args.log.parent.name}/{args.log.name}, from Vampire's proofs. -/\n\n"
+        f"/-! The implications printed in {args.log.parent.name}/{args.log.name}, from Vampire's proofs. -/\n\n"
         + "\n".join(theorems),
         encoding="utf-8",
     )
-    print(f"Wrote {len(rules)} theorems to {module / 'Proofs.lean'}")
+    print(f"Wrote {len(implications)} theorems to {module / 'Proofs.lean'}")
 
 
 if __name__ == "__main__":

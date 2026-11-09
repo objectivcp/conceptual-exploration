@@ -56,8 +56,8 @@ def test_with_associativity_assumed_the_duality_compares_words(tmp_path):
     path = tmp_path / "laws.json"
     path.write_text(json.dumps(laws))
     run_magma_exploration(path, max_search_size=2, report_interval=0, results_dir=tmp_path / "out", axioms=[4512])
-    rules = json.loads((tmp_path / "out" / "implications.json").read_text())
-    assert {r["source"] for r in rules} >= {"mapped"}
+    implications = json.loads((tmp_path / "out" / "implications.json").read_text())
+    assert {r["source"] for r in implications} >= {"mapped"}
 
 
 def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(tmp_path):
@@ -71,14 +71,14 @@ def test_the_rules_are_saved_with_their_images_and_laws_as_words_for_semigroups(
     base.accept(Implication([idempotent], [other]), ImplicationSource.CONFIRMED)
     base.add_background(Implication([], [laws[-1]]))
     save_results(base, laws, tmp_path, "test", words=True)
-    rules = (tmp_path / "simplified_implications.txt").read_text().splitlines()
-    assert rules[2:] == [
-        "Background (2 rules and their images):",
+    lines = (tmp_path / "simplified_implications.txt").read_text().splitlines()
+    assert lines[2:] == [
+        "Background (2 simplified implications and their images):",
         "[B1] Eq5: x = yx  =>  Eq3: x = xx   (background)",
         "[B1^op] Eq4: x = xy  =>  Eq3: x = xx   (mapped background from [B1])",
         "[B2] ∅  =>  Eq4512: (x * (y * z)) = ((x * y) * z)   (background)",
         "",
-        "Rules (1 rules, as numbered in exploration.log, and their images):",
+        "Simplified implications (1, as numbered in exploration.log, and their images):",
         "[1] Eq3: x = xx  =>  Eq8: x = xxx   (confirmed)",
     ]
     save_results(base, laws, tmp_path, "test")
@@ -101,8 +101,8 @@ def test_implications_of_a_background_file_are_taken_as_background(tmp_path):
         tmp_path / "laws.json", use_duality_symmetry=False, max_search_size=2, report_interval=0,
         results_dir=tmp_path / "out", background_files=[tmp_path / "background.json"],
     )
-    rules = json.loads((tmp_path / "out" / "implications.json").read_text())
-    assert {"premise": [4], "conclusion": [3, "x = xyy"], "source": "background"} in rules
+    implications = json.loads((tmp_path / "out" / "implications.json").read_text())
+    assert {"premise": [4], "conclusion": [3, "x = xyy"], "source": "background"} in implications
 
 
 def test_truncated_free_semigroups_need_associativity(tmp_path):

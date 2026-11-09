@@ -45,14 +45,15 @@ def results(tmp_path):
 def test_the_rules_are_simplified_and_followed_by_their_duals(tmp_path, monkeypatch):
     monkeypatch.setattr(etp_export, "EtpLaws", FakeLaws)
     export = etp_export.Export(results(tmp_path), tmp_path / "equations.json", [], tmp_path)
-    rules = export.rules()
+    implications = export.implications()
     # One of x = x(xx) and its dual x = (xx)x is kept, the other is its image.
-    proved = [(r["name"], r["premise"], r["conclusion"], r["source"]) for r in rules if not r["name"].startswith("B")]
+    proved = [(r["name"], r["premise"], r["conclusion"], r["source"])
+              for r in implications if not r["name"].startswith("B")]
     assert sorted(proved) in (
         [("1", [3], [8], "proved"), ("1^op", [3], [23], "dual of 1")],
         [("1", [3], [23], "proved"), ("1^op", [3], [8], "dual of 1")],
     )
-    assert {"name": "B1", "premise": [], "conclusion": [1], "source": "background"} in rules
+    assert {"name": "B1", "premise": [], "conclusion": [1], "source": "background"} in implications
 
 
 def closure(implications, duals={8: 23, 23: 8}):
@@ -77,10 +78,10 @@ def test_rules_the_etp_lacks_even_up_to_duality_are_new(tmp_path, monkeypatch):
     # x = xx => x = (xx)x is known; x = xx => x = x(xx) is its dual.
     export = etp_export.Export(run, tmp_path / "equations.json", [], tmp_path,
                                background_label="ETP", closure=closure([(3, 23)]))
-    rules = {tuple(r["conclusion"]): r for r in export.rules()}
-    assert rules[(1,)]["origin"] == "ETP" and not rules[(1,)]["new"]
-    assert not rules[(8,)]["new"] and not rules[(23,)]["new"]
-    assert "origin" not in rules[(8,)] and "origin" not in rules[(23,)]
+    implications = {tuple(r["conclusion"]): r for r in export.implications()}
+    assert implications[(1,)]["origin"] == "ETP" and not implications[(1,)]["new"]
+    assert not implications[(8,)]["new"] and not implications[(23,)]["new"]
+    assert "origin" not in implications[(8,)] and "origin" not in implications[(23,)]
     export = etp_export.Export(run, tmp_path / "equations.json", [], tmp_path, closure=closure([]))
     etp_export.write(export, tmp_path / "data", reduce=False)
     lines = (tmp_path / "data" / "implications.txt").read_text().splitlines()
@@ -88,7 +89,7 @@ def test_rules_the_etp_lacks_even_up_to_duality_are_new(tmp_path, monkeypatch):
     assert all(line.endswith(", new)") for line in lines if "E8:" in line or "E23:" in line)
 
 
-def test_background_rules_are_checked_against_the_background_without_its_duals(tmp_path, monkeypatch):
+def test_background_implications_are_checked_against_the_background_without_its_duals(tmp_path, monkeypatch):
     monkeypatch.setattr(etp_export, "EtpLaws", FakeLaws)
     run = results(tmp_path)
     # Only x = xx => x = (xx)x was given; the duality adds x = xx => x = x(xx).
@@ -97,7 +98,7 @@ def test_background_rules_are_checked_against_the_background_without_its_duals(t
         {"premise": [3], "conclusion": [23], "source": "background"},
     ]))
     export = etp_export.Export(run, tmp_path / "equations.json", [], tmp_path, background_label="ETP")
-    origins = {tuple(r["conclusion"]): r.get("origin") for r in export.rules()}
+    origins = {tuple(r["conclusion"]): r.get("origin") for r in export.implications()}
     assert origins[(1,)] == origins[(23,)] == "ETP"
     law = {number: eq for eq, number in export.number.items()}
     assert export._direct([law[3]], [law[23]]) and not export._direct([law[3]], [law[8]])

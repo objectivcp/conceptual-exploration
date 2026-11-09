@@ -6,23 +6,23 @@ with ◇. Writes in DATA_DIR:
 
 - laws.txt: the laws of the exploration, one `N: law` a line;
 - implications.json and implications.txt, the latter with the laws written
-  out: the implications found,
-  simplified into rules as simplified_implications.txt has them (premises
-  and conclusions cut to what the symmetries and the other rules do not
-  give, the rules then redundant dropped), the background rules first, each
-  rule followed by its dual image; a rule whose premise only one-element
-  magmas satisfy concludes everything. With CERTIFICATES, an unconfirmed
-  implication that the certificates entail counts as proved. With
-  --background-label, the background rules carry it as their origin
-  (`(background: ETP)`), with `and reversal` (`and duality` for magmas)
-  when their conclusions do not follow from the background implications
-  without their duals, and their duals name them; with --etp-data, a rule
-  is marked new when a law of its conclusion follows from no single law of
-  its premise, nor from an assumed law, by chains of the ETP's
-  implications and their duals (reversals among semigroups), through any
-  ETP laws (a rule concluding everything, when none implies x = y): the ETP
-  studies implications from one law, and assumed laws such as
-  associativity make every rule's premise larger than one law;
+  out: the implications found, simplified as simplified_implications.txt
+  has them (premises and conclusions cut to what the symmetries and the
+  other implications do not give, those then redundant dropped), the
+  background implications first, each followed by its dual image; an
+  implication whose premise only one-element magmas satisfy concludes
+  everything. With CERTIFICATES, an unconfirmed implication that the
+  certificates entail counts as proved. With --background-label, the
+  background implications carry it as their origin (`(background: ETP)`),
+  with `and reversal` (`and duality` for magmas) when their conclusions do
+  not follow from the background implications without their duals, and
+  their duals name them; with --etp-data, an implication is marked new when
+  a law of its conclusion follows from no single law of its premise, nor
+  from an assumed law, by chains of the ETP's implications and their duals
+  (reversals among semigroups), through any ETP laws (an implication
+  concluding everything, when none implies x = y): the ETP studies
+  implications from one law, and assumed laws such as associativity make
+  every premise larger than one law;
 - magmas.txt: each finite magma of the context, as `Table [[...]]` followed
   by the laws it satisfies and those it refutes, as in the ETP's `Facts`;
   with --reduce, only the magmas whose rows are not intersections of the
@@ -57,7 +57,7 @@ if __package__ in (None, ""):
 
 from conceptual_exploration.core.implication import Implication
 from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
-from conceptual_exploration.exploration.basis import simplified_rules
+from conceptual_exploration.exploration.basis import simplified_implications
 from explorations.equational_theories.certificates import parse_law
 from explorations.equational_theories import etp as etp_data
 from explorations.equational_theories.etp import ImplicationClosure, ImplicationGraph
@@ -73,11 +73,11 @@ def key(equation: Equation):
     return equation.id if equation.id is not None else equation.name
 
 
-def _closure(mask: int, rules: list[tuple[int, int]]) -> int:
+def _closure(mask: int, implications: list[tuple[int, int]]) -> int:
     changed = True
     while changed:
         changed = False
-        for premise, conclusion in rules:
+        for premise, conclusion in implications:
             if premise & ~mask == 0 and conclusion & ~mask:
                 mask |= conclusion
                 changed = True
@@ -118,7 +118,7 @@ class Export:
         bit = {eq: 1 << i for i, eq in enumerate(self.equations)}
         texts = {law_key(parse_law(f"{eq.lhs} = {eq.rhs}"), self.associative): eq for eq in self.equations}
         opener = lzma.open if path.suffix == ".xz" else open
-        rules = []
+        implications = []
         with opener(path, "rt", encoding="utf-8") as file:
             for line in file:
                 if line.strip():
@@ -126,8 +126,8 @@ class Export:
                     laws = [texts.get(law_key(parse_law(p), self.associative))
                             for p in [*certificate["premise"], certificate["conclusion"]]]
                     if None not in laws:
-                        rules.append((sum(bit[eq] for eq in laws[:-1]), bit[laws[-1]]))
-        return rules
+                        implications.append((sum(bit[eq] for eq in laws[:-1]), bit[laws[-1]]))
+        return implications
 
     def _entailed(self, implication: Implication[Equation]) -> bool:
         mask = _closure(sum(self.bit[eq] for eq in implication.premise) | self.always, self.certified)
@@ -162,36 +162,38 @@ class Export:
             # Mapped implications are the images the bases add themselves.
         return base, background
 
-    def rules(self) -> list[dict]:
-        """The background rules and the rules, each followed by its dual."""
+    def implications(self) -> list[dict]:
+        """The simplified background implications and the simplified
+        implications found, each followed by its dual."""
         base, background = self.bases()
         mapping = base.mappings[0] if base.mappings else (lambda eq: eq)
         listed, seen = [], set()
-        for tag, rules, background_rules in (("B", simplified_rules(background), True),
-                                            ("", simplified_rules(base), False)):
-            for k, rule in enumerate(rules, start=1):
-                source = "background" if background_rules else (
-                    "proved" if rule.source is ImplicationSource.CONFIRMED else "unconfirmed")
-                own = (rule.premise, rule.conclusion)
-                image = (frozenset(map(mapping, rule.premise)), frozenset(map(mapping, rule.conclusion)))
+        for tag, simplified, background_implications in (("B", simplified_implications(background), True),
+                                                         ("", simplified_implications(base), False)):
+            for k, implication in enumerate(simplified, start=1):
+                source = "background" if background_implications else (
+                    "proved" if implication.source is ImplicationSource.CONFIRMED else "unconfirmed")
+                own = (implication.premise, implication.conclusion)
+                image = (frozenset(map(mapping, implication.premise)),
+                         frozenset(map(mapping, implication.conclusion)))
                 entries = [(f"{tag}{k}", own, source)]
-                # An unconfirmed rule whose dual was asked in turn has no dual.
+                # An unconfirmed implication whose dual was asked in turn has no dual.
                 if image != own and (self.map_unconfirmed or source != "unconfirmed"):
                     entries.append((f"{tag}{k}^op", image, f"dual of {tag}{k}"))
                 for name, (premise, conclusion), provenance in entries:
                     numbers = (sorted(self.number[eq] for eq in premise), sorted(self.number[eq] for eq in conclusion))
-                    identity = (tuple(numbers[0]), () if rule.everything else tuple(numbers[1]))
+                    identity = (tuple(numbers[0]), () if implication.everything else tuple(numbers[1]))
                     if identity in seen:
                         continue
                     seen.add(identity)
                     entry = {"name": name, "premise": numbers[0],
-                             "conclusion": "everything" if rule.everything else numbers[1], "source": provenance}
-                    if background_rules and self.background_label and provenance == source:
+                             "conclusion": "everything" if implication.everything else numbers[1], "source": provenance}
+                    if background_implications and self.background_label and provenance == source:
                         entry["origin"] = self.background_label + (
                             "" if self._direct(premise, conclusion)
                             else " and reversal" if self.associative else " and duality")
                     if self.closure is not None:
-                        entry["new"] = self.new(numbers[0], [2] if rule.everything else numbers[1])
+                        entry["new"] = self.new(numbers[0], [2] if implication.everything else numbers[1])
                     listed.append(entry)
         return listed
 
@@ -275,19 +277,19 @@ def write(export: Export, directory: Path, reduce: bool) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     numbers = sorted(export.number.values())
     (directory / "laws.txt").write_text("".join(f"{n}: {export.law_text(n)}\n" for n in numbers), encoding="utf-8")
-    rules = export.rules()
+    implications = export.implications()
     (directory / "implications.json").write_text(
-        "[\n" + ",\n".join(json.dumps(rule) for rule in rules) + "\n]\n", encoding="utf-8")
+        "[\n" + ",\n".join(json.dumps(implication) for implication in implications) + "\n]\n", encoding="utf-8")
 
     def laws(listed):
         return ", ".join(f"E{n}: {export.law_text(n)}" for n in listed) or "∅"
 
-    def label(rule):
-        source = f"{rule['source']}: {rule['origin']}" if "origin" in rule else rule["source"]
-        return f"{source}, new" if rule.get("new") else source
+    def label(entry):
+        source = f"{entry['source']}: {entry['origin']}" if "origin" in entry else entry["source"]
+        return f"{source}, new" if entry.get("new") else source
     lines = [f"[{r['name']}] {laws(r['premise'])} => "
              f"{'everything' if r['conclusion'] == 'everything' else laws(r['conclusion'])}   ({label(r)})"
-             for r in rules]
+             for r in implications]
     (directory / "implications.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     magmas = export.magmas(reduce)
     (directory / "magmas.txt").write_text("".join(
@@ -297,10 +299,11 @@ def write(export: Export, directory: Path, reduce: bool) -> None:
     if free:
         (directory / "free_magmas.json").write_text(
             "[\n" + ",\n".join(json.dumps(entry) for entry in free) + "\n]\n", encoding="utf-8")
-    proved = sum(r["source"] in ("proved", "background") for r in rules)
-    new = f"{sum(1 for r in rules if r.get('new'))} new to the ETP, " if export.closure else ""
-    print(f"Wrote {len(numbers)} laws, {len(rules)} rules ({proved} proved or background, the rest duals"
-          f"{' or unconfirmed' if any(r['source'] == 'unconfirmed' for r in rules) else ''}), {new}"
+    proved = sum(r["source"] in ("proved", "background") for r in implications)
+    new = f"{sum(1 for r in implications if r.get('new'))} new to the ETP, " if export.closure else ""
+    print(f"Wrote {len(numbers)} laws, {len(implications)} implications ({proved} proved or background, "
+          f"the rest duals"
+          f"{' or unconfirmed' if any(r['source'] == 'unconfirmed' for r in implications) else ''}), {new}"
           f"{len(magmas)} magmas and {len(free)} free magmas to {directory}")
 
 
@@ -314,9 +317,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
     parser.add_argument("--reduce", action="store_true", help="only the magmas with irreducible rows")
     parser.add_argument("--background-label", default=None, metavar="TEXT",
-                        help="the origin of the background rules, such as ETP")
+                        help="the origin of the background implications, such as ETP")
     parser.add_argument("--etp-data", type=Path, default=None, metavar="DIR",
-                        help="the ETP's graph.json and equations.txt, to mark the rules new to the ETP")
+                        help="the ETP's graph.json and equations.txt, to mark the implications new to the ETP")
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
     args = parser.parse_args(argv)

@@ -410,13 +410,13 @@ def verify_lean(results: Path, lean: Sequence[Path], etp: Path, classes: bool, r
     # The rows.
     always = sum(1 << index[a] for a in axioms) | sum(
         1 << index[a] for a in attributes if laws[a][0] == laws[a][1])
-    rules = implications + [(0, always)]
+    with_axioms = implications + [(0, always)]
 
     def closure(mask: int) -> int:
         changed = True
         while changed:
             changed = False
-            for premise, conclusion in rules:
+            for premise, conclusion in with_axioms:
                 if premise & ~mask == 0 and conclusion & ~mask:
                     mask |= conclusion
                     changed = True
@@ -452,7 +452,7 @@ def verify_lean(results: Path, lean: Sequence[Path], etp: Path, classes: bool, r
                 added += 1
         print(f"{added} free magmas, their rows taken from the context", flush=True)
 
-    count = check_closure_systems(len(attributes), intents, rules, os.cpu_count() or 1)
+    count = check_closure_systems(len(attributes), intents, with_axioms, os.cpu_count() or 1)
     print(f"The implications are a basis of the theory: {count} closed sets, the intents of the objects",
           flush=True)
     if classes:

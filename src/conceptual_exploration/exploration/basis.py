@@ -11,17 +11,18 @@ A = TypeVar("A")
 
 
 @dataclass(frozen=True)
-class Rule(Generic[A]):
+class SimplifiedImplication(Generic[A]):
     """An accepted implication rewritten for reading.
 
     `implication` is the one the expert accepted, and `source` says whether
-    it was confirmed; the rule follows from the trusted implications if it
-    was, and otherwise no attribute of its conclusion follows from its
-    premise by them (see `simplified_rules`). `everything` says that the
-    premise entails every attribute, and that no attribute does so on its
-    own, so the rule is printed as concluding everything: no object has the
-    premise unless it has every attribute. That may be a contradiction,
-    though not necessarily (a one-element magma satisfies every equation).
+    it was confirmed; the simplified implication follows from the trusted
+    implications if it was, and otherwise no attribute of its conclusion
+    follows from its premise by them (see `simplified_implications`).
+    `everything` says that the premise entails every attribute, and that no
+    attribute does so on its own, so it is printed as concluding everything:
+    no object has the premise unless it has every attribute. That may be a
+    contradiction, though not necessarily (a one-element magma satisfies
+    every equation).
     """
 
     premise: frozenset[A]
@@ -43,35 +44,35 @@ class Rule(Generic[A]):
         return self.format()
 
 
-def simplified_rules(base: ExplorationBase) -> list[Rule]:
-    """The accepted implications of `base`, simplified into rules for reading,
-    without those that are then redundant.
+def simplified_implications(base: ExplorationBase) -> list[SimplifiedImplication]:
+    """The accepted implications of `base`, simplified for reading, without
+    those that are then redundant.
 
-    Rules are simplified with the trusted implications alone: the
-    background, the confirmed implications and their images. Each premise is
-    cut to the attributes the rest of it does not entail by them. The
-    conclusion of a confirmed implication's rule then starts as everything
-    its premise entails by them, and that of an unconfirmed implication's
-    rule as what the implication adds to that. Each conclusion is cut to the
-    attributes that do not follow from the premise by way of the background,
-    the rules of the other confirmed implications, and the images of all of
-    these under the mappings; a rule left with no conclusion is redundant and
-    is dropped. The confirmed implications' rules are cut first, one at a
-    time against the others as already cut, so that with the background and
-    the mappings they entail exactly the trusted implications. An
-    unconfirmed implication's rule is cut against these alone, never against
+    They are simplified with the trusted implications alone: the background,
+    the confirmed implications and their images. Each premise is cut to the
+    attributes the rest of it does not entail by them. The conclusion of a
+    simplified confirmed implication then starts as everything its premise
+    entails by them, and that of a simplified unconfirmed implication as what
+    the implication adds to that. Each conclusion is cut to the attributes
+    that do not follow from the premise by way of the background, the other
+    simplified confirmed implications, and the images of all of these under
+    the mappings; one left with no conclusion is redundant and is dropped.
+    The simplified confirmed implications are cut first, one at a time
+    against the others as already cut, so that with the background and the
+    mappings they entail exactly the trusted implications. A simplified
+    unconfirmed implication is cut against these alone, never against
     another unconfirmed one, so that each states what is not proved: no
     attribute of its conclusion follows from its premise by the trusted
     implications, and an open question is not merged into another. Read
     together with the background and the mappings (except for the
-    unconfirmed implications of a base that does not map them), the rules
-    entail exactly what the accepted implications do. A rule's own images
-    are not used in cutting it, since they would let it derive its own
-    conclusion.
+    unconfirmed implications of a base that does not map them), the
+    simplified implications entail exactly what the accepted implications
+    do. The images of a simplified implication are not used in cutting it,
+    since they would let it derive its own conclusion.
 
     Conclusion attributes are tried for removal weakest first, by how much
-    each entails on its own, so that a rule keeps the attribute the others
-    follow from (SameCell rather than SameRow and SameColumn). A premise that
+    each entails on its own, so that the attribute the others follow from is
+    kept (SameCell rather than SameRow and SameColumn). A premise that
     entails every attribute is cut the same way; it is printed as concluding
     everything unless what is left of its conclusion entails every attribute
     on its own, as a law satisfied only by one-element magmas does.
@@ -99,22 +100,23 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
 
     accepted = base.accepted_implications
     confirmed = [sources[implication] is ImplicationSource.CONFIRMED for implication in accepted]
-    rules = []
+    simplified = []
     for implication, is_confirmed in zip(accepted, confirmed):
         premise = index.encode(trusted.simplify(implication).premise)
         start = trusted.closure_mask(premise)
         if is_confirmed:
-            rules.append([premise, start & ~premise])
+            simplified.append([premise, start & ~premise])
         else:
             given = premise | index.encode(implication.conclusion)
-            rules.append([premise, trusted.closure_mask(given) & ~start])
+            simplified.append([premise, trusted.closure_mask(given) & ~start])
     # Unconfirmed implications that the base does not map stand for themselves.
     mapped = [base.map_unconfirmed or c for c in confirmed]
-    rule_images = [images(premise, conclusion, m) for (premise, conclusion), m in zip(rules, mapped)]
+    simplified_images = [images(premise, conclusion, m) for (premise, conclusion), m in zip(simplified, mapped)]
 
     def cut(i: int) -> None:
-        premise, conclusion = rules[i]
-        rest = list(background.union(*(rule_images[j] for j in range(len(rules)) if j != i and confirmed[j])))
+        premise, conclusion = simplified[i]
+        others = (simplified_images[j] for j in range(len(simplified)) if j != i and confirmed[j])
+        rest = list(background.union(*others))
         target = conclusion
         weakest_first = sorted(
             bits(target),
@@ -125,19 +127,19 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
             implications = rest + list(images(premise, candidate, mapped[i]))
             if target & ~close_mask(premise, implications) == 0:
                 conclusion = candidate
-        rules[i][1] = conclusion
-        rule_images[i] = images(premise, conclusion, mapped[i])
+        simplified[i][1] = conclusion
+        simplified_images[i] = images(premise, conclusion, mapped[i])
 
-    for i in range(len(rules)):
+    for i in range(len(simplified)):
         if confirmed[i]:
             cut(i)
-    for i in range(len(rules)):
+    for i in range(len(simplified)):
         if not confirmed[i]:
             cut(i)
 
     full = base.full_mask
     return [
-        Rule(
+        SimplifiedImplication(
             premise=frozenset(index.decode(premise)),
             conclusion=frozenset(index.decode(conclusion)),
             everything=(
@@ -147,10 +149,12 @@ def simplified_rules(base: ExplorationBase) -> list[Rule]:
             source=ImplicationSource.CONFIRMED if confirmed[i] else ImplicationSource.UNCONFIRMED,
             implication=implication,
         )
-        for i, (implication, (premise, conclusion)) in enumerate(zip(accepted, rules))
+        for i, (implication, (premise, conclusion)) in enumerate(zip(accepted, simplified))
         if conclusion
     ]
 
 
-# The former name.
-reduced_basis = simplified_rules
+# Former names, kept for code that still uses them.
+Rule = SimplifiedImplication
+simplified_rules = simplified_implications
+reduced_basis = simplified_implications
