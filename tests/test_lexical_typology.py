@@ -5,7 +5,8 @@ import random
 
 import pytest
 
-from conceptual_exploration import Implication, PartialObject, Undecided
+from conceptual_exploration import Implication, PartialObject, Undecided, simplified_rules
+from conceptual_exploration.core.theory import ImplicationTheory
 from explorations.lexical_typology.explore import FIELD_DIR, explore, table
 from explorations.lexical_typology.lexical import ContextExpert, Field, Judgments, LexicalExpert
 
@@ -139,7 +140,7 @@ def test_an_unknown_conclusion_gives_an_undecided_answer():
     judgments.judge_words(["pointed"])
     expert = LexicalExpert(judgments, Proposer())
     answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ needle"})))
-    assert isinstance(answer, Undecided) and answer.unconfirmed
+    assert isinstance(answer, Undecided) and not answer.rejected
     assert answer.object.object == "pointed"
     assert expert.given == {"pointed"}
 
@@ -178,17 +179,28 @@ def test_limits_stop_the_search_for_words(tmp_path, limits):
             assert not judgments.row(word).refutes(implication)
 
 
-@pytest.mark.parametrize("seed", range(20))
-def test_no_word_is_refuted_by_the_rules_together(tmp_path, seed):
+@pytest.mark.parametrize("seed", range(60))
+def test_no_rule_contradicts_a_word_on_its_own_and_joint_conflicts_are_reported(tmp_path, seed):
     # Unknown cells let each rule leave a word unrefuted while the rules
-    # together refute it; the exploration must not end that way.
+    # together contradict it; that is allowed, but reported. Five of these
+    # seeds give such a conflict.
     rng = random.Random(seed)
     unsure = {(w, c) for w in GOLD for c in CONTEXTS if rng.random() < 0.4}
     judgments, _, result = run(tmp_path, Judge(unsure), Proposer())
-    theory = result.base.implications
-    for word in judgments.words():
-        row = judgments.row(word)
-        assert not set(theory.closure(set(row.positive))) & row.negative, word
+    base = result.base
+
+    def contradicts(rules, row):
+        theory = ImplicationTheory(rules, index=base.index)
+        return bool(set(theory.closure(set(row.positive))) & row.negative)
+
+    rows = {word: judgments.row(word) for word in judgments.words()}
+    for rule in simplified_rules(base):
+        for word, row in rows.items():
+            assert not contradicts([Implication(rule.premise, rule.conclusion)], row), (rule, word)
+    reported = {c.original for conflict in base.joint_conflicts() for c in conflict.contradicted}
+    for word, row in rows.items():
+        if contradicts(list(base.implications), row):
+            assert word in reported, word
 
 
 class Referee:

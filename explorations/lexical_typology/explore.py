@@ -33,6 +33,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from conceptual_exploration import explore_in_rounds, report_every, simplified_rules
+from conceptual_exploration.exploration.base import VersionedObject
 from explorations.lexical_typology.lexical import (
     Claude, ContextExpert, Field, Judgments, LexicalExpert,
 )
@@ -99,6 +100,34 @@ def explore(judgments: Judgments, words: LexicalExpert, contexts: ContextExpert 
         round_ += 1
 
 
+def joint_conflicts(base, rules) -> list[str]:
+    """The rules that contradict words only together, by their numbers in
+    `rules`, each with the words they contradict: one of them is false."""
+    number = {rule.implication: n for n, rule in enumerate(rules, start=1)}
+    lines = []
+    for conflict in base.joint_conflicts():
+        together = ", ".join(f"[{number[i]}]" if i in number else str(i) for i in conflict.implications)
+        against = ", ".join(
+            str(c.original) if isinstance(c, VersionedObject) else str(c) for c in conflict.contradicted
+        )
+        lines.append(f"{together} contradict {against}")
+    return lines
+
+
+def show(title: str, rules, base) -> list[str]:
+    """Print the rules numbered, then their joint conflicts; return the
+    latter."""
+    print(f"\n{title} ({len(rules)}, all unconfirmed):")
+    for n, rule in enumerate(rules, start=1):
+        print(f"  [{n}] {rule}")
+    conflicts = joint_conflicts(base, rules)
+    if conflicts:
+        print(f"Contradicting words only together ({len(conflicts)}):")
+        for line in conflicts:
+            print(f"  {line}")
+    return conflicts
+
+
 def table(judgments: Judgments) -> list[str]:
     """The words against the contexts, + for fits, - for does not, ? for
     votes that disagree or say unsure; * marks the referee's decisions."""
@@ -119,6 +148,14 @@ def table(judgments: Judgments) -> list[str]:
             marks.append(f"{mark + ('*' if judgments.decided(word, c) else ''):<4}")
         lines.append(f"{word:<{width}} " + " ".join(marks))
     return lines
+
+
+def write(path: Path, rules, conflicts: list[str]) -> None:
+    """One rule a line, numbered by its line; then the joint conflicts."""
+    lines = [str(rule) for rule in rules]
+    if conflicts:
+        lines += ["", "Contradicting words only together:"] + conflicts
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -200,7 +237,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     elapsed = time.perf_counter() - start
 
-    rules = [str(rule) for rule in simplified_rules(result.base)]
+    rules = simplified_rules(result.base)
     models = [judge, proposer] + ([referee] if referee else [])
     calls = sum(m.calls for m in models)
     cost = sum(m.cost for m in models)
@@ -217,25 +254,21 @@ def main(argv: list[str] | None = None) -> None:
     if context_expert is not None and context_expert.unsearched:
         print(f"Not Searched:      {context_expert.unsearched} questions about words, "
               f"accepted once a limit was reached without searching for new contexts")
-    print(f"\nRules ({len(rules)}, all unconfirmed):")
-    for n, rule in enumerate(rules, start=1):
-        print(f"  [{n}] {rule}")
-    word_rules = []
+    conflicts = show("Rules", rules, result.base)
+    word_rules, word_conflicts = [], []
     if context_result is not None:
-        word_rules = [str(rule) for rule in simplified_rules(context_result.base)]
-        print(f"\nRules about the words {', '.join(context_expert.words)} "
-              f"({len(word_rules)}, all unconfirmed):")
-        for n, rule in enumerate(word_rules, start=1):
-            print(f"  [{n}] {rule}")
+        word_rules = simplified_rules(context_result.base)
+        word_conflicts = show(f"Rules about the words {', '.join(context_expert.words)}",
+                              word_rules, context_result.base)
     lines = table(judgments)
     print()
     print("\n".join(lines))
 
     results.mkdir(parents=True, exist_ok=True)
-    (results / "rules.txt").write_text("\n".join(rules) + "\n", encoding="utf-8")
+    write(results / "rules.txt", rules, conflicts)
     (results / "context.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     if context_result is not None:
-        (results / "word_rules.txt").write_text("\n".join(word_rules) + "\n", encoding="utf-8")
+        write(results / "word_rules.txt", word_rules, word_conflicts)
     print(f"\nResults written to {results}")
 
 

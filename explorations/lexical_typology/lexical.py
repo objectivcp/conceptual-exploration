@@ -453,7 +453,7 @@ class _Searching(Expert[str, str]):
                 return row
         for row in rows:
             if implication.premise <= row.positive and implication.conclusion - row.negative - row.positive:
-                return Undecided(object=row, unconfirmed=True)
+                return Undecided(object=row)
         return None
 
     def _search(self, implication: Implication[str]) -> list[str] | None:
