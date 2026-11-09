@@ -667,6 +667,8 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
     "ConfinedToColumnInBlock": (SudokuSort.CELL, SudokuSort.NUMBER),
     "ConfinedToBlockInRow": (SudokuSort.CELL, SudokuSort.NUMBER),
     "ConfinedToBlockInColumn": (SudokuSort.CELL, SudokuSort.NUMBER),
+    "ConfinedToPairInRow": (SudokuSort.CELL, SudokuSort.CELL, SudokuSort.NUMBER),
+    "ConfinedToPairInColumn": (SudokuSort.CELL, SudokuSort.CELL, SudokuSort.NUMBER),
 }
 
 # Predicates saying what holds in every completion of a partial grid. For
@@ -683,6 +685,30 @@ COMPLETION_PREDICATES = (
     "ConfinedToBlockInRow",
     "ConfinedToBlockInColumn",
 )
+
+# Completion predicates of two cells and a digit: P(x, y, n) says that n's
+# place in x's row (column) is x or y in every completion, the premise of an
+# X-wing. It is about x's row, so it is symmetric only for y in that row,
+# and P(x, x, n) is Forced(x, n).
+PAIR_COMPLETION_PREDICATES = ("ConfinedToPairInRow", "ConfinedToPairInColumn")
+
+
+def pair_confinement_cells(
+    name: str,
+    cell: Tuple[int, int],
+    other: Tuple[int, int],
+    block_size: int,
+) -> List[Tuple[int, int]]:
+    """The cells a ConfinedToPair predicate keeps n out of, for x in `cell`
+    and y in `other`: the cells of x's row (column) other than x and y."""
+    n = block_size**2
+    r, c = cell
+    line = (
+        [(r, cc) for cc in range(n)]
+        if name == "ConfinedToPairInRow"
+        else [(rr, c) for rr in range(n)]
+    )
+    return [p for p in line if p not in (cell, other)]
 
 
 def confinement_cells(name: str, cell: Tuple[int, int], block_size: int) -> List[Tuple[int, int]]:
@@ -730,7 +756,7 @@ PREDICATE_PROPERTIES: Dict[str, Dict[str, Any]] = {
     "DifferentBlocks": {**_DISTINCTION, "complement": "SameBlock"},
     "SameBand": _EQUIVALENCE,
     "SameStack": _EQUIVALENCE,
-    **{name: {} for name in COMPLETION_PREDICATES},
+    **{name: {} for name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES},
 }
 
 
@@ -842,6 +868,23 @@ def sudoku_background(
                 [("Forced", (u, n)), ("Forced", (v, m)), ("DifferentNumbers", (n, m))],
                 [("DifferentCells", (u, v))],
             )
+
+    # A pair in one row (column) confines n there whichever way round it is
+    # named; a pair of one cell forces n there; and equal cells and numbers
+    # are interchangeable.
+    for name, same_line in zip(PAIR_COMPLETION_PREDICATES, ("SameRow", "SameColumn")):
+        for u, v in product(cells, repeat=2):
+            for n in numbers:
+                rule([(name, (u, v, n)), (same_line, (u, v))], [(name, (v, u, n))])
+                for w in cells:
+                    rule([(name, (u, v, n)), ("SameCell", (u, w))], [(name, (w, v, n))])
+                    rule([(name, (u, v, n)), ("SameCell", (v, w))], [(name, (u, w, n))])
+                for m in numbers:
+                    rule([(name, (u, v, n)), ("SameNumber", (n, m))], [(name, (u, v, m))])
+        for u in cells:
+            for n in numbers:
+                rule([(name, (u, u, n))], [("Forced", (u, n))])
+                rule([("Forced", (u, n))], [(name, (u, u, n))])
 
     return background
 
@@ -1024,6 +1067,29 @@ class _SatRuleExpert(Expert):
                 for br, bc in confinement_cells(name, (r, c), self.block_size)
             )
         )
+
+    def _pair_kept_out(self, solution, name: str, x: Any, y: Any, m: Any) -> int:
+        """Whether the solved grid `solution` puts the digit of number m, in
+        x's row (column), in x or in y."""
+        d = self._defs
+        n = self.grid_size
+        by_row = name == "ConfinedToPairInRow"
+        # x's line and the digit decide the one cell holding it there.
+        line_x, across_x = (self._rows[x], self._columns[x]) if by_row else (self._columns[x], self._rows[x])
+        line_y, across_y = (self._rows[y], self._columns[y]) if by_row else (self._columns[y], self._rows[y])
+        cases = []
+        for line in range(n):
+            for digit in range(1, n + 1):
+                place = next(
+                    i for i in range(n)
+                    if (solution[line][i] if by_row else solution[i][line]) == digit
+                )
+                cases.append(d.conj((
+                    line_x[line],
+                    self._digits[m][digit - 1],
+                    d.disj((across_x[place], d.conj((line_y[line], across_y[place])))),
+                )))
+        return d.disj(cases)
 
     def _same(self, xs: List[int], ys: List[int]) -> int:
         """True where two one-hot encodings pick the same position."""
@@ -1249,6 +1315,15 @@ class PartialGridExpert(_SatRuleExpert):
         if name == "kept_out":
             i, confined, x, m = args
             return self._kept_out(self._solutions[i], confined, x, m)
+        if name == "pair_kept_out":
+            i, confined, x, y, m = args
+            return self._pair_kept_out(self._solutions[i], confined, x, y, m)
+        if name in PAIR_COMPLETION_PREDICATES:
+            x, y, m = args
+            return d.conj(
+                d.disj((-consistent, self._defined(("pair_kept_out", i, name, x, y, m))))
+                for i, consistent in enumerate(self._consistent)
+            )
         if name in COMPLETION_PREDICATES:
             x, m = args
             return d.conj(
@@ -1326,10 +1401,10 @@ class CegarPartialGridExpert(_SatRuleExpert):
         implication: Implication,
         attributes: Optional[Iterable[Any]] = None,
     ) -> Optional[PartialObject]:
-        semantic = lambda a: a.predicate.name in COMPLETION_PREDICATES
+        semantic = lambda a: a.predicate.name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES
         premise_static = [self._literal(a) for a in implication.premise if not semantic(a)]
         premise_semantic = [
-            (a.predicate.name, a.arguments[0], a.arguments[1])
+            (a.predicate.name, a.arguments)
             for a in implication.premise if semantic(a)
         ]
 
@@ -1341,16 +1416,16 @@ class CegarPartialGridExpert(_SatRuleExpert):
             for a in implication.conclusion
         ]
         self._defs.pending.append([-active] + failing)
-        for name, x, m in premise_semantic:
-            self._defs.pending.append([-active, self._in_witness(name, x, m)])
+        for name, args in premise_semantic:
+            self._defs.pending.append([-active, self._in_witness(name, *args)])
 
         def require(completion: int) -> None:
             """Completion number `completion`, if consistent with the givens,
             satisfies the premise's completion predicates."""
             consistent = self._defined(("consistent", completion))
-            for name, x, m in premise_semantic:
+            for name, args in premise_semantic:
                 self._defs.pending.append(
-                    [-active, -consistent, self._in_completion(completion, name, x, m)]
+                    [-active, -consistent, self._in_completion(completion, name, *args)]
                 )
 
         for completion in range(len(self._completions)):
@@ -1366,8 +1441,8 @@ class CegarPartialGridExpert(_SatRuleExpert):
             givens = self._givens(true)
             places = self._places(true)
             broken = None
-            for name, x, m in premise_semantic:
-                broken = self._breaking(givens, name, places[x], places[m])
+            for name, args in premise_semantic:
+                broken = self._breaking(givens, name, [places[a] for a in args])
                 if broken is not None:
                     break
             if broken is None:
@@ -1395,31 +1470,44 @@ class CegarPartialGridExpert(_SatRuleExpert):
             for v in self.variables
         }
 
-    def _in_witness(self, name: str, x: Any, m: Any) -> int:
-        """Whether the guessed completion W satisfies name(x, m)."""
+    def _in_witness(self, name: str, *args: Any) -> int:
+        """Whether the guessed completion W satisfies name(*args)."""
+        if name in PAIR_COMPLETION_PREDICATES:
+            return self._defined(("witness_pair_kept_out", name, *args))
+        x, m = args
         if name == "Forced":
             return self._defined(("witness_holds", x, m))
         if name == "Excluded":
             return -self._defined(("witness_holds", x, m))
         return self._defined(("witness_kept_out", name, x, m))
 
-    def _in_completion(self, i: int, name: str, x: Any, m: Any) -> int:
-        """Whether completion number i satisfies name(x, m)."""
+    def _in_completion(self, i: int, name: str, *args: Any) -> int:
+        """Whether completion number i satisfies name(*args)."""
+        if name in PAIR_COMPLETION_PREDICATES:
+            return self._defined(("pair_kept_out_in", i, name, *args))
+        x, m = args
         if name == "Forced":
             return self._defined(("holds_in", i, x, m))
         if name == "Excluded":
             return -self._defined(("holds_in", i, x, m))
         return self._defined(("kept_out_in", i, name, x, m))
 
-    def _breaking(self, givens, name: str, cell: Tuple[int, int], digit: int):
-        """A completion of the givens in which name(cell, digit) fails, or
-        None if it holds in all of them."""
-        r, c = cell
+    def _breaking(self, givens, name: str, places: List[Any]):
+        """A completion of the givens in which name(*places) fails, or None
+        if it holds in all of them; `places` are the arguments' cells and
+        digit."""
+        *cells, digit = places
+        r, c = cells[0]
         if name == "Forced":
             return self._completion(givens, r, c, digit, False)
         if name == "Excluded":
             return self._completion(givens, r, c, digit, True)
-        for br, bc in confinement_cells(name, cell, self.block_size):
+        kept_out = (
+            pair_confinement_cells(name, cells[0], cells[1], self.block_size)
+            if name in PAIR_COMPLETION_PREDICATES
+            else confinement_cells(name, cells[0], self.block_size)
+        )
+        for br, bc in kept_out:
             broken = self._completion(givens, br, bc, digit, True)
             if broken is not None:
                 return broken
@@ -1441,9 +1529,9 @@ class CegarPartialGridExpert(_SatRuleExpert):
         n = self.grid_size
         positive = set()
         for a in attributes:
-            if a.predicate.name in COMPLETION_PREDICATES:
-                cell, digit = places[a.arguments[0]], places[a.arguments[1]]
-                holds = self._breaking(givens, a.predicate.name, cell, digit) is None
+            if a.predicate.name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES:
+                arguments = [places[argument] for argument in a.arguments]
+                holds = self._breaking(givens, a.predicate.name, arguments) is None
             else:
                 lit = self._literal(a)
                 holds = lit in true if lit > 0 else -lit not in true
@@ -1498,6 +1586,27 @@ class CegarPartialGridExpert(_SatRuleExpert):
         if name == "kept_out_in":
             i, confined, x, m = args
             return self._kept_out(self._completions[i], confined, x, m)
+        if name == "pair_kept_out_in":
+            i, confined, x, y, m = args
+            return self._pair_kept_out(self._completions[i], confined, x, y, m)
+        if name == "witness_pair_kept_out":
+            # Whether W, in x's row (column), has the digit of m only in x or y.
+            confined, x, y, m = args
+            by_row = confined == "ConfinedToPairInRow"
+            line_x, across_x = (self._rows[x], self._columns[x]) if by_row else (self._columns[x], self._rows[x])
+            line_y, across_y = (self._rows[y], self._columns[y]) if by_row else (self._columns[y], self._rows[y])
+            return d.conj(
+                d.disj((
+                    -line_x[line],
+                    -self._digits[m][digit - 1],
+                    -(self._witness_var(line, i, digit) if by_row else self._witness_var(i, line, digit)),
+                    across_x[i],
+                    d.conj((line_y[line], across_y[i])),
+                ))
+                for line in range(n)
+                for i in range(n)
+                for digit in range(1, n + 1)
+            )
         if name == "consistent":
             (i,) = args
             solution = self._completions[i]
@@ -1623,8 +1732,8 @@ def geometry_basis(
 # values but nothing follows from anything, partial grids have forced and
 # excluded digits but no values of their own.
 _GRID_PREDICATES: Dict[str, Set[str]] = {
-    "solved": set(PREDICATE_SORTS) - set(COMPLETION_PREDICATES),
-    "partial": set(GEOMETRIC_PREDICATES) | set(COMPLETION_PREDICATES) | {
+    "solved": set(PREDICATE_SORTS) - set(COMPLETION_PREDICATES) - set(PAIR_COMPLETION_PREDICATES),
+    "partial": set(GEOMETRIC_PREDICATES) | set(COMPLETION_PREDICATES) | set(PAIR_COMPLETION_PREDICATES) | {
         "Peers", "Apart", "SameNumber", "DifferentNumbers",
     },
 }

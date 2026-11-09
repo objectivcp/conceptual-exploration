@@ -6,7 +6,7 @@ import pytest
 
 from itertools import product
 
-from conceptual_exploration import Implication, reduced_basis
+from conceptual_exploration import Implication, simplified_implications
 from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku import (
@@ -14,8 +14,10 @@ from explorations.sudoku import (
     GEOMETRIC_PREDICATES,
     PartialGridExpert,
     SudokuSort,
+    CegarPartialGridExpert,
     confinement_cells,
     geometry_basis,
+    pair_confinement_cells,
     load_config,
     partial_grid_exploration,
     sudoku_background,
@@ -45,6 +47,10 @@ def _holds(atom, grid, assignment):
         if name == "Forced":
             return all(s[r][c] == digit for s in completions)
         return all(s[r][c] != digit for s in completions)
+    if name.startswith("ConfinedToPair"):
+        cell, other, digit = args
+        kept_out = pair_confinement_cells(name, cell, other, 2)
+        return all(s[r][c] != digit for s in _completions(grid) for r, c in kept_out)
     if name.startswith("Confined"):
         cell, digit = args
         kept_out = confinement_cells(name, cell, 2)
@@ -195,8 +201,8 @@ def test_exploring_geometry_first_reports_only_deductions():
     geometric = lambda rule: not any(
         a.predicate.name in ("Forced", "Excluded") for a in rule.premise | rule.conclusion
     )
-    assert any(map(geometric, reduced_basis(one.base)))
-    assert not any(map(geometric, reduced_basis(two.base)))
+    assert any(map(geometric, simplified_implications(one.base)))
+    assert not any(map(geometric, simplified_implications(two.base)))
 
 
 def test_only_4x4_grids_are_supported():
@@ -278,3 +284,51 @@ def test_cegar_agrees_with_enumeration_on_confinement():
         exploration.run()
         theories.append({str(i) for i in exploration.base.implications})
     assert theories[0] == theories[1]
+
+
+# The enumerating expert is slow on pairs, so it is given the rows only.
+@pytest.mark.parametrize("expert, line", [("sat", "Row"), ("cegar", "Row"), ("cegar", "Column")])
+def test_pair_confinement_is_decided_right(expert, line):
+    """Both experts' counterexamples have the attributes they claim, checked
+    against the solved grids directly."""
+    settings = {
+        "grid": "partial",
+        "cells": ["x", "y"],
+        "numbers": ["n"],
+        "predicates": [f"Same{line}", "Excluded", f"ConfinedToPairIn{line}"],
+        "expert": expert,
+    }
+    exploration = ExplorationConfig.from_dict(settings).rule_exploration()
+    validate = exploration.expert.validate
+
+    def checked(implication, attributes=None):
+        counterexample = validate(implication, attributes)
+        if counterexample is not None:
+            witness = counterexample.object
+            holds = lambda a: _holds(a, witness.grid, witness.assignment)
+            assert all(map(holds, implication.premise))
+            assert not all(map(holds, implication.conclusion))
+            assert all(holds(a) == (a in counterexample.positive) for a in attributes)
+        return counterexample
+
+    exploration.expert.validate = checked
+    exploration.run()
+
+
+def test_the_x_wing_holds_on_9x9_grids():
+    """In two rows where n can only go in the same two columns, n is excluded
+    from the rest of those columns; without either premise about the
+    columns or rows, it is not."""
+    a, b, c, d, e = (SortedVariable(v, SudokuSort.CELL) for v in "abcde")
+    n = SortedVariable("n", SudokuSort.NUMBER)
+    xwing = [
+        _atom("ConfinedToPairInRow", a, b, n), _atom("ConfinedToPairInRow", c, d, n),
+        _atom("SameColumn", a, c), _atom("SameColumn", b, d), _atom("DifferentRows", a, c),
+        _atom("SameColumn", a, e), _atom("DifferentRows", a, e), _atom("DifferentRows", c, e),
+    ]
+    conclusion = [_atom("Excluded", e, n)]
+    expert = CegarPartialGridExpert([a, b, c, d, e, n], 3)
+    assert expert.validate(Implication(xwing, conclusion)) is None
+    for dropped in (_atom("DifferentRows", a, c), _atom("SameColumn", b, d)):
+        premise = [p for p in xwing if p != dropped]
+        assert expert.validate(Implication(premise, conclusion)) is not None

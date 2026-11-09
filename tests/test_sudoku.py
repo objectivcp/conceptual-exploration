@@ -2,7 +2,7 @@
 
 import pytest
 
-from conceptual_exploration import AttributeExploration, Implication, reduced_basis
+from conceptual_exploration import AttributeExploration, Implication, simplified_implications
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
@@ -11,6 +11,7 @@ from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
     COMPLETION_PREDICATES,
+    PAIR_COMPLETION_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -221,7 +222,7 @@ def test_primitive_exploration_finds_the_sudoku_rules(block_size):
     exploration.run()
     base = exploration.base
 
-    assert sorted(str(rule) for rule in reduced_basis(base)) == [
+    assert sorted(str(rule) for rule in simplified_implications(base)) == [
         "Same(x, y), SameBlock(x, y) -> SameCell(x, y)",
         "Same(x, y), SameColumn(x, y) -> SameCell(x, y)",
         "Same(x, y), SameRow(x, y) -> SameCell(x, y)",
@@ -239,7 +240,7 @@ def test_plain_predicates_match_the_z3_predicates():
     z3_names = {p.name for p in z3_predicates}
     # The completion predicates quantify over a partial grid's completions,
     # which only the partial-grid experts evaluate.
-    assert set(PREDICATE_SORTS) - z3_names == set(COMPLETION_PREDICATES)
+    assert set(PREDICATE_SORTS) - z3_names == set(COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES)
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
     )
