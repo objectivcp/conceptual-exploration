@@ -235,76 +235,18 @@ class Judgments:
             self.data = data
         self._lock = threading.Lock()
 
-    def judged_words(self) -> list[str]:
-        """Every word judged, in the order they were first judged."""
-        return list(self.data["votes"])
-
     def words(self) -> list[str]:
-        """The words of the field: those judged, less those not admitted
-        (see `not_admitted_words`)."""
-        rejected = self.not_admitted_words()
-        return [w for w in self.data["votes"] if w not in rejected]
-
-    def not_admitted_words(self) -> set[str]:
-        """The words proposed, other than the seed words, that do not
-        clearly fit (+) every context of the premise of any question they
-        were proposed for, once judged in those contexts. A word that fails
-        the premise answers nothing, so it is kept out of the exploration."""
-        votes = self.data["votes"]
-        return self._not_admitted(
-            self.data.get("proposals", {}),
-            set(self.field.words),
-            lambda word, context: context in votes.get(word, {}),
-            lambda word, context: self.value(word, context) is True,
-        )
-
-    @property
-    def all_contexts(self) -> list[str]:
-        """The field's contexts, then those added, in the order they were
-        added, admitted or not."""
-        return list(self.field.contexts) + self.data.get("contexts", [])
+        """The words judged, in the order they were first judged."""
+        return list(self.data["votes"])
 
     @property
     def contexts(self) -> list[str]:
-        """The contexts of the field: the field's, then those added and
-        admitted (see `not_admitted_contexts`)."""
-        rejected = self.not_admitted_contexts()
-        return [c for c in self.all_contexts if c not in rejected]
-
-    def not_admitted_contexts(self) -> set[str]:
-        """The contexts proposed by object exploration that not every word
-        of the premise of any question they were proposed for clearly fits,
-        once those words are judged in them."""
-        votes = self.data["votes"]
-        return self._not_admitted(
-            self.data.get("context_proposals", {}),
-            set(self.field.contexts),
-            lambda context, word: context in votes.get(word, {}),
-            lambda context, word: self.value(word, context) is True,
-        )
-
-    @staticmethod
-    def _not_admitted(proposals, kept, judged, fits) -> set[str]:
-        """The objects proposed, other than `kept`, judged in the premise of
-        every question they were proposed for and fitting none of them."""
-        failed: set[str] = set()
-        admitted: set[str] = set()
-        for key, proposed in proposals.items():
-            premise = json.loads(key)[0]
-            for name in proposed:
-                if name in kept:
-                    continue
-                if not all(judged(name, a) for a in premise):
-                    admitted.add(name)
-                elif all(fits(name, a) for a in premise):
-                    admitted.add(name)
-                else:
-                    failed.add(name)
-        return failed - admitted
+        """The field's contexts, then those added, in the order they were added."""
+        return list(self.field.contexts) + self.data.get("contexts", [])
 
     def add_contexts(self, contexts: Iterable[str]) -> list[str]:
         """Add the contexts with a slot that are not known yet; return them."""
-        known = set(self.all_contexts)
+        known = set(self.contexts)
         new = [c for c in dict.fromkeys(contexts) if c.count(SLOT) == 1 and c not in known]
         self.data.setdefault("contexts", []).extend(new)
         self.save()
@@ -488,11 +430,6 @@ class _Searching(Expert[str, str]):
         self._conclusive = False
 
     def objects(self) -> list[str]:
-        """The objects judged and admitted."""
-        raise NotImplementedError
-
-    def judged(self) -> list[str]:
-        """The objects judged, admitted or not."""
         raise NotImplementedError
 
     def row(self, name: str) -> PartialObject[str, str]:
@@ -527,11 +464,7 @@ class _Searching(Expert[str, str]):
                 new = self._search(implication)
                 if new is None:
                     searched, new = False, []
-            judged = set(self.judged())
-            candidates = [o for o in new if o in judged] + self._add([o for o in new if o not in judged])
-            # Tried whether admitted or not: the referee may decide the
-            # premise, and one that refutes is admitted by this question.
-            found = self._answer(implication, candidates) if candidates else None
+            found = self._answer(implication, self._add(new)) if new else None
             if found is not None:
                 answer = found
         if isinstance(answer, Undecided):
@@ -569,7 +502,7 @@ class _Searching(Expert[str, str]):
 
     def _covered(self, implication: Implication[str]) -> bool:
         """Whether an earlier search covers `implication` (see the class)."""
-        known = set(self.judged())
+        known = set(self.objects())
         for key, proposed in self.judgments.data.get(self.cache, {}).items():
             premise, conclusion = map(frozenset, json.loads(key))
             if not (premise <= implication.premise and implication.conclusion <= conclusion):
@@ -600,10 +533,9 @@ class _Searching(Expert[str, str]):
         return None
 
     def _search(self, implication: Implication[str]) -> list[str] | None:
-        """The objects proposed for `implication` and not given yet: those
-        judged already, which may not have been admitted, then the new ones,
-        to judge; or None when a limit keeps them from being searched for."""
-        known = self.judged()
+        """New objects to judge for `implication`, or None when a limit
+        keeps them from being searched for."""
+        known = self.objects()
         room = None if self.max_objects is None else max(self.max_objects - len(known), 0)
         key = json.dumps([sorted(implication.premise), sorted(implication.conclusion)], ensure_ascii=False)
         proposals = self.judgments.data.setdefault(self.cache, {})
@@ -615,9 +547,8 @@ class _Searching(Expert[str, str]):
         else:
             proposed = proposals[key] = self._propose(implication)
             self.judgments.save()
-        judged = [o for o in proposed if o in set(known) and o not in self.given]
         new = [o for o in proposed if o not in set(known)]
-        return judged + (new if room is None else new[:room])
+        return new if room is None else new[:room]
 
     def _ask(self, prompt: str) -> list[str]:
         f = self.judgments.field
@@ -640,9 +571,6 @@ class LexicalExpert(_Searching):
 
     def objects(self) -> list[str]:
         return self.judgments.words()
-
-    def judged(self) -> list[str]:
-        return self.judgments.judged_words()
 
     def row(self, name: str) -> PartialObject[str, str]:
         return self.judgments.row(name)
@@ -672,7 +600,7 @@ class LexicalExpert(_Searching):
             f"and that do not fit at least one of these:\n"
             f"{_numbered(sorted(implication.conclusion))}\n\n"
             f"Do not list these words, which are already known: "
-            f"{', '.join(self.judgments.judged_words()) or '(none)'}.\n"
+            f"{', '.join(self.judgments.words()) or '(none)'}.\n"
             f"Give dictionary forms of real, current words as the items. Return an "
             f"empty list if there is no such word; do not stretch."
         )
@@ -694,9 +622,6 @@ class ContextExpert(_Searching):
 
     def objects(self) -> list[str]:
         return self.judgments.contexts
-
-    def judged(self) -> list[str]:
-        return self.judgments.all_contexts
 
     def row(self, name: str) -> PartialObject[str, str]:
         return self.judgments.column(name, self.words)
