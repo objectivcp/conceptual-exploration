@@ -192,6 +192,8 @@ def test_shipped_fields_load():
     ('language = "English"\npart_of_speech = "noun"\ndescription = "x"\ncontexts = ["a knife"]', "without the slot"),
     ('language = "English"\npart_of_speech = "noun"\ndescription = "x"\ncontexts = ["a ___"]\ncolour = 1', "unknown keys"),
     ('language = "English"\ncontexts = ["a ___"]', "missing keys"),
+    ('language = "English"\npart_of_speech = "noun"\ndescription = "x"\ncontexts = ["a ___"]\nfigurative_contexts = ["a ___"]', "repeated contexts"),
+    ('language = "English"\npart_of_speech = "noun"\ndescription = "x"\ncontexts = ["a ___"]\nwith_figurative = true', "unknown keys"),
 ])
 def test_bad_fields_are_rejected(tmp_path, text, message):
     path = tmp_path / "field.toml"
@@ -286,6 +288,32 @@ def test_the_referee_makes_an_unknown_value_refute():
     answer = expert.validate(Implication(frozenset({"a ___ nose"}), frozenset({"a ___ knife"})))
     assert isinstance(answer, PartialObject) and answer.object == "pointed"
     assert referee.asked == [("pointed", "a ___ knife")]
+
+
+def test_figurative_senses_and_contexts_count_only_if_asked(tmp_path):
+    path = tmp_path / "field.toml"
+    path.write_text(
+        'language = "English"\npart_of_speech = "adjective"\ndescription = "sharp"\n'
+        'figurative = "a piercing pain"\ncontexts = ["a ___ knife"]\n'
+        'figurative_contexts = ["a ___ pain"]\n',
+        encoding="utf-8",
+    )
+    literal, figurative = Field.load(path), Field.load(path, with_figurative=True)
+    assert literal.explored_contexts == ("a ___ knife",)
+    assert figurative.explored_contexts == ("a ___ knife", "a ___ pain")
+    judge = Judge()
+    prompts = []
+    judge.ask = lambda system, prompt, schema, ask=judge.ask: prompts.append(prompt) or ask(system, prompt, schema)
+    Judgments(literal, judge).judge_words(["sharp"])
+    assert "Only literal senses count" in prompts[0] and "a ___ pain" not in prompts[0]
+    prompts.clear()
+    judgments = Judgments(figurative, judge)
+    judgments.judge_words(["sharp"])
+    assert "Figurative senses count too: a piercing pain." in prompts[0]
+    assert judgments.contexts == ["a ___ knife", "a ___ pain"]
+    Judgments(literal, Judge(), tmp_path / "judgments.json").judge_words(["sharp"])
+    with pytest.raises(ValueError, match="other instructions"):
+        Judgments(figurative, Judge(), tmp_path / "judgments.json")
 
 
 def test_judgments_made_under_other_instructions_are_refused(tmp_path):

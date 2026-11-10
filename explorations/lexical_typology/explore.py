@@ -148,7 +148,7 @@ def table(judgments: Judgments) -> list[str]:
     """The words against the contexts, + for fits, - for does not, ? for
     votes that disagree or say unsure; * marks the referee's decisions."""
     contexts = judgments.contexts
-    added = len(judgments.field.contexts)
+    added = len(judgments.field.explored_contexts)
     width = max(map(len, judgments.words()), default=0)
     lines = [
         f"c{n:<3} {c}{'   (added)' if n > added else ''}"
@@ -180,7 +180,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("field", help="a field file, or the name of one in fields/")
     parser.add_argument("--results", type=Path, metavar="DIR",
                         help="where to keep the judgments and write the results "
-                             "(default: results/<field>)")
+                             "(default: results/<field>, or results/<field>_figurative)")
+    parser.add_argument("--figurative", action="store_true",
+                        help="count figurative senses likened to the field's meaning "
+                             "too, and explore the field's figurative contexts")
     parser.add_argument("--judge-model", default="sonnet",
                         help="the model judging words in contexts (default: sonnet)")
     parser.add_argument("--propose-model", default="opus",
@@ -218,10 +221,10 @@ def main(argv: list[str] | None = None) -> None:
 
     path = field_path(args.field)
     try:
-        field = Field.load(path)
+        field = Field.load(path, with_figurative=args.figurative)
     except (OSError, ValueError) as error:
         parser.error(str(error))
-    results = args.results or HERE / "results" / path.stem
+    results = args.results or HERE / "results" / (path.stem + ("_figurative" if args.figurative else ""))
 
     judge = Claude(args.judge_model)
     proposer = Claude(args.propose_model)
@@ -249,8 +252,9 @@ def main(argv: list[str] | None = None) -> None:
             search_covered=args.search_covered,
         )
 
-    print(f"Field:    {field.description} ({field.language} {field.part_of_speech}s)")
-    print(f"Contexts: {len(field.contexts)}; seed words: {', '.join(field.words) or '-'}")
+    senses = "literal and figurative senses" if field.with_figurative else "literal senses"
+    print(f"Field:    {field.description} ({field.language} {field.part_of_speech}s, {senses})")
+    print(f"Contexts: {len(field.explored_contexts)}; seed words: {', '.join(field.words) or '-'}")
     print(f"Judge:    {args.judge_model}, {args.votes} votes; referee: {args.referee_model}; "
           f"proposer: {args.propose_model}, {args.candidates} words per question")
     print(f"Limits:   {args.max_words or 'no'} words, {args.max_proposals or 'no'} proposals"
@@ -271,7 +275,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"\nTime Elapsed:      {elapsed:.0f}s")
     print(f"Questions Asked:   {result.questions_asked}")
     print(f"Words Judged:      {len(judgments.words())}")
-    added = judgments.contexts[len(field.contexts):]
+    added = judgments.contexts[len(field.explored_contexts):]
     if context_expert is not None:
         print(f"Contexts:          {len(judgments.contexts)}, {len(added)} added")
     print(f"Claude Calls:      {calls} (estimated at list prices: ${cost:.2f})")

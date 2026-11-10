@@ -6,8 +6,10 @@ has a context when a native speaker would put it in the slot. Claude is run
 through the `claude` command line in print mode, so no API key is needed:
 one call proposes words that may refute a question, and others judge each
 word in each context, several times, each time with a sentence as evidence.
-A word has a context when it is natural there with a meaning of the field,
-so that an antonym in a natural combination does not. It has the context
+A word has a context when it is natural there and, in that combination,
+itself expresses the field's meaning, so that neither an antonym nor a word
+saying only how strong, dangerous or good the thing is has it; figurative
+senses count only when the field is explored with them. It has the context
 when every vote says yes, lacks it when every vote says no, and otherwise
 it is unknown there, unless a referee, shown the votes, decides it. The
 referee is asked only about the contexts of a question that a word might
@@ -55,7 +57,12 @@ GUIDELINES = (
 class Field:
     """A semantic field of one language: the contexts explored as attributes
     and the words judged before the exploration starts. `guidelines` say
-    which words to propose, in place of `GUIDELINES`."""
+    which words to propose, in place of `GUIDELINES`.
+
+    Only literal senses count unless `with_figurative` is set: then the
+    senses likened to the field's meaning count too, those `figurative`
+    describes if given, and the `figurative_contexts`, which call for them,
+    are explored as well."""
 
     language: str
     part_of_speech: str
@@ -63,23 +70,46 @@ class Field:
     contexts: tuple[str, ...]
     words: tuple[str, ...] = ()
     guidelines: str = GUIDELINES
+    figurative: str = ""
+    figurative_contexts: tuple[str, ...] = ()
+    with_figurative: bool = False
+
+    @property
+    def explored_contexts(self) -> tuple[str, ...]:
+        """The contexts explored: the figurative ones too if figurative
+        senses count."""
+        return self.contexts + (self.figurative_contexts if self.with_figurative else ())
+
+    @property
+    def scope(self) -> str:
+        """The field's meaning and which of its senses count, as every prompt
+        states them."""
+        field = f"Field: {self.description.rstrip('.')}.\n"
+        if not self.with_figurative:
+            return field + "Only literal senses count, not figurative ones."
+        if self.figurative:
+            return field + f"Figurative senses count too: {self.figurative.rstrip('.')}."
+        return field + "Figurative senses likened to this meaning count too."
 
     @classmethod
-    def load(cls, path: Path) -> "Field":
+    def load(cls, path: Path, with_figurative: bool = False) -> "Field":
         with open(path, "rb") as f:
             data = tomllib.load(f)
         names = {f.name for f in fields(cls)}
         if unknown := data.keys() - names:
+            raise ValueError(f"{path}: unknown keys {sorted(unknown)}")
+        if unknown := data.keys() & {"with_figurative"}:
             raise ValueError(f"{path}: unknown keys {sorted(unknown)}")
         if missing := {"language", "part_of_speech", "description", "contexts"} - data.keys():
             raise ValueError(f"{path}: missing keys {sorted(missing)}")
         field = cls(**{
             key: tuple(value) if isinstance(value, list) else value
             for key, value in data.items()
-        })
-        if bad := [c for c in field.contexts if SLOT not in c]:
+        }, with_figurative=with_figurative)
+        contexts = field.contexts + field.figurative_contexts
+        if bad := [c for c in contexts if SLOT not in c]:
             raise ValueError(f"{path}: contexts without the slot {SLOT}: {bad}")
-        if len(set(field.contexts)) != len(field.contexts):
+        if len(set(contexts)) != len(contexts):
             raise ValueError(f"{path}: repeated contexts")
         return field
 
@@ -151,28 +181,37 @@ def _system(field: Field) -> str:
     )
 
 
+# When a word fits a context, as every prompt says it.
+FITS = (
+    "A word fits a context when a native speaker would naturally use it in the "
+    f"slot {SLOT}, inflected as needed, and, in that combination, the word itself "
+    "expresses the field's meaning, or a more specific kind of it, in a sense "
+    "that counts. It does not fit if it only says something else the context "
+    "allows, such as how strong, dangerous or good the thing is."
+)
+
+
 def _judging(field: Field) -> str:
     return (
-        f"Field: {field.description}\n\n"
-        f"For each context below, decide whether a native speaker of {field.language} "
-        f"would naturally use this word in the slot {SLOT}, inflected as needed, with "
-        f"a meaning of the field.\n\n"
+        f"{field.scope}\n{FITS}\n\n"
+        f"For each context below, decide whether this word fits it, for a native "
+        f"speaker of {field.language}.\n\n"
         f"First write the most natural sentence you can in {field.language} with the "
         f"word in that context, then give the verdict:\n"
         f"- yes: a natural combination that speakers actually use, in which the word "
-        f"has a meaning of the field;\n"
+        f"itself expresses the field's meaning in a sense that counts;\n"
         f"- no: odd or unidiomatic, possible only as wordplay or a deliberate stretch, "
-        f"or natural only with a meaning outside the field, such as the opposite one;\n"
+        f"or natural only with a sense that does not count or a meaning outside the "
+        f"field, such as the opposite one or only a related quality;\n"
         f"- unsure: neither clearly."
     )
 
 
 def _refereeing(field: Field) -> str:
     return (
-        f"Field: {field.description}\n\n"
-        f"Judges disagreed, or were unsure, whether a native speaker of {field.language} "
-        f"would naturally use this word in the contexts below, in the slot {SLOT}, "
-        f"inflected as needed, with a meaning of the field. Their sentences and "
+        f"{field.scope}\n{FITS}\n\n"
+        f"Judges disagreed, or were unsure, whether this word fits the contexts "
+        f"below, for a native speaker of {field.language}. Their sentences and "
         f"verdicts follow each context.\n\n"
         f"Weigh them against your own knowledge of {field.language} and give the final "
         f"verdict for each context, after a short reason: yes, no, or unsure only if "
@@ -242,7 +281,7 @@ class Judgments:
     @property
     def contexts(self) -> list[str]:
         """The field's contexts, then those added, in the order they were added."""
-        return list(self.field.contexts) + self.data.get("contexts", [])
+        return list(self.field.explored_contexts) + self.data.get("contexts", [])
 
     def add_contexts(self, contexts: Iterable[str]) -> list[str]:
         """Add the contexts with a slot that are not known yet; return them."""
@@ -590,10 +629,8 @@ class LexicalExpert(_Searching):
             else "(no condition: any word of the field)"
         )
         return self._ask(
-            f"We are collecting {f.part_of_speech}s of {f.language} in the semantic "
-            f"field: {f.description}.\n"
-            f"A word fits a context when a native speaker would naturally use it in "
-            f"the slot {SLOT}, inflected as needed, with a meaning of the field.\n"
+            f"We are collecting {f.part_of_speech}s of {f.language} in a semantic "
+            f"field.\n{f.scope}\n{FITS}\n"
             f"{f.guidelines}\n\n"
             f"Find up to {self.candidates} {f.part_of_speech}s of {f.language} that fit "
             f"every one of these contexts:\n{premise}\n"
@@ -645,19 +682,18 @@ class ContextExpert(_Searching):
             else "(no condition)"
         )
         return self._ask(
-            f"We are collecting contexts for {f.part_of_speech}s of {f.language} in the "
-            f"semantic field: {f.description}.\n"
+            f"We are collecting contexts for {f.part_of_speech}s of {f.language} in a "
+            f"semantic field.\n{f.scope}\n"
             f"A context is a phrase or a sentence of {f.language} with the slot {SLOT} "
             f"for the word, like these, which are already known:\n"
             f"{_numbered(self.judgments.contexts)}\n"
-            f"A word fits a context when a native speaker would naturally use it in "
-            f"the slot, inflected as needed, with a meaning of the field.\n\n"
+            f"{FITS}\n\n"
             f"Find up to {self.candidates} new contexts, of the same form as the known "
             f"ones, that every one of these words fits:\n{premise}\n"
             f"and that at least one of these words does not fit:\n"
             f"{_numbered(sorted(implication.conclusion))}\n\n"
             f"Prefer contexts for typical, everyday situations of the field, each narrow "
-            f"enough to call for one meaning of the field. Give the contexts as the "
+            f"enough to call for one meaning of the field in a sense that counts. Give the contexts as the "
             f"items, each with the slot {SLOT} exactly once. Return an empty list if "
             f"there is no such context; do not stretch."
         )
