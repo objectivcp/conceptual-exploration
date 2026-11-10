@@ -1,0 +1,12 @@
+piercing -> sharp
+stabbing -> acute, keen, piercing, sharp
+incisive -> acute, keen, piercing, sharp
+acute -> keen, piercing, sharp
+spiky -> pointed
+keen -> sharp
+acute, incisive, keen, piercing, sharp, stabbing -> everything
+piercing, pointed, sharp -> acute, incisive, keen, stabbing
+pointed, sharp, spiky -> everything
+
+Contradicting words only together:
+[7], [8] contradict a ___ gaze

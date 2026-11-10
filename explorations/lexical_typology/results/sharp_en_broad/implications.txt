@@ -1,0 +1,65 @@
+___ blue eyes -> a ___ gaze
+a ___ scream -> a ___ pain
+a ___ whistle -> a ___ gaze, a ___ pain, a ___ scream
+a ___ beard, a ___ gaze -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+a ___ gaze, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ beard, a witch's ___ hat -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ beard, a ___ mind -> everything
+a ___ mind, a witch's ___ hat -> everything
+___ blue eyes, a ___ gaze, a ___ pain -> a ___ whistle
+a ___ gaze, a ___ pain, a ___ scream -> ___ blue eyes, a ___ whistle
+___ blue eyes, a ___ gaze, a ___ pain, a ___ scream, a ___ whistle -> a ___ mind
+a ___ beard, a ___ pain -> everything
+a ___ pain, a witch's ___ hat -> everything
+a ___ mind, a ___ pain -> a ___ gaze
+a ___ chin, a ___ gaze -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ chin, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ chin, a ___ mind -> ___ blue eyes, a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
+a ___ chin, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
+a ___ nose -> a ___ chin
+a ___ gaze, a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil
+a ___ beard, a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a witch's ___ hat
+a ___ mind, a ___ thorn -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
+a ___ pain, a ___ thorn -> a ___ arrow, a ___ knife, a ___ razor
+a ___ chin, a ___ thorn -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil
+a ___ arrow, a ___ gaze -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ arrow, a ___ beard -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+a ___ arrow, a witch's ___ hat -> a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ arrow, a ___ mind -> a ___ knife, a ___ needle, a ___ razor
+a ___ arrow, a ___ pain -> a ___ knife, a ___ needle, a ___ razor, a ___ thorn
+a ___ arrow, a ___ chin -> a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+a ___ gaze, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
+a ___ beard, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+a ___ needle, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
+a ___ mind, a ___ needle -> a ___ arrow, a ___ gaze, a ___ knife, a ___ pencil, a ___ razor
+a ___ needle, a ___ pain -> a ___ arrow, a ___ knife, a ___ razor, a ___ thorn
+a ___ chin, a ___ needle -> a ___ arrow, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
+a ___ needle, a ___ thorn -> a ___ arrow, a ___ knife
+a ___ arrow, a ___ needle -> a ___ knife
+a ___ razor -> a ___ knife
+___ blue eyes, a ___ gaze, a ___ knife -> a ___ mind, a ___ pain, a ___ razor, a ___ whistle
+a ___ beard, a ___ knife -> a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+a ___ knife, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ knife, a ___ mind -> a ___ razor
+a ___ knife, a ___ pain, a ___ scream -> a ___ arrow, a ___ thorn
+a ___ gaze, a ___ knife, a ___ pain -> ___ blue eyes, a ___ mind, a ___ razor, a ___ whistle
+a ___ chin, a ___ knife -> a ___ arrow, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+a ___ knife, a ___ thorn -> a ___ arrow
+a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
+a ___ knife, a ___ needle -> a ___ arrow
+a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
+a ___ gaze, a ___ knife, a ___ razor -> ___ blue eyes, a ___ mind, a ___ pain, a ___ whistle
+a ___ arrow, a ___ knife, a ___ needle, a ___ razor, a ___ thorn -> a ___ pain
+a ___ arrow, a ___ knife, a ___ needle, a ___ pain, a ___ razor, a ___ scream, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ gaze, a ___ mind, a ___ nose, a ___ pencil, a ___ whistle
+a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ razor -> a ___ gaze, a ___ mind
+
+Contradicting words only together:
+[3], [10] contradict slicing
+[10], [11] contradict searing
+[48], [49] contradict vicious
+[28], [35] contradict honed
+[45], [49] contradict jagged
+[32], [49] contradict pointed
+[3], [52] contradict keen
+[52], [55] contradict sharpened

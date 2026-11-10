@@ -1,9 +1,18 @@
-piercing -> sharp
-stabbing -> acute
-incisive -> acute
-acute -> keen
-spiky -> pointed
-keen -> piercing
-incisive, stabbing -> everything
-sharp, spiky -> everything
-pointed, stabbing -> everything
+barbed -> pointy, sharp
+prickly -> pointy, spiky
+spiky -> pointy
+jagged -> pointed, pointy, sharp
+keen -> sharp
+pointed -> pointy
+pointed, pointy, prickly, spiky -> sharp
+barbed, pointy, sharp, spiky -> jagged
+keen, pointy, sharp -> pointed
+jagged, pointed, pointy, sharp -> keen
+keen, pointed, pointy, sharp, spiky -> everything
+barbed, jagged, keen, pointed, pointy, sharp -> everything
+
+Contradicting words only together:
+[4], [8] contradict a ___ cactus
+[4], [10] contradict ___ wire
+[8], [10] contradict a stingray's ___ tail
+[10], [12] contradict a ___ thorn

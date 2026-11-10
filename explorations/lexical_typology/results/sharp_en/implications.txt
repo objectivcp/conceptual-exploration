@@ -1,41 +1,59 @@
-___ blue eyes -> a ___ mind
-a ___ scream -> a ___ whistle
-a ___ whistle -> ___ blue eyes, a ___ pain, a ___ scream
-a ___ beard, a ___ gaze -> a ___ pencil
-a ___ gaze, a witch's ___ hat -> a ___ pencil
-a ___ beard, a witch's ___ hat -> a ___ pencil
-a ___ mind -> a ___ gaze
-a ___ beard, a ___ pain -> everything
-a ___ pain, a witch's ___ hat -> everything
-a ___ chin, a ___ gaze -> a ___ pencil
-a ___ beard, a ___ chin -> a ___ pencil
-a ___ chin, a witch's ___ hat -> a ___ pencil
-a ___ chin, a ___ pain -> a ___ scream
-a ___ nose -> a ___ chin
-a ___ beard, a ___ thorn -> a ___ pencil
-a ___ mind, a ___ thorn -> a ___ scream
-a ___ pain, a ___ thorn -> a ___ razor
-a ___ chin, a ___ thorn -> a ___ pencil
-a ___ arrow, a ___ beard -> a ___ pencil
-a ___ arrow, a witch's ___ hat -> a ___ pencil
-___ blue eyes, a ___ arrow -> a ___ scream
-a ___ arrow, a ___ pain -> a ___ razor
-a ___ arrow, a ___ chin -> a ___ pencil
-a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
-a ___ beard, a ___ needle -> a ___ pencil
-a ___ needle, a witch's ___ hat -> a ___ pencil
-a ___ mind, a ___ needle -> a ___ scream
-a ___ needle, a ___ pain -> a ___ razor
-a ___ chin, a ___ needle -> a ___ pencil
-a ___ needle, a ___ thorn -> a ___ knife
+a ___ hedgehog -> a ___ cactus
+a ___ cactus, a ___ hedgehog, a stingray's ___ tail -> ___ ears, a ___ hat
+a ___ harpoon -> a ___ arrow
+a ___ fishhook -> a ___ arrow, a ___ harpoon
+___ wire, a ___ cactus -> a stingray's ___ tail
+a ___ cactus, a ___ hat, a ___ hedgehog -> ___ ears, ___ wire, a stingray's ___ tail
+a ___ hat, a stingray's ___ tail -> ___ ears
+___ wire, a ___ hat -> ___ ears, a ___ cactus, a ___ hedgehog, a stingray's ___ tail
+___ ears, a ___ cactus -> a stingray's ___ tail
+___ ears, ___ wire -> a ___ cactus, a ___ chin, a ___ harpoon, a ___ nose, a stingray's ___ tail
+___ ears, a ___ hat -> a ___ chin, a ___ nose, a stingray's ___ tail
+a ___ chin, a stingray's ___ tail -> ___ ears, a ___ nose
+___ wire, a ___ chin -> ___ ears, a ___ cactus, a ___ harpoon, a ___ nose, a stingray's ___ tail
+a ___ chin, a ___ hat -> ___ ears, a ___ nose, a stingray's ___ tail
+a ___ cactus, a ___ nose -> a ___ thorn
+a ___ nose, a stingray's ___ tail -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+___ wire, a ___ nose -> ___ ears, a ___ arrow, a ___ cactus, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+___ ears, a ___ nose -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+a ___ cactus, a ___ hedgehog, a ___ thorn -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ hat, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a stingray's ___ tail
+a ___ thorn, a stingray's ___ tail -> a ___ needle
+___ wire, a ___ thorn -> a ___ arrow, a ___ cactus, a stingray's ___ tail
+a ___ hat, a ___ thorn -> a ___ nose
+___ ears, a ___ thorn -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+a ___ chin, a ___ thorn -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+a ___ arrow, a ___ cactus -> ___ wire, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+a ___ arrow, a ___ harpoon, a stingray's ___ tail -> ___ wire
+___ wire, a ___ arrow -> a ___ harpoon
+___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon -> a ___ needle
+a ___ arrow, a ___ hat -> ___ ears, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+___ ears, a ___ arrow -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+a ___ arrow, a ___ chin -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+a ___ arrow, a ___ nose -> ___ ears, ___ wire, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+a ___ arrow, a ___ thorn -> a ___ needle, a stingray's ___ tail
+a ___ pencil -> ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle
+a ___ needle -> ___ wire
+___ wire, a ___ needle, a stingray's ___ tail -> a ___ arrow, a ___ cactus, a ___ harpoon, a ___ thorn
 a ___ razor -> a ___ knife
-a ___ beard, a ___ knife -> a witch's ___ hat
-a ___ knife, a witch's ___ hat -> a ___ beard, a ___ nose
-___ blue eyes, a ___ knife -> a ___ scream
-a ___ knife, a ___ mind, a ___ pain -> a ___ pencil
-a ___ chin, a ___ knife -> a ___ thorn
-a ___ knife, a ___ thorn -> a ___ arrow
-a ___ pencil, a ___ thorn -> a ___ nose
-a ___ pain, a ___ razor -> a ___ thorn
-a ___ razor, a ___ thorn -> a ___ needle
-a ___ needle, a ___ razor -> a ___ gaze, a ___ pain
+a ___ cactus, a ___ knife -> ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+a ___ knife, a stingray's ___ tail -> ___ wire, a ___ arrow, a ___ harpoon
+___ wire, a ___ knife -> a ___ arrow
+a ___ hat, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+___ ears, a ___ knife -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+a ___ chin, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+a ___ knife, a ___ nose -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+a ___ knife, a ___ thorn -> ___ wire, a ___ arrow, a stingray's ___ tail
+a ___ arrow, a ___ knife -> a ___ harpoon
+___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle -> a ___ pencil
+___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil -> a ___ fishhook
+___ wire, a ___ arrow, a ___ cactus, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail -> ___ ears, a ___ chin, a ___ nose
+___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ razor -> a ___ fishhook, a ___ needle, a ___ pencil
+
+Contradicting words only together:
+[8], [11] contradict spiked
+[2], [11] contradict spiny
+[14], [18] contradict spiky
+[35], [36] contradict tapered
+[33], [35] contradict tapering
+[45], [46] contradict jagged
+[45], [48] contradict pointed

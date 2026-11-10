@@ -1,1010 +1,911 @@
-Field:    adjectives that describe something as sharp: having an edge or a point that can cut or prick, a pointed shape, or a quality likened to these, such as a sudden intense pain or a quick, penetrating mind (English adjectives)
-Contexts: 10; seed words: sharp, pointed, keen
+Field:    adjectives that describe something as sharp: having an edge or a point that can cut or prick, or a pointed shape (English adjectives, literal senses)
+Contexts: 8; seed words: sharp, pointed, keen
 Judge:    sonnet, 3 votes; referee: opus; proposer: opus, 2 words per question
 Limits:   60 words, 100 proposals of each kind, 16 contexts, object exploration of 8 words
 
 === Round 1: contexts, refuted by words ===
 
 Number of implications: 0
-Number of objects: 34
-Question 1: ___ blue eyes -> a ___ gaze, a ___ mind
-Unconfirmed
-
-
-Number of implications: 1
-Number of objects: 34
-Question 2: a ___ scream -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 2
-Number of objects: 34
-Question 3: a ___ whistle -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ scream
-Unconfirmed
-
-
-Number of implications: 3
-Number of objects: 34
-Question 4: a ___ beard, a ___ gaze -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 4
-Number of objects: 34
-Question 5: a ___ gaze, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 5
-Number of objects: 34
-Question 6: a ___ beard, a witch's ___ hat -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 6
-Number of objects: 34
-Question 7: a ___ mind -> a ___ gaze
-Unconfirmed
-
-
-Number of implications: 7
-Number of objects: 34
-Question 8: a ___ gaze, a ___ pain -> a ___ mind
-Counterexample found: searing
-Satisfies: a ___ gaze, a ___ pain
-Does not satisfy: a ___ beard, a witch's ___ hat, a ___ razor, a ___ arrow, a ___ nose, a ___ pencil, a ___ mind, a ___ needle, a ___ chin, a ___ thorn, a ___ knife
-
-
-Number of implications: 7
-Number of objects: 35
-Question 9: a ___ beard, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 8
-Number of objects: 35
-Question 10: a ___ pain, a witch's ___ hat -> ___ blue eyes, a ___ arrow, a ___ beard, a ___ chin, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 9
-Number of objects: 35
-Question 11: ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain -> a ___ whistle
-Unconfirmed
-
-
-Number of implications: 9
-Number of objects: 35
-Question 12: a ___ chin, a ___ gaze -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 10
-Number of objects: 35
-Question 13: a ___ beard, a ___ chin -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 11
-Number of objects: 35
-Question 14: a ___ chin, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 12
-Number of objects: 35
-Question 15: a ___ chin, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 13
-Number of objects: 35
-Question 16: a ___ nose -> a ___ chin
-Unconfirmed
-
-
-Number of implications: 14
-Number of objects: 35
-Question 17: a ___ gaze, a ___ thorn -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 14
-Number of objects: 35
-Question 18: a ___ beard, a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 15
-Number of objects: 35
-Question 19: a ___ gaze, a ___ mind, a ___ thorn -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 16
-Number of objects: 35
-Question 20: a ___ pain, a ___ thorn -> a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ razor
-Unconfirmed
-
-
-Number of implications: 17
-Number of objects: 35
-Question 21: a ___ chin, a ___ thorn -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil
-Unconfirmed
-
-
-Number of implications: 18
-Number of objects: 35
-Question 22: a ___ arrow, a ___ gaze -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 18
-Number of objects: 35
-Question 23: a ___ arrow, a ___ beard -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 19
-Number of objects: 35
-Question 24: a ___ arrow, a witch's ___ hat -> a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 20
-Number of objects: 35
-Question 25: a ___ arrow, a ___ gaze, a ___ mind -> ___ blue eyes, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 20
-Number of objects: 35
-Question 26: ___ blue eyes, a ___ arrow, a ___ gaze, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 21
-Number of objects: 35
-Question 27: a ___ arrow, a ___ pain -> a ___ gaze, a ___ knife, a ___ needle, a ___ razor, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 22
-Number of objects: 35
-Question 28: a ___ arrow, a ___ chin -> a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 23
-Number of objects: 35
-Question 29: a ___ arrow, a ___ gaze, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 23
-Number of objects: 35
-Question 30: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
-Unconfirmed
-
-
-Number of implications: 24
-Number of objects: 35
-Question 31: a ___ gaze, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 24
-Number of objects: 35
-Question 32: a ___ beard, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 25
-Number of objects: 35
-Question 33: a ___ needle, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 26
-Number of objects: 35
-Question 34: a ___ gaze, a ___ mind, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 27
-Number of objects: 35
-Question 35: a ___ needle, a ___ pain -> a ___ arrow, a ___ gaze, a ___ knife, a ___ razor, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 28
-Number of objects: 35
-Question 36: a ___ chin, a ___ needle -> a ___ arrow, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 29
-Number of objects: 35
-Question 37: a ___ needle, a ___ thorn -> a ___ arrow, a ___ knife
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 35
-Question 38: a ___ arrow, a ___ needle -> a ___ knife, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 35
-Question 39: a ___ arrow, a ___ gaze, a ___ needle -> ___ blue eyes, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 35
-Question 40: a ___ razor -> a ___ knife
-Unconfirmed
-
-
-Number of implications: 31
-Number of objects: 35
-Question 41: a ___ gaze, a ___ knife -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 31
-Number of objects: 35
-Question 42: a ___ beard, a ___ knife -> a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 32
-Number of objects: 35
-Question 43: a ___ knife, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 33
-Number of objects: 35
-Question 44: a ___ gaze, a ___ knife, a ___ mind -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 33
-Number of objects: 35
-Question 45: ___ blue eyes, a ___ gaze, a ___ knife, a ___ mind -> a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 35
-Question 46: a ___ knife, a ___ pain -> a ___ arrow, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 35
-Question 47: a ___ gaze, a ___ knife, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 35
-Question 48: a ___ gaze, a ___ knife, a ___ mind, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 35
-Number of objects: 35
-Question 49: a ___ chin, a ___ knife -> a ___ arrow, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 36
-Number of objects: 35
-Question 50: a ___ knife, a ___ thorn -> a ___ arrow, a ___ needle
-Counterexample found: vicious
-Satisfies: a ___ thorn, a ___ knife
-Does not satisfy: a ___ beard, a witch's ___ hat, a ___ nose, a ___ gaze, a ___ needle, a ___ scream, a ___ mind, a ___ pencil, a ___ chin, a ___ whistle, ___ blue eyes
-
-
-Number of implications: 36
-Number of objects: 36
-Question 51: a ___ knife, a ___ thorn -> a ___ arrow
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 52: a ___ arrow, a ___ gaze, a ___ knife -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 53: a ___ arrow, a ___ gaze, a ___ knife, a ___ mind -> ___ blue eyes, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 54: a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 55: a ___ arrow, a ___ gaze, a ___ knife, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 56: a ___ knife, a ___ needle -> a ___ arrow, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 57: a ___ gaze, a ___ knife, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 58: a ___ arrow, a ___ knife, a ___ needle -> a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 59: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 60: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 61: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil -> a ___ chin, a ___ nose, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 62: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ pencil -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 36
-Question 63: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 36
-Question 64: a ___ arrow, a ___ chin, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn -> ___ blue eyes, a ___ mind, a ___ pain, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 36
-Question 65: a ___ arrow, a ___ beard, a ___ chin, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat -> ___ blue eyes, a ___ mind, a ___ pain, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 36
-Question 66: a ___ gaze, a ___ knife, a ___ razor -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 36
-Question 67: a ___ gaze, a ___ knife, a ___ mind, a ___ razor -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 36
-Question 68: a ___ knife, a ___ pain, a ___ razor -> a ___ arrow, a ___ gaze, a ___ needle, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 36
-Question 69: a ___ arrow, a ___ gaze, a ___ knife, a ___ razor -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 36
-Question 70: a ___ arrow, a ___ gaze, a ___ knife, a ___ mind, a ___ razor -> ___ blue eyes, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 36
-Question 71: a ___ arrow, a ___ knife, a ___ razor, a ___ thorn -> a ___ gaze, a ___ needle, a ___ pain
-Unconfirmed
-
-
-Number of implications: 40
-Number of objects: 36
-Question 72: a ___ knife, a ___ needle, a ___ razor -> a ___ arrow, a ___ gaze, a ___ pain, a ___ thorn
-Unconfirmed
-
-
-Exploring again with the objects judged but not in the context: astute, canny, searing, prickling, stubbly, spiked, trenchant, probing, vicious
+Number of objects: 3
+Question 1:  -> a ___ arrow, a ___ knife, a ___ needle, a ___ thorn
+Counterexample found: jagged
+Satisfies: a ___ knife, a ___ thorn
+Does not satisfy: a ___ nose, a ___ chin, a ___ needle, a ___ razor, a ___ pencil
+Also added: spiky
 
 
 Number of implications: 0
-Number of objects: 43
-Question 1: ___ blue eyes -> a ___ gaze, a ___ mind
+Number of objects: 5
+Question 2: a ___ chin -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Counterexample found: spiky
+Satisfies: a ___ chin
+Does not satisfy: a ___ knife, a ___ needle, a ___ arrow, a ___ thorn, a ___ razor, a ___ pencil
+
+
+Number of implications: 0
+Number of objects: 5
+Question 3: a ___ chin -> a ___ nose
 Unconfirmed
 
 
 Number of implications: 1
-Number of objects: 43
-Question 2: a ___ scream -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ whistle
+Number of objects: 5
+Question 4: a ___ nose -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
 Unconfirmed
+Also added: pointy
 
 
 Number of implications: 2
-Number of objects: 43
-Question 3: a ___ whistle -> ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain, a ___ scream
+Number of objects: 6
+Question 5: a ___ thorn -> a ___ arrow, a ___ knife
+Unconfirmed
+Also added: prickly
+
+
+Number of implications: 3
+Number of objects: 7
+Question 6: a ___ arrow -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Counterexample found: keen
+Satisfies: a ___ knife, a ___ razor, a ___ arrow
+Does not satisfy: a ___ nose, a ___ chin, a ___ pencil
+
+
+Number of implications: 3
+Number of objects: 7
+Question 7: a ___ arrow -> a ___ knife, a ___ needle, a ___ thorn
+Counterexample found: barbed
+Satisfies: a ___ needle, a ___ arrow, a ___ thorn
+Does not satisfy: a ___ knife, a ___ nose, a ___ chin, a ___ razor, a ___ pencil
+Also added: sharpened
+
+
+barbed refutes the unconfirmed a ___ thorn -> a ___ arrow, a ___ knife; resuming
+
+
+Number of implications: 2
+Number of objects: 9
+Question 1: a ___ thorn -> a ___ arrow
 Unconfirmed
 
 
 Number of implications: 3
-Number of objects: 43
-Question 4: a ___ beard, a ___ gaze -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
+Number of objects: 9
+Question 2: a ___ arrow -> a ___ needle
 Unconfirmed
 
 
 Number of implications: 4
-Number of objects: 43
-Question 5: a ___ gaze, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Number of objects: 10
+Question 3: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
+Unconfirmed
+Also added: tapered
+
+
+Number of implications: 5
+Number of objects: 11
+Question 4: a ___ razor -> a ___ arrow, a ___ knife, a ___ needle
+Counterexample found: stropped
+Satisfies: a ___ knife, a ___ razor
+Does not satisfy: a ___ nose, a ___ chin, a ___ needle, a ___ arrow, a ___ thorn, a ___ pencil
+Also added: whetted
+
+
+whetted refutes the unconfirmed a ___ arrow -> a ___ needle; resuming
+
+
+Number of implications: 3
+Number of objects: 13
+Question 1: a ___ arrow, a ___ thorn -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 13
+Question 2: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
 Unconfirmed
 
 
 Number of implications: 5
-Number of objects: 43
-Question 6: a ___ beard, a witch's ___ hat -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
+Number of objects: 13
+Question 3: a ___ razor -> a ___ knife
 Unconfirmed
 
 
 Number of implications: 6
-Number of objects: 43
-Question 7: a ___ mind -> a ___ gaze
+Number of objects: 13
+Question 4: a ___ knife, a ___ needle -> a ___ arrow, a ___ pencil
 Unconfirmed
 
 
 Number of implications: 7
-Number of objects: 43
-Question 8: a ___ beard, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle, a witch's ___ hat
+Number of objects: 13
+Question 5: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
 Unconfirmed
 
 
 Number of implications: 8
-Number of objects: 43
-Question 9: a ___ pain, a witch's ___ hat -> ___ blue eyes, a ___ arrow, a ___ beard, a ___ chin, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 9
-Number of objects: 43
-Question 10: ___ blue eyes, a ___ gaze, a ___ mind, a ___ pain -> a ___ whistle
-Unconfirmed
-
-
-Number of implications: 9
-Number of objects: 43
-Question 11: a ___ chin, a ___ gaze -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 10
-Number of objects: 43
-Question 12: a ___ beard, a ___ chin -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 11
-Number of objects: 43
-Question 13: a ___ chin, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 12
-Number of objects: 43
-Question 14: a ___ chin, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ gaze, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 13
-Number of objects: 43
-Question 15: a ___ nose -> a ___ chin
-Unconfirmed
-
-
-Number of implications: 14
-Number of objects: 43
-Question 16: a ___ gaze, a ___ thorn -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 14
-Number of objects: 43
-Question 17: a ___ beard, a ___ thorn -> a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 15
-Number of objects: 43
-Question 18: a ___ gaze, a ___ mind, a ___ thorn -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 16
-Number of objects: 43
-Question 19: a ___ pain, a ___ thorn -> a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ razor
-Unconfirmed
-
-
-Number of implications: 17
-Number of objects: 43
-Question 20: a ___ chin, a ___ thorn -> a ___ arrow, a ___ knife, a ___ needle, a ___ nose, a ___ pencil
-Unconfirmed
-
-
-Number of implications: 18
-Number of objects: 43
-Question 21: a ___ arrow, a ___ gaze -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 18
-Number of objects: 43
-Question 22: a ___ arrow, a ___ beard -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 19
-Number of objects: 43
-Question 23: a ___ arrow, a witch's ___ hat -> a ___ beard, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 20
-Number of objects: 43
-Question 24: a ___ arrow, a ___ gaze, a ___ mind -> ___ blue eyes, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 20
-Number of objects: 43
-Question 25: ___ blue eyes, a ___ arrow, a ___ gaze, a ___ mind -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 21
-Number of objects: 43
-Question 26: a ___ arrow, a ___ pain -> a ___ gaze, a ___ knife, a ___ needle, a ___ razor, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 22
-Number of objects: 43
-Question 27: a ___ arrow, a ___ chin -> a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 23
-Number of objects: 43
-Question 28: a ___ arrow, a ___ gaze, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ knife, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 23
-Number of objects: 43
-Question 29: a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
-Unconfirmed
-
-
-Number of implications: 24
-Number of objects: 43
-Question 30: a ___ gaze, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 24
-Number of objects: 43
-Question 31: a ___ beard, a ___ needle -> a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 25
-Number of objects: 43
-Question 32: a ___ needle, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 26
-Number of objects: 43
-Question 33: a ___ gaze, a ___ mind, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ knife, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 27
-Number of objects: 43
-Question 34: a ___ needle, a ___ pain -> a ___ arrow, a ___ gaze, a ___ knife, a ___ razor, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 28
-Number of objects: 43
-Question 35: a ___ chin, a ___ needle -> a ___ arrow, a ___ knife, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 29
-Number of objects: 43
-Question 36: a ___ needle, a ___ thorn -> a ___ arrow, a ___ knife
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 43
-Question 37: a ___ arrow, a ___ needle -> a ___ knife, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 43
-Question 38: a ___ arrow, a ___ gaze, a ___ needle -> ___ blue eyes, a ___ chin, a ___ knife, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 30
-Number of objects: 43
-Question 39: a ___ razor -> a ___ knife
-Unconfirmed
-
-
-Number of implications: 31
-Number of objects: 43
-Question 40: a ___ gaze, a ___ knife -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 31
-Number of objects: 43
-Question 41: a ___ beard, a ___ knife -> a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat
-Unconfirmed
-
-
-Number of implications: 32
-Number of objects: 43
-Question 42: a ___ knife, a witch's ___ hat -> a ___ arrow, a ___ beard, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 33
-Number of objects: 43
-Question 43: a ___ gaze, a ___ knife, a ___ mind -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 33
-Number of objects: 43
-Question 44: ___ blue eyes, a ___ gaze, a ___ knife, a ___ mind -> a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 43
-Question 45: a ___ knife, a ___ pain -> a ___ arrow, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 43
-Question 46: a ___ gaze, a ___ knife, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 34
-Number of objects: 43
-Question 47: a ___ gaze, a ___ knife, a ___ mind, a ___ pain -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 35
-Number of objects: 43
-Question 48: a ___ chin, a ___ knife -> a ___ arrow, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 36
-Number of objects: 43
-Question 49: a ___ knife, a ___ thorn -> a ___ arrow
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 50: a ___ arrow, a ___ gaze, a ___ knife -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 51: a ___ arrow, a ___ gaze, a ___ knife, a ___ mind -> ___ blue eyes, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 52: a ___ arrow, a ___ knife, a ___ thorn -> a ___ needle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 53: a ___ arrow, a ___ gaze, a ___ knife, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 54: a ___ knife, a ___ needle -> a ___ arrow, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 55: a ___ gaze, a ___ knife, a ___ needle -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 56: a ___ arrow, a ___ knife, a ___ needle -> a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 57: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 58: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ thorn -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ pencil, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 59: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil -> a ___ chin, a ___ nose, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 60: a ___ arrow, a ___ gaze, a ___ knife, a ___ needle, a ___ pencil -> ___ blue eyes, a ___ chin, a ___ mind, a ___ nose, a ___ pain, a ___ razor, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 37
-Number of objects: 43
-Question 61: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn -> a ___ chin, a ___ nose
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 43
-Question 62: a ___ arrow, a ___ chin, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn -> ___ blue eyes, a ___ mind, a ___ pain, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 43
-Question 63: a ___ arrow, a ___ beard, a ___ chin, a ___ gaze, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a witch's ___ hat -> ___ blue eyes, a ___ mind, a ___ pain, a ___ razor, a ___ scream, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 43
-Question 64: a ___ gaze, a ___ knife, a ___ razor -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 43
-Question 65: a ___ gaze, a ___ knife, a ___ mind, a ___ razor -> ___ blue eyes, a ___ arrow, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 38
-Number of objects: 43
-Question 66: a ___ knife, a ___ pain, a ___ razor -> a ___ arrow, a ___ gaze, a ___ needle, a ___ thorn
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 43
-Question 67: a ___ arrow, a ___ gaze, a ___ knife, a ___ razor -> ___ blue eyes, a ___ chin, a ___ mind, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 43
-Question 68: a ___ arrow, a ___ gaze, a ___ knife, a ___ mind, a ___ razor -> ___ blue eyes, a ___ chin, a ___ needle, a ___ nose, a ___ pain, a ___ pencil, a ___ scream, a ___ thorn, a ___ whistle
-Unconfirmed
-
-
-Number of implications: 39
-Number of objects: 43
-Question 69: a ___ arrow, a ___ knife, a ___ razor, a ___ thorn -> a ___ gaze, a ___ needle, a ___ pain
-Unconfirmed
-
-
-Number of implications: 40
-Number of objects: 43
-Question 70: a ___ knife, a ___ needle, a ___ razor -> a ___ arrow, a ___ gaze, a ___ pain, a ___ thorn
-Unconfirmed
+Number of objects: 13
+Question 6: a ___ arrow, a ___ knife, a ___ needle, a ___ pencil, a ___ razor -> a ___ chin, a ___ nose, a ___ thorn
+Counterexample found: sharpened
+Satisfies: a ___ knife, a ___ needle, a ___ arrow, a ___ razor, a ___ pencil
+Does not satisfy: a ___ nose, a ___ chin, a ___ thorn
 
 
 === Round 1: words, refuted by contexts ===
 
 Number of implications: 0
-Number of objects: 16
-Question 1: piercing -> sharp
+Number of objects: 8
+Question 1:  -> sharp
+Counterexample found: a ___ hat
+Satisfies: spiky, pointy, pointed
+Does not satisfy: barbed, jagged, sharp, keen
+Also added: ___ ears
+
+
+Number of implications: 0
+Number of objects: 10
+Question 2: barbed -> keen, pointed, pointy, sharp
+Counterexample found: ___ wire
+Satisfies: pointy, barbed, sharp
+Does not satisfy: keen
+Also added: a ___ fishhook
+
+
+Number of implications: 0
+Number of objects: 12
+Question 3: barbed -> pointy, sharp
 Unconfirmed
+Also added: a ___ harpoon, a stingray's ___ tail
+
+
+Number of implications: 1
+Number of objects: 14
+Question 4: prickly -> barbed, jagged, keen, pointed, pointy, sharp, spiky
+Counterexample found: a ___ chin
+Satisfies: sharp, pointy, spiky, pointed, prickly
+Does not satisfy: barbed, jagged, keen
+
+
+Number of implications: 1
+Number of objects: 14
+Question 5: prickly -> pointed, pointy, sharp, spiky
+Counterexample found: a ___ cactus
+Satisfies: pointy, prickly, spiky, sharp
+Does not satisfy: pointed, keen
+Also added: a ___ hedgehog
 
 
 Number of implications: 1
 Number of objects: 16
-Question 2: stabbing -> acute, keen, piercing, sharp
+Question 6: prickly -> pointy, spiky
 Unconfirmed
 
 
 Number of implications: 2
 Number of objects: 16
-Question 3: incisive -> acute, keen, piercing, sharp
+Question 7: spiky -> pointy, prickly
+Counterexample found: ___ ears
+Satisfies: spiky, pointy, pointed, sharp
+Does not satisfy: barbed, prickly, keen
+
+
+Number of implications: 2
+Number of objects: 16
+Question 8: spiky -> pointy
 Unconfirmed
 
 
 Number of implications: 3
 Number of objects: 16
-Question 4: acute -> keen, piercing, sharp
+Question 9: jagged -> keen, pointed, pointy, sharp
+Counterexample found: ___ wire
+Satisfies: sharp, pointy, barbed, spiky, jagged
+Does not satisfy: prickly, keen
+
+
+Number of implications: 3
+Number of objects: 16
+Question 10: jagged -> pointed, pointy, sharp
 Unconfirmed
 
 
 Number of implications: 4
 Number of objects: 16
-Question 5: spiky -> pointed
+Question 11: keen -> sharp
 Unconfirmed
 
 
 Number of implications: 5
 Number of objects: 16
-Question 6: keen -> piercing, sharp
+Question 12: pointed -> pointy
 Unconfirmed
 
 
 Number of implications: 6
 Number of objects: 16
-Question 7: acute, incisive, keen, piercing, sharp, stabbing -> pointed, spiky
+Question 13: pointed, pointy, prickly, spiky -> sharp
 Unconfirmed
 
 
 Number of implications: 7
 Number of objects: 16
-Question 8: piercing, pointed, sharp -> acute, incisive, keen, stabbing
-Unconfirmed
+Question 14: barbed, pointy, sharp, spiky -> jagged, pointed
+Counterexample found: a ___ cactus
+Satisfies: sharp, pointy, barbed, spiky, prickly
+Does not satisfy: pointed, keen
 
 
 Number of implications: 7
 Number of objects: 16
-Question 9: pointed, sharp, spiky -> acute, incisive, keen, piercing, stabbing
+Question 15: barbed, pointy, sharp, spiky -> jagged
 Unconfirmed
 
 
 Number of implications: 8
 Number of objects: 16
-Question 10: keen, piercing, pointed, sharp -> acute, incisive, stabbing
-Unconfirmed
+Question 16: keen, pointy, sharp -> jagged, pointed
+Counterexample found: a ___ harpoon
+Satisfies: sharp, pointy, barbed, pointed, keen
+Does not satisfy: prickly, jagged
 
 
 Number of implications: 8
 Number of objects: 16
-Question 11: acute, keen, piercing, pointed, sharp -> incisive, stabbing
-Unconfirmed
-
-
-Number of implications: 8
-Number of objects: 16
-Question 12: acute, keen, piercing, pointed, sharp, stabbing -> incisive, spiky
+Question 17: keen, pointy, sharp -> pointed
 Unconfirmed
 
 
 Number of implications: 9
 Number of objects: 16
-Question 13: acute, incisive, keen, piercing, pointed, sharp -> stabbing
+Question 18: jagged, pointed, pointy, sharp -> keen
 Unconfirmed
 
 
-Time Elapsed:      502s
-Questions Asked:   70
-Words Judged:      43
-Contexts:          16, 6 added
-Claude Calls:      72 (estimated at list prices: $1.61)
-Not Searched:      17 questions, accepted once a limit was reached without searching for new words
-Not Searched:      13 questions about words, accepted once a limit was reached without searching for new contexts
+Number of implications: 10
+Number of objects: 16
+Question 19: keen, pointed, pointy, sharp, spiky -> barbed, jagged, prickly
+Unconfirmed
 
-Rules (41, all unconfirmed):
-  [1] ___ blue eyes -> a ___ mind
-  [2] a ___ scream -> a ___ whistle
-  [3] a ___ whistle -> ___ blue eyes, a ___ pain, a ___ scream
-  [4] a ___ beard, a ___ gaze -> a ___ pencil
-  [5] a ___ gaze, a witch's ___ hat -> a ___ pencil
-  [6] a ___ beard, a witch's ___ hat -> a ___ pencil
-  [7] a ___ mind -> a ___ gaze
-  [8] a ___ beard, a ___ pain -> everything
-  [9] a ___ pain, a witch's ___ hat -> everything
-  [10] a ___ chin, a ___ gaze -> a ___ pencil
-  [11] a ___ beard, a ___ chin -> a ___ pencil
-  [12] a ___ chin, a witch's ___ hat -> a ___ pencil
-  [13] a ___ chin, a ___ pain -> a ___ scream
-  [14] a ___ nose -> a ___ chin
-  [15] a ___ beard, a ___ thorn -> a ___ pencil
-  [16] a ___ mind, a ___ thorn -> a ___ scream
-  [17] a ___ pain, a ___ thorn -> a ___ razor
-  [18] a ___ chin, a ___ thorn -> a ___ pencil
-  [19] a ___ arrow, a ___ beard -> a ___ pencil
-  [20] a ___ arrow, a witch's ___ hat -> a ___ pencil
-  [21] ___ blue eyes, a ___ arrow -> a ___ scream
-  [22] a ___ arrow, a ___ pain -> a ___ razor
-  [23] a ___ arrow, a ___ chin -> a ___ pencil
-  [24] a ___ pencil -> a ___ arrow, a ___ knife, a ___ needle
-  [25] a ___ beard, a ___ needle -> a ___ pencil
-  [26] a ___ needle, a witch's ___ hat -> a ___ pencil
-  [27] a ___ mind, a ___ needle -> a ___ scream
-  [28] a ___ needle, a ___ pain -> a ___ razor
-  [29] a ___ chin, a ___ needle -> a ___ pencil
-  [30] a ___ needle, a ___ thorn -> a ___ knife
-  [31] a ___ razor -> a ___ knife
-  [32] a ___ beard, a ___ knife -> a witch's ___ hat
-  [33] a ___ knife, a witch's ___ hat -> a ___ beard, a ___ nose
-  [34] ___ blue eyes, a ___ knife -> a ___ scream
-  [35] a ___ knife, a ___ mind, a ___ pain -> a ___ pencil
-  [36] a ___ chin, a ___ knife -> a ___ thorn
-  [37] a ___ knife, a ___ thorn -> a ___ arrow
-  [38] a ___ pencil, a ___ thorn -> a ___ nose
-  [39] a ___ pain, a ___ razor -> a ___ thorn
-  [40] a ___ razor, a ___ thorn -> a ___ needle
-  [41] a ___ needle, a ___ razor -> a ___ gaze, a ___ pain
 
-Rules about the words sharp, pointed, keen, spiky, acute, incisive, stabbing, piercing (9, all unconfirmed):
-  [1] piercing -> sharp
-  [2] stabbing -> acute
-  [3] incisive -> acute
-  [4] acute -> keen
-  [5] spiky -> pointed
-  [6] keen -> piercing
-  [7] incisive, stabbing -> everything
-  [8] sharp, spiky -> everything
-  [9] pointed, stabbing -> everything
+Number of implications: 11
+Number of objects: 16
+Question 20: barbed, jagged, keen, pointed, pointy, sharp -> prickly, spiky
+Unconfirmed
+
+
+=== Round 2: contexts, refuted by words ===
+
+Number of implications: 0
+Number of objects: 13
+Question 1: a ___ hedgehog -> a ___ cactus, a ___ chin
+Counterexample found: spiny
+Satisfies: a ___ hedgehog, a stingray's ___ tail, a ___ cactus
+Does not satisfy: a ___ knife, a ___ nose, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ needle, a ___ arrow, ___ wire, a ___ razor, a ___ pencil
+
+
+Number of implications: 0
+Number of objects: 14
+Question 2: a ___ hedgehog -> a ___ cactus
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 14
+Question 3: a ___ cactus, a ___ hedgehog, a stingray's ___ tail -> ___ ears, a ___ hat
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 15
+Question 4: a ___ harpoon -> a ___ arrow, a ___ needle
+Counterexample found: whetted
+Satisfies: a ___ knife, a ___ razor, a ___ harpoon, a ___ arrow
+Does not satisfy: a ___ nose, a ___ chin, a stingray's ___ tail, a ___ needle, ___ wire, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ hat, ___ ears, a ___ pencil
+
+
+Number of implications: 2
+Number of objects: 15
+Question 5: a ___ harpoon -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 15
+Question 6: a ___ fishhook -> ___ wire, a ___ arrow, a ___ harpoon, a ___ needle
+Counterexample found: honed
+Satisfies: a ___ knife, a ___ fishhook, a ___ harpoon, a ___ arrow, a ___ razor
+Does not satisfy: a ___ nose, a ___ chin, a stingray's ___ tail, ___ wire, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ hat, ___ ears, a ___ pencil
+
+
+Number of implications: 3
+Number of objects: 15
+Question 7: a ___ fishhook -> a ___ arrow, a ___ harpoon, a ___ needle
+Counterexample found: whetted
+Satisfies: a ___ knife, a ___ fishhook, a ___ harpoon, a ___ arrow, a ___ razor
+Does not satisfy: a ___ nose, a ___ chin, a stingray's ___ tail, a ___ needle, ___ wire, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ hat, ___ ears, a ___ pencil
+
+
+Number of implications: 3
+Number of objects: 15
+Question 8: a ___ fishhook -> a ___ arrow, a ___ harpoon
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 15
+Question 9: ___ wire -> a ___ cactus, a stingray's ___ tail
+Counterexample found: sharpened
+Satisfies: a ___ knife, a ___ fishhook, a ___ harpoon, a ___ needle, a ___ arrow, ___ wire, a ___ razor, a ___ pencil
+Does not satisfy: a ___ nose, a ___ chin, a stingray's ___ tail, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ hat, ___ ears
+
+
+Number of implications: 4
+Number of objects: 15
+Question 10: ___ wire, a ___ cactus -> a ___ harpoon, a stingray's ___ tail
+Counterexample found: spiked
+Satisfies: a stingray's ___ tail, a ___ hat, a ___ hedgehog, a ___ cactus, ___ wire
+Does not satisfy: a ___ nose, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ needle, a ___ thorn, a ___ razor, a ___ pencil
+
+
+Number of implications: 4
+Number of objects: 15
+Question 11: ___ wire, a ___ cactus -> a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 15
+Question 12: ___ wire, a stingray's ___ tail -> a ___ cactus
+Counterexample found: serrated
+Satisfies: a ___ knife, a stingray's ___ tail, ___ wire
+Does not satisfy: a ___ nose, a ___ chin, a ___ needle, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ pencil
+
+
+Number of implications: 5
+Number of objects: 16
+Question 13: a ___ hat -> ___ ears, ___ wire, a stingray's ___ tail
+Counterexample found: conical
+Satisfies: a ___ hat
+Does not satisfy: a ___ knife, a ___ chin, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ needle, a ___ arrow, a ___ hedgehog, ___ wire, a ___ razor, ___ ears, a ___ pencil
+Also added: peaked
+
+
+Number of implications: 5
+Number of objects: 18
+Question 14: a ___ cactus, a ___ hat -> ___ ears, ___ wire, a ___ hedgehog, a stingray's ___ tail
+Counterexample found: conical
+Satisfies: a ___ cactus, a ___ hat
+Does not satisfy: a ___ knife, a ___ chin, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ needle, a ___ arrow, a ___ hedgehog, ___ wire, a ___ razor, ___ ears, a ___ pencil
+
+
+Number of implications: 5
+Number of objects: 18
+Question 15: a ___ cactus, a ___ hat, a ___ hedgehog -> ___ ears, ___ wire, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 18
+Question 16: a ___ hat, a stingray's ___ tail -> ___ ears, ___ wire
+Counterexample found: tapering
+Satisfies: a stingray's ___ tail, ___ ears, a ___ hat
+Does not satisfy: a ___ fishhook, a ___ harpoon, a ___ hedgehog, a ___ cactus, ___ wire, a ___ razor
+
+
+Number of implications: 6
+Number of objects: 19
+Question 17: a ___ hat, a stingray's ___ tail -> ___ ears
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 19
+Question 18: ___ wire, a ___ hat -> ___ ears, a ___ cactus, a ___ hedgehog, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 19
+Question 19: ___ ears -> a ___ chin, a ___ nose, a stingray's ___ tail
+Counterexample found: spiny
+Satisfies: a ___ hedgehog, a stingray's ___ tail, ___ ears, a ___ cactus
+Does not satisfy: a ___ knife, a ___ nose, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ needle, a ___ arrow, ___ wire, a ___ razor, a ___ pencil
+
+
+Number of implications: 8
+Number of objects: 19
+Question 20: ___ ears -> a stingray's ___ tail
+Counterexample found: triangular
+Satisfies: ___ ears
+Does not satisfy: a ___ knife, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ arrow, a ___ hedgehog, a ___ cactus, ___ wire, a ___ razor, a ___ pencil
+
+
+Number of implications: 8
+Number of objects: 20
+Question 21: ___ ears, a ___ cactus -> a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 20
+Question 22: ___ ears, ___ wire -> a ___ cactus, a ___ chin, a ___ harpoon, a ___ nose, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 20
+Question 23: ___ ears, a ___ hat -> a ___ chin, a ___ nose, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 20
+Question 24: a ___ chin, a stingray's ___ tail -> ___ ears, ___ wire, a ___ harpoon, a ___ nose
+Counterexample found: tapered
+Satisfies: a ___ needle, a ___ chin, ___ ears, a stingray's ___ tail
+Does not satisfy: a ___ fishhook, a ___ harpoon, a ___ arrow, a ___ hedgehog, a ___ cactus, a ___ razor
+
+
+Number of implications: 11
+Number of objects: 20
+Question 25: a ___ chin, a stingray's ___ tail -> ___ ears, ___ wire, a ___ nose
+Counterexample found: tapering
+Satisfies: a ___ chin, ___ ears, a stingray's ___ tail, a ___ hat
+Does not satisfy: a ___ fishhook, a ___ harpoon, a ___ hedgehog, a ___ cactus, ___ wire, a ___ razor
+
+
+Number of implications: 11
+Number of objects: 20
+Question 26: a ___ chin, a stingray's ___ tail -> ___ ears, a ___ nose
+Unconfirmed
+
+
+Number of implications: 12
+Number of objects: 20
+Question 27: ___ wire, a ___ chin -> ___ ears, a ___ cactus, a ___ harpoon, a ___ nose, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 13
+Number of objects: 20
+Question 28: a ___ chin, a ___ hat -> ___ ears, a ___ nose, a stingray's ___ tail
+Unconfirmed
+Also added: angular
+
+
+Number of implications: 14
+Number of objects: 21
+Question 29: ___ ears, a ___ chin -> a ___ nose, a stingray's ___ tail
+Counterexample found: triangular
+Satisfies: a ___ chin, ___ ears
+Does not satisfy: a ___ knife, a ___ nose, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, ___ wire, a ___ arrow, a ___ hedgehog, a ___ cactus, a ___ hat, a ___ razor, a ___ pencil
+
+
+Number of implications: 14
+Number of objects: 21
+Question 30: a ___ nose -> a ___ chin
+Counterexample found: conical
+Satisfies: a ___ nose, a ___ cactus, a ___ hat
+Does not satisfy: a ___ knife, a ___ chin, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ needle, a ___ arrow, a ___ hedgehog, ___ wire, a ___ razor, ___ ears, a ___ pencil
+
+
+Number of implications: 14
+Number of objects: 21
+Question 31: a ___ cactus, a ___ nose -> a ___ thorn
+Unconfirmed
+
+
+Number of implications: 15
+Number of objects: 21
+Question 32: a ___ nose, a stingray's ___ tail -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 16
+Number of objects: 21
+Question 33: ___ wire, a ___ nose -> ___ ears, a ___ arrow, a ___ cactus, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 17
+Number of objects: 21
+Question 34: a ___ hat, a ___ nose -> a ___ thorn
+Counterexample found: peaked
+Satisfies: a ___ nose, a ___ hat
+Does not satisfy: a ___ knife, a ___ chin, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ needle, a ___ arrow, a ___ thorn, a ___ hedgehog, a ___ cactus, ___ wire, a ___ razor, ___ ears, a ___ pencil
+
+
+Number of implications: 17
+Number of objects: 21
+Question 35: ___ ears, a ___ nose -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 18
+Number of objects: 21
+Question 36: a ___ thorn -> ___ wire, a ___ arrow, a stingray's ___ tail
+Counterexample found: tapered
+Satisfies: a ___ chin, a stingray's ___ tail, a ___ needle, a ___ thorn, ___ ears
+Does not satisfy: a ___ fishhook, a ___ harpoon, a ___ arrow, a ___ hedgehog, a ___ cactus, a ___ razor
+
+
+Number of implications: 18
+Number of objects: 21
+Question 37: a ___ thorn -> ___ wire, a stingray's ___ tail
+Counterexample found: conical
+Satisfies: a ___ nose, a ___ cactus, a ___ thorn, a ___ hat
+Does not satisfy: a ___ knife, a ___ chin, a ___ fishhook, a ___ harpoon, a stingray's ___ tail, a ___ needle, a ___ arrow, a ___ hedgehog, ___ wire, a ___ razor, ___ ears, a ___ pencil
+
+
+Number of implications: 18
+Number of objects: 21
+Question 38: a ___ cactus, a ___ hedgehog, a ___ thorn -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ hat, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a stingray's ___ tail
+Unconfirmed
+Also added: stabby
+
+
+Number of implications: 19
+Number of objects: 22
+Question 39: a ___ thorn, a stingray's ___ tail -> ___ wire, a ___ needle
+Counterexample found: tapering
+Satisfies: a ___ chin, a stingray's ___ tail, a ___ arrow, a ___ thorn, a ___ hat, ___ ears
+Does not satisfy: a ___ fishhook, a ___ harpoon, a ___ hedgehog, a ___ cactus, ___ wire, a ___ razor, a ___ pencil
+
+
+Number of implications: 19
+Number of objects: 22
+Question 40: a ___ thorn, a stingray's ___ tail -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 20
+Number of objects: 22
+Question 41: ___ wire, a ___ thorn -> a ___ arrow, a ___ cactus, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 21
+Number of objects: 22
+Question 42: a ___ hat, a ___ thorn -> a ___ nose
+Unconfirmed
+
+
+Number of implications: 22
+Number of objects: 22
+Question 43: ___ ears, a ___ thorn -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 23
+Number of objects: 22
+Question 44: a ___ chin, a ___ thorn -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 24
+Number of objects: 22
+Question 45: a ___ arrow, a ___ cactus -> ___ wire, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 25
+Number of objects: 22
+Question 46: a ___ arrow, a stingray's ___ tail -> a ___ needle, a ___ thorn
+Counterexample found: serrated
+Satisfies: a ___ knife, a ___ harpoon, a stingray's ___ tail, a ___ arrow, ___ wire
+Does not satisfy: a ___ nose, a ___ chin, a ___ needle, a ___ hedgehog, a ___ thorn, a ___ cactus, a ___ hat, a ___ pencil
+
+
+Number of implications: 25
+Number of objects: 22
+Question 47: a ___ arrow, a ___ harpoon, a stingray's ___ tail -> ___ wire
+Unconfirmed
+
+
+Number of implications: 26
+Number of objects: 22
+Question 48: ___ wire, a ___ arrow -> a ___ harpoon
+Unconfirmed
+
+
+Number of implications: 27
+Number of objects: 22
+Question 49: ___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon -> a ___ needle
+Unconfirmed
+
+
+Number of implications: 28
+Number of objects: 22
+Question 50: a ___ arrow, a ___ hat -> ___ ears, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 29
+Number of objects: 22
+Question 51: ___ ears, a ___ arrow -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 30
+Number of objects: 22
+Question 52: a ___ arrow, a ___ chin -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 31
+Number of objects: 22
+Question 53: a ___ arrow, a ___ nose -> ___ ears, ___ wire, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 32
+Number of objects: 22
+Question 54: a ___ arrow, a ___ thorn -> a ___ needle, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 33
+Number of objects: 22
+Question 55: a ___ pencil -> ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle
+Unconfirmed
+
+
+Number of implications: 34
+Number of objects: 22
+Question 56: a ___ needle -> ___ wire
+Unconfirmed
+
+
+Number of implications: 35
+Number of objects: 22
+Question 57: ___ wire, a ___ needle, a stingray's ___ tail -> a ___ arrow, a ___ cactus, a ___ harpoon, a ___ thorn
+Unconfirmed
+
+
+Number of implications: 36
+Number of objects: 22
+Question 58: a ___ razor -> a ___ knife
+Unconfirmed
+
+
+Number of implications: 37
+Number of objects: 22
+Question 59: a ___ cactus, a ___ knife -> ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 38
+Number of objects: 22
+Question 60: a ___ knife, a stingray's ___ tail -> ___ wire, a ___ arrow, a ___ harpoon
+Unconfirmed
+Also added: toothed
+
+
+Number of implications: 39
+Number of objects: 23
+Question 61: ___ wire, a ___ knife -> a ___ arrow
+Unconfirmed
+
+
+Number of implications: 40
+Number of objects: 23
+Question 62: a ___ hat, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 41
+Number of objects: 23
+Question 63: ___ ears, a ___ knife -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 42
+Number of objects: 23
+Question 64: a ___ chin, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 43
+Number of objects: 23
+Question 65: a ___ knife, a ___ nose -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 44
+Number of objects: 23
+Question 66: a ___ knife, a ___ thorn -> ___ wire, a ___ arrow, a stingray's ___ tail
+Unconfirmed
+
+
+Number of implications: 45
+Number of objects: 23
+Question 67: a ___ arrow, a ___ knife -> a ___ harpoon
+Unconfirmed
+
+
+Number of implications: 46
+Number of objects: 23
+Question 68: ___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle -> a ___ pencil
+Unconfirmed
+
+
+Number of implications: 47
+Number of objects: 23
+Question 69: ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil -> a ___ fishhook
+Unconfirmed
+
+
+Number of implications: 48
+Number of objects: 23
+Question 70: ___ wire, a ___ arrow, a ___ cactus, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail -> ___ ears, a ___ chin, a ___ nose
+Unconfirmed
+
+
+Number of implications: 49
+Number of objects: 23
+Question 71: ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ razor -> a ___ fishhook, a ___ needle, a ___ pencil
+Unconfirmed
+
+
+=== Round 2: words, refuted by contexts ===
+
+Number of implications: 0
+Number of objects: 16
+Question 1: barbed -> pointy, sharp
+Unconfirmed
+
+
+Number of implications: 1
+Number of objects: 16
+Question 2: prickly -> pointy, spiky
+Unconfirmed
+
+
+Number of implications: 2
+Number of objects: 16
+Question 3: spiky -> pointy
+Unconfirmed
+
+
+Number of implications: 3
+Number of objects: 16
+Question 4: jagged -> pointed, pointy, sharp
+Unconfirmed
+
+
+Number of implications: 4
+Number of objects: 16
+Question 5: keen -> sharp
+Unconfirmed
+
+
+Number of implications: 5
+Number of objects: 16
+Question 6: pointed -> pointy
+Unconfirmed
+
+
+Number of implications: 6
+Number of objects: 16
+Question 7: pointed, pointy, prickly, spiky -> sharp
+Unconfirmed
+
+
+Number of implications: 7
+Number of objects: 16
+Question 8: barbed, pointy, sharp, spiky -> jagged
+Unconfirmed
+
+
+Number of implications: 8
+Number of objects: 16
+Question 9: keen, pointy, sharp -> pointed
+Unconfirmed
+
+
+Number of implications: 9
+Number of objects: 16
+Question 10: jagged, pointed, pointy, sharp -> keen
+Unconfirmed
+
+
+Number of implications: 10
+Number of objects: 16
+Question 11: keen, pointed, pointy, sharp, spiky -> barbed, jagged, prickly
+Unconfirmed
+
+
+Number of implications: 11
+Number of objects: 16
+Question 12: barbed, jagged, keen, pointed, pointy, sharp -> prickly, spiky
+Unconfirmed
+
+
+Time Elapsed:      1380s
+Questions Asked:   71
+Words Judged:      23
+Contexts:          16, 8 added
+Claude Calls:      311 (estimated at list prices: $4.95)
+Not Searched:      8 questions about words, accepted once a limit was reached without searching for new contexts
+
+Implications (50, all unconfirmed):
+  [1] a ___ hedgehog -> a ___ cactus
+  [2] a ___ cactus, a ___ hedgehog, a stingray's ___ tail -> ___ ears, a ___ hat
+  [3] a ___ harpoon -> a ___ arrow
+  [4] a ___ fishhook -> a ___ arrow, a ___ harpoon
+  [5] ___ wire, a ___ cactus -> a stingray's ___ tail
+  [6] a ___ cactus, a ___ hat, a ___ hedgehog -> ___ ears, ___ wire, a stingray's ___ tail
+  [7] a ___ hat, a stingray's ___ tail -> ___ ears
+  [8] ___ wire, a ___ hat -> ___ ears, a ___ cactus, a ___ hedgehog, a stingray's ___ tail
+  [9] ___ ears, a ___ cactus -> a stingray's ___ tail
+  [10] ___ ears, ___ wire -> a ___ cactus, a ___ chin, a ___ harpoon, a ___ nose, a stingray's ___ tail
+  [11] ___ ears, a ___ hat -> a ___ chin, a ___ nose, a stingray's ___ tail
+  [12] a ___ chin, a stingray's ___ tail -> ___ ears, a ___ nose
+  [13] ___ wire, a ___ chin -> ___ ears, a ___ cactus, a ___ harpoon, a ___ nose, a stingray's ___ tail
+  [14] a ___ chin, a ___ hat -> ___ ears, a ___ nose, a stingray's ___ tail
+  [15] a ___ cactus, a ___ nose -> a ___ thorn
+  [16] a ___ nose, a stingray's ___ tail -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn
+  [17] ___ wire, a ___ nose -> ___ ears, a ___ arrow, a ___ cactus, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [18] ___ ears, a ___ nose -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [19] a ___ cactus, a ___ hedgehog, a ___ thorn -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ fishhook, a ___ harpoon, a ___ hat, a ___ knife, a ___ needle, a ___ nose, a ___ pencil, a stingray's ___ tail
+  [20] a ___ thorn, a stingray's ___ tail -> a ___ needle
+  [21] ___ wire, a ___ thorn -> a ___ arrow, a ___ cactus, a stingray's ___ tail
+  [22] a ___ hat, a ___ thorn -> a ___ nose
+  [23] ___ ears, a ___ thorn -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+  [24] a ___ chin, a ___ thorn -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a stingray's ___ tail
+  [25] a ___ arrow, a ___ cactus -> ___ wire, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+  [26] a ___ arrow, a ___ harpoon, a stingray's ___ tail -> ___ wire
+  [27] ___ wire, a ___ arrow -> a ___ harpoon
+  [28] ___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon -> a ___ needle
+  [29] a ___ arrow, a ___ hat -> ___ ears, a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+  [30] ___ ears, a ___ arrow -> a ___ chin, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+  [31] a ___ arrow, a ___ chin -> ___ ears, a ___ knife, a ___ needle, a ___ nose, a ___ thorn, a stingray's ___ tail
+  [32] a ___ arrow, a ___ nose -> ___ ears, ___ wire, a ___ chin, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [33] a ___ arrow, a ___ thorn -> a ___ needle, a stingray's ___ tail
+  [34] a ___ pencil -> ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle
+  [35] a ___ needle -> ___ wire
+  [36] ___ wire, a ___ needle, a stingray's ___ tail -> a ___ arrow, a ___ cactus, a ___ harpoon, a ___ thorn
+  [37] a ___ razor -> a ___ knife
+  [38] a ___ cactus, a ___ knife -> ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ thorn, a stingray's ___ tail
+  [39] a ___ knife, a stingray's ___ tail -> ___ wire, a ___ arrow, a ___ harpoon
+  [40] ___ wire, a ___ knife -> a ___ arrow
+  [41] a ___ hat, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [42] ___ ears, a ___ knife -> ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [43] a ___ chin, a ___ knife -> ___ ears, ___ wire, a ___ arrow, a ___ harpoon, a ___ needle, a ___ nose, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [44] a ___ knife, a ___ nose -> ___ ears, ___ wire, a ___ arrow, a ___ chin, a ___ harpoon, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail
+  [45] a ___ knife, a ___ thorn -> ___ wire, a ___ arrow, a stingray's ___ tail
+  [46] a ___ arrow, a ___ knife -> a ___ harpoon
+  [47] ___ wire, a ___ arrow, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle -> a ___ pencil
+  [48] ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil -> a ___ fishhook
+  [49] ___ wire, a ___ arrow, a ___ cactus, a ___ fishhook, a ___ harpoon, a ___ knife, a ___ needle, a ___ pencil, a ___ thorn, a stingray's ___ tail -> ___ ears, a ___ chin, a ___ nose
+  [50] ___ wire, a ___ arrow, a ___ harpoon, a ___ knife, a ___ razor -> a ___ fishhook, a ___ needle, a ___ pencil
+Contradicting words only together (7):
+  [8], [11] contradict spiked
+  [2], [11] contradict spiny
+  [14], [18] contradict spiky
+  [35], [36] contradict tapered
+  [33], [35] contradict tapering
+  [45], [46] contradict jagged
+  [45], [48] contradict pointed
+
+Implications between the words sharp, pointed, keen, jagged, spiky, pointy, prickly, barbed (12, all unconfirmed):
+  [1] barbed -> pointy, sharp
+  [2] prickly -> pointy, spiky
+  [3] spiky -> pointy
+  [4] jagged -> pointed, pointy, sharp
+  [5] keen -> sharp
+  [6] pointed -> pointy
+  [7] pointed, pointy, prickly, spiky -> sharp
+  [8] barbed, pointy, sharp, spiky -> jagged
+  [9] keen, pointy, sharp -> pointed
+  [10] jagged, pointed, pointy, sharp -> keen
+  [11] keen, pointed, pointy, sharp, spiky -> everything
+  [12] barbed, jagged, keen, pointed, pointy, sharp -> everything
+Contradicting words only together (4):
+  [4], [8] contradict a ___ cactus
+  [4], [10] contradict ___ wire
+  [8], [10] contradict a stingray's ___ tail
+  [10], [12] contradict a ___ thorn
 
 c1   a ___ knife
 c2   a ___ razor
@@ -1014,58 +915,38 @@ c5   a ___ arrow
 c6   a ___ thorn
 c7   a ___ nose
 c8   a ___ chin
-c9   a ___ pain
-c10  a ___ mind
-c11  a witch's ___ hat   (added)
-c12  a ___ beard   (added)
-c13  a ___ whistle   (added)
-c14  a ___ gaze   (added)
-c15  a ___ scream   (added)
-c16  ___ blue eyes   (added)
+c9   ___ ears   (added)
+c10  a ___ hat   (added)
+c11  ___ wire   (added)
+c12  a ___ fishhook   (added)
+c13  a ___ harpoon   (added)
+c14  a stingray's ___ tail   (added)
+c15  a ___ cactus   (added)
+c16  a ___ hedgehog   (added)
 
-            c1   c2   c3   c4   c5   c6   c7   c8   c9   c10  c11  c12  c13  c14  c15  c16 
-sharp       +    +    +    +    +    +    +    +    +    +    -*   -*   +    +    +    +*  
-pointed     ?    -    ?    +    +    ?    +    +    -    -    +    +    -    +*   -    -   
-keen        ?    ?    -    -    -    -    -    -    +    +    -    -    ?    +    -    +*  
-spiky       -    -    -    -    ?    ?    ?    ?    -    -    ?    +    -    -    -    -   
-acute       -    -    -    -    -    -    -    -    +    +    -    -    -*   +*   ?    -   
-incisive    -    -    -    -    -    -    -    -    -*   +    -    -    -    +    -    ?   
-stabbing    -    -    -    -    -    -    -    -    +    -    -    -    ?    ?    ?    -   
-piercing    -*   -    -*   -    ?    ?    -    -    +    +*   -    -    +    +    +    +   
-angular     -    -    -    -    -    -    +*   +*   -    -    -    ?    -    -    -    -   
-beaky       -    -    -    -    -    -    +    ?    -    -    -    -    -    ?    -    -   
-pointy      +*   -    +*   +    +    +    +    +    -    -    +    +    -    -    -    -   
-barbed      -    -    -    -    +    +*   -    -    -    -    -    -    -    ?    -    -   
-prickly     -    -    -    -    -    ?    -    ?    ?    -    -    +    -    -    -    -   
-sharpened   +    ?    ?    +    +    -*   -    -    -    ?    -    -    -    ?    -    -   
-penetrating -    -    -    -    -*   -    -    -    +    +    -    -    +    +    +    +   
-stinging    -    -    -    -    -    -    -    -    +    -    -    -    -    ?    ?    -   
-jagged      +*   -    -    -    ?    ?    -*   -*   +    -    -    ?    -    -    ?    -   
-tapered     +*   -    +*   +*   ?    +*   +*   +*   -    -    ?    ?    -    -    -    -   
-tapering    +*   -    +*   ?    +*   +*   +*   +    -    -    ?    ?    -    -    -    -   
-fine        -*   ?    +*   ?    -    -    -    -    -    -    -    ?    -    -    -    -   
-pricking    -    -    -*   -    -    ?    -    -    +    -    -    ?    -    -    -    -   
-honed       +    +    ?    -    +*   -    -    -    -    +    -    -    -    ?    -    -   
-whetted     +    +*   -    -    +*   -    -    -    -    ?    -    -    -    -    -    -   
-wicked      +    +*   +*   -    +*   +*   -    -    +    -*   -    -    -    ?    -    -   
-cutting     -*   -    -    -    -    -    -    -    ?    -*   -    -    ?    ?    ?    ?   
-jabbing     -    -    -    -    -    -    -    -    +    -    -    -    ?    ?    ?    -   
-stropped    +    +    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
-slicing     -*   -    -    -    -    -    -    -    +*   -    -    -    ?    ?    ?    -   
-shrewd      -    -    -    -    -    -    -    -    -*   +    -    -    -    +    -    +   
-shrill      -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
-bristly     -    -    -    -    -    -    -    +*   -    -    -    ?    -    -    -    -   
-scratchy    -    -    -    -    -    -    -    -    -    -    -    +*   -    -    -    -   
-conical     -    -    -    -*   -    +*   -    -    -    -    +    -*   -    -    -    -   
-peaked      -    -    -    -    -    -    ?    -*   -    -    +    ?    -    -    -    -   
-astute      -    -    -    -    -    -    -    -    -    +    -    -    -    +*   -    ?   
-canny       -    -    -    -    -    -    -    -    -    +    -    -    -    +*   -    ?   
-searing     -    -    -    -    -    -    -    -    +    -    -    -    ?    +*   ?    ?   
-prickling   -    -    -    -    -    -*   -    -    +*   -    -    -*   -    ?    -    -   
-stubbly     -    -    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
-spiked      -*   -    -    -    -*   -    -    -    -    -    -*   +*   -    -    -    -   
-trenchant   -    -    -    -    -    -    -    -    -    ?    -    -    -    ?    -    -   
-probing     -    -    -    -    -    -    -    -    -    ?    -    -    -    ?    -    ?   
-vicious     +*   ?    -    -    ?    +*   -    -    ?    -    -    -    -    -    -    -   
+           c1   c2   c3   c4   c5   c6   c7   c8   c9   c10  c11  c12  c13  c14  c15  c16 
+sharp      +    +    +    +    +    +    +    +    +*   -    +    +    +    +*   +    -*  
+pointed    +*   -    +*   +    +    +*   +    +    +    +    ?    -*   +*   +*   -*   -   
+keen       +    +    ?    -    +*   ?    -    -    -    -    -    -    +*   -    -    -   
+jagged     +    -    -    -    ?    +*   -    -    -*   -    +*   -*   -*   ?    ?    -   
+spiky      -    -    -    -    -*   -*   ?    +*   +*   +    +*   -    ?    +    +    +   
+pointy     +*   -    +*   +    +    +    +    +    +    +    +*   +*   +*   +*   +    +*  
+prickly    -    -    -    -    -    -*   -    +*   -    -*   -*   -    -    -*   +    +   
+barbed     -    -    +*   -    +    +*   -    -    -    -    +    +    +    +    +*   -   
+sharpened  +    +*   +*   +    +    -*   -    -    -    -    +*   +    +    -    -    -   
+honed      +    +    ?    -    +*   -    -    -    -    -    -*   +    +    -    -    -   
+tapered    ?    -    +*   ?    -*   +*   ?    +*   +    ?    ?    -    -*   +*   -    -   
+stropped   +    +    -    -    -    -    -    -    -    -    -    -    -    -    -    -   
+whetted    +    +*   -    -    +*   -    -    -    -    -    -    +*   +*   -    -    -   
+spiny      -    -    -    -    -    -*   -    -    +*   ?    -    -    -    +    +    +   
+spiked     -*   -    -    -    ?    -    -    -    ?    +    +*   -    -*   +    +*   +*  
+serrated   +    ?    -    -    +*   -    -    -    ?    -*   +*   ?    +*   +*   -    -   
+conical    -    -    -    -    -    +*   +*   -    -*   +    -    -    -    -    +*   -   
+peaked     -    -    -    -    -    -    +*   -*   -    +    -    -    -    -    -    -   
+tapering   ?    -    ?    -*   +*   +*   ?    +*   +*   +*   -    -    -    +*   -    -   
+triangular -    -    -*   -    -    -*   -*   +*   +*   -*   -    -    -    -    -    -   
+angular    -    -    -    -    -    -    +*   +*   -*   ?    -    -    -    -    -    -   
+stabby     +    -    +*   -    +*   +    -    -    -    -    +*   -    +*   +*   +    ?   
+toothed    ?    -    -    -    -    -    -    -    -    -    -    -    ?    -    -    -   
 
 Results written to /Users/sergei.obj/Library/Mobile Documents/com~apple~CloudDocs/conceptual-exploration/explorations/lexical_typology/results/sharp_en
