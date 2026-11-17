@@ -261,3 +261,22 @@ def test_enumeration_resumes_from_any_set():
                 return [(mask >> i) & 1 for i in range(len(attributes))]
             expected = [m for m in full if lectic_key(m) >= lectic_key(start)]
             assert list(enumerator.generate_masks(start)) == expected
+
+
+def test_after_a_change_the_new_closure_is_visited_when_it_comes_next():
+    """Sending True says the closure changed. The new closure of the set
+    just yielded is yielded next when it is the next closed set, even if it
+    has more to ask about than the set had, as after a partial answer."""
+    theory = ImplicationTheory()
+    generator = NextClosure("abc", closure_operator=theory.closure).generate()
+    seen = [next(generator)]
+    assert seen == [frozenset()]
+    theory.add(Implication(frozenset(), frozenset("c")))
+    seen.append(generator.send(True))
+    while seen[-1] != frozenset("bc"):
+        seen.append(next(generator))
+    # b -> a adds a, which comes before b: {a, b, c} is not next.
+    theory.add(Implication(frozenset("b"), frozenset("a")))
+    seen.append(generator.send(True))
+    seen += list(generator)
+    assert seen == [frozenset(), frozenset("c"), frozenset("bc"), frozenset("ac"), frozenset("abc")]

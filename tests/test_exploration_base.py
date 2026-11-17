@@ -736,19 +736,28 @@ def test_undecided_implications_can_be_rejected_tentatively():
     assert [v.original for v in base.tentative_objects] == [Tentative(i) for i in stands_for]
 
 
-def test_a_tentatively_rejected_rest_follows_the_proved_part():
-    from conceptual_exploration import AttributeExploration, Undecided
+def test_a_tentatively_rejected_rest_follows_the_proved_part_and_is_not_asked_again():
+    from conceptual_exploration import AttributeExploration, Tentative, Undecided
 
     def prove_b(implication, number):
         if number == 1:
             return Undecided(frozenset({"b"}))
 
     base = ExplorationBase(attributes=["a", "b", "c"])
-    AttributeExploration(base, _Recording(prove_b), undecided="reject").run(start=frozenset({"a"}))
+    expert = _Recording(prove_b)
+    AttributeExploration(base, expert, undecided="reject").run(start=frozenset({"a"}))
     assert base.implication_sources[_implication("a", "b")] is ImplicationSource.CONFIRMED
-    tentative = next(o for v, o in base.context.objects.items() if v in base.tentative_objects)
-    assert base.tentative_objects[next(iter(base.tentative_objects))] == _implication("a", "c")
-    assert (tentative.positive, tentative.negative) == ({"a", "b"}, {"c"})
+    # The tentative object is not completed. The question at the closure of
+    # a, ab -> c, is equivalent to a -> c and not asked: a second tentative
+    # object, with the larger premise, stands for a -> c too.
+    assert expert.questions[0] == _implication("a", "bc")
+    assert all(q.premise != {"a", "b"} for q in expert.questions)
+    assert base.tentative_implications == [_implication("a", "c")]
+    rows = {v.original: (o.positive, o.negative) for v, o in base.context.objects.items() if v in base.tentative_objects}
+    assert rows == {
+        Tentative(_implication("a", "c")): ({"a"}, {"c"}),
+        Tentative(_implication("a", "c"), frozenset("ab")): ({"a", "b"}, {"c"}),
+    }
 
 
 def test_tentative_objects_are_not_facts():
@@ -762,11 +771,105 @@ def test_tentative_objects_are_not_facts():
     assert base.joint_conflicts() == []
 
 
-def test_a_tentative_object_is_refuted_when_the_trusted_implications_contradict_it():
+def test_a_tentative_object_is_dropped_when_the_trusted_implications_entail_it():
     swap = {"a": "c", "c": "a", "b": "d", "d": "b"}
     base = ExplorationBase(attributes=["a", "b", "c", "d"], mappings=[lambda x: swap[x]])
     base.add_tentative(_implication("a", "b"), "t")
     # c -> d has a -> b as its image.
     base.accept(_implication("c", "d"), ImplicationSource.CONFIRMED)
-    [(name, stands_for)] = base.refuted.items()
-    assert name.original == "t" and stands_for == _implication("a", "b")
+    assert not base.refuted
+    assert not base.tentative_objects and not base.context.objects
+    assert base.settled_tentative == {_implication("a", "b"): True}
+
+
+def test_a_proof_settles_every_tentative_object_it_entails():
+    base = ExplorationBase(attributes=["a", "b", "c", "d"])
+    base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
+    base.add_tentative(_implication("a", "c"), "t1")
+    base.add_tentative(_implication("a", "c"), "t2", premise={"a", "b"})
+    base.add_tentative(_implication("b", "c"), "t3")
+    base.add_tentative(_implication("a", "d"), "t4")
+    base.accept(_implication("b", "c"), ImplicationSource.CONFIRMED)
+    assert base.settled_tentative == {_implication("a", "c"): True, _implication("b", "c"): True}
+    assert base.tentative_implications == [_implication("a", "d")]
+    assert [v.original for v in base.context.objects] == ["t4"]
+    assert base.context_closure_mask(base.index.encode({"a"})) == base.index.encode({"a", "b", "c"})
+
+
+def test_a_tentative_object_is_dropped_when_a_completed_partial_object_refutes_it():
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    base.add_tentative(_implication("a", "b"), "t")
+    base.add_counterexample(PartialObject("x", {"a"}, {"c"}))
+    assert base.tentative_implications == [_implication("a", "b")]
+    # With b -> c, x lacks b: it refutes a -> b, and takes the place of t.
+    base.accept(_implication("b", "c"), ImplicationSource.CONFIRMED)
+    assert base.settled_tentative == {_implication("a", "b"): False}
+    assert {v.original: (o.positive, o.negative) for v, o in base.context.objects.items()} == {
+        "x": ({"a"}, {"b", "c"})}
+
+
+def test_a_tentative_object_shown_false_by_a_rejected_implication_leaves_a_derived_witness():
+    from conceptual_exploration import Witness
+
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    base.accept(_implication("a", "c"), ImplicationSource.CONFIRMED)
+    base.add_tentative(_implication("a", "b"), "t")
+    base.reject(_implication("a", "bc"))
+    assert base.settled_tentative == {_implication("a", "b"): False}
+    assert {v.original: (o.positive, o.negative) for v, o in base.context.objects.items()} == {
+        Witness(_implication("a", "b"), derived=True): ({"a", "c"}, {"b"})}
+
+
+def test_a_tentative_object_needs_an_equivalent_premise_and_an_implication_not_entailed():
+    base = ExplorationBase(attributes=["a", "b", "c"])
+    base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
+    with pytest.raises(ValueError):
+        base.add_tentative(_implication("a", "c"), "t", premise={"a", "c"})
+    with pytest.raises(ValueError):
+        base.add_tentative(_implication("b", "c"), "t", premise={"a", "b"})
+    with pytest.raises(ValueError):
+        base.add_tentative(_implication("a", "b"), "t")
+    assert not base.context.objects
+
+
+def test_a_tentative_object_does_not_hide_the_questions_of_the_premise_closure():
+    """The gap: a completed tentative object for x2, x3 -> e would have x1,
+    which x2, x3 imply, and so hide x1 -> e, which comes after it."""
+    from conceptual_exploration import AttributeExploration, Expert, Undecided
+
+    names = ["x1", "x2", "x3", "e"]
+    world = [row for k in range(16) for row in [{a for i, a in enumerate(names) if k >> i & 1}]
+             if not ({"x2", "x3"} <= row and "x1" not in row) and not ("x1" in row and "e" not in row)]
+
+    class Expert_(Expert):
+        def __init__(self):
+            self.questions = []
+
+        def validate(self, implication, attributes=None):
+            self.questions.append(implication)
+            if implication.premise == {"x2", "x3"}:
+                return Undecided(frozenset({"x1"}))
+            for k, row in enumerate(world):
+                if implication.premise <= row and not implication.conclusion <= row:
+                    return PartialObject(f"w{k}", set(row), set(names) - row)
+            return None
+
+    base = ExplorationBase(attributes=names)
+    expert = Expert_()
+    AttributeExploration(base, expert, undecided="reject").run()
+    assert any(q.premise == {"x1"} and "e" in q.conclusion for q in expert.questions)
+    assert base.settled_tentative == {_implication(["x2", "x3"], ["e"]): True}
+    assert not base.tentative_objects
+    for k in range(16):
+        subset = {a for i, a in enumerate(names) if k >> i & 1}
+        rows = [row for row in world if subset <= row]
+        assert base.implications.closure(subset) == (set(names).intersection(*rows) if rows else set(names))
+
+
+def test_the_report_says_whether_an_undecided_rest_is_rejected_tentatively(capsys):
+    from conceptual_exploration import AttributeExploration, report_every
+
+    for undecided, outcome in [("accept", "Unconfirmed"), ("reject", "Rejected tentatively")]:
+        base = ExplorationBase(attributes=["a"])
+        AttributeExploration(base, _Recording(), on_question=report_every(1), undecided=undecided).run()
+        assert f"\n{outcome}\n" in capsys.readouterr().out

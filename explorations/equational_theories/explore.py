@@ -291,7 +291,7 @@ def save_results(
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
         records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
-    for implication in base.tentative_objects.values():
+    for implication in base.tentative_implications:
         records.append({"premise": ids(implication.premise), "conclusion": ids(implication.conclusion),
                         "source": "tentatively rejected"})
     conflicts = base.joint_conflicts()
@@ -310,9 +310,9 @@ def save_results(
     if base.rejected_implications:
         extra += ["", "Rejected implications:"]
         extra += [f"  {show(i)}" for i in base.rejected_implications]
-    if base.tentative_objects:
+    if base.tentative_implications:
         extra += ["", "Undecided implications rejected tentatively, still open:"]
-        extra += [f"  {show(i)}" for i in base.tentative_objects.values()]
+        extra += [f"  {show(i)}" for i in base.tentative_implications]
     if conflicts:
         extra += ["", "Unconfirmed implications contradicting an object or a rejected implication only together:"]
         for conflict in conflicts:
@@ -601,8 +601,10 @@ def run_magma_exploration(
     print(f"Rejected Implications:        {len(base.rejected_implications)}")
     conflicts = base.joint_conflicts()
     print(f"Joint Conflicts:              {len(conflicts)}")
-    if base.tentative_objects:
-        print(f"Rejected Tentatively:         {len(base.tentative_objects)}")
+    if base.tentative_objects or base.settled_tentative:
+        print(f"Rejected Tentatively:         {len(base.tentative_implications)} open")
+        settled = list(base.settled_tentative.values())
+        print(f"  settled later:              {settled.count(True)} proved, {settled.count(False)} refuted")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -632,9 +634,9 @@ def run_magma_exploration(
         print("\nRejected Implications (shown false as a whole, but no law of the conclusion known to fail):")
         for implication in base.rejected_implications:
             print(f"  {implication}")
-    if base.tentative_objects:
+    if base.tentative_implications:
         print("\nUndecided Implications Rejected Tentatively (still open):")
-        for implication in base.tentative_objects.values():
+        for implication in base.tentative_implications:
             print(f"  {implication}")
     if conflicts:
         print("\nUnconfirmed Implications Contradicting an Object or a Rejected Implication Only Together:")

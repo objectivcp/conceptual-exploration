@@ -5,7 +5,7 @@ from typing import Generic, Literal, TypeVar
 from ..core.context import PartialObject
 from ..core.implication import Implication
 from ..experts.base import Expert
-from .attribute import AttributeExploration, QuestionReport, Tentative
+from .attribute import AttributeExploration, QuestionReport
 from .base import ExplorationBase, ImplicationSource, VersionedObject
 from .state import ExplorationState
 
@@ -24,10 +24,8 @@ class RoundsResult(Generic[O, A]):
     questions_asked: int = 0
     counterexamples: list = field(default_factory=list)
     # Each unconfirmed implication refuted, with the object or the rejected
-    # implication refuting it, and each tentative object refuted, with the
-    # implication it stands for, which the trusted implications came to
-    # entail.
-    refuted: list[tuple[Implication[A] | Tentative[A], O | Implication[A]]] = field(default_factory=list)
+    # implication refuting it.
+    refuted: list[tuple[Implication[A], O | Implication[A]]] = field(default_factory=list)
 
 
 def explore_in_rounds(
@@ -44,24 +42,25 @@ def explore_in_rounds(
         confirmed: Iterable[Implication[A]] = (),
 ) -> RoundsResult[O, A]:
     """Explore, resuming whenever an object or a rejected implication
-    refutes an implication accepted as unconfirmed, or the trusted
-    implications contradict a tentative object.
+    refutes an implication accepted as unconfirmed.
 
-    Such an implication or object has steered the enumeration since it was
-    added, so the exploration stops (see `AttributeExploration.run`) and the
-    next round resumes at the question it was added at. Every closed set
+    Such an implication has steered the enumeration since it was accepted,
+    so the exploration stops (see `AttributeExploration.run`) and the next
+    round resumes at the question it was accepted at. Every closed set
     before that question was enumerated without it, so nothing before is
     repeated. The next round starts with the implications accepted before
     that question, whatever their source; the confirmed ones accepted after
     it, which are sound whatever steered the enumeration to them; every
-    object found; the tentative objects added before that question; and
-    every rejected implication, which is false whatever steered the
-    enumeration to it. It leaves out the refuted implication or object and
-    the unconfirmed implications and tentative objects added after it, whose
-    questions are asked again.
+    object found; and every rejected implication, which is false whatever
+    steered the enumeration to it. It leaves out the refuted implication and
+    the unconfirmed implications accepted after it, whose questions are
+    asked again.
 
     `map_unconfirmed` is passed to `ExplorationBase`, and `undecided` to
-    `AttributeExploration`. `confirmed` holds implications the expert
+    `AttributeExploration`. With `undecided="reject"` no implication is
+    accepted as unconfirmed, and a tentative object the trusted knowledge
+    decides is dropped without resuming (see `ExplorationBase`), so the
+    exploration takes a single round. `confirmed` holds implications the expert
     confirmed in an earlier exploration: they are accepted as confirmed
     before anything else and kept in every round, and, unlike background
     implications, reported as found.
@@ -77,8 +76,6 @@ def explore_in_rounds(
     kept: list[Implication[A]] = list(confirmed)
     objects = list(objects)
     rejected: list[Implication[A]] = []
-    # The implications the tentative objects kept stand for.
-    tentative: list[Implication[A]] = []
     start = None
     result = None
     while True:
@@ -94,8 +91,6 @@ def explore_in_rounds(
             base.accept(implication, ImplicationSource.CONFIRMED)
         for obj in objects:
             base.add_counterexample(obj)
-        for implication in tentative:
-            base.add_tentative(implication, Tentative(implication))
         for implication in rejected:
             base.reject(implication)
         exploration = AttributeExploration(base, expert, evaluate_all, on_question, undecided)
@@ -119,14 +114,9 @@ def explore_in_rounds(
         refuter = base.refuted[culprit]
         if isinstance(refuter, VersionedObject):
             refuter = refuter.original
-        stands_for = base.tentative_objects.get(culprit)
-        reported = culprit if stands_for is None else culprit.original
-        result.refuted.append((reported, refuter))
+        result.refuted.append((culprit, refuter))
         if on_resume is not None:
-            on_resume(reported, refuter)
-        # Unconfirmed implications and tentative objects come from different
-        # modes, so the order of the two kinds never needs comparing beyond
-        # a round.
+            on_resume(culprit, refuter)
         cut = base.added_at(culprit)
         accepted = history + [
             (implication, base.implication_sources[implication])
@@ -139,6 +129,5 @@ def explore_in_rounds(
             for version, obj in base.context.objects.items()
             if version.version == 0 and version not in base.tentative_objects
         ]
-        tentative = [i for name, i in base.tentative_objects.items() if base.added_at(name) < cut]
-        start = (culprit if stands_for is None else stands_for).premise
+        start = culprit.premise
         rejected = list(base.rejected_implications)

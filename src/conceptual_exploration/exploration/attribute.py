@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Generic, Literal, TypeVar
 
 from ..experts.base import Expert, Undecided
-from .base import ExplorationBase, ImplicationSource
+from .base import ExplorationBase, ImplicationSource, Tentative, Witness
 from .state import ExplorationState
 from ..algorithms.next_closure import NextClosure
 from ..core.bitset import bits
@@ -12,36 +12,6 @@ from ..core.implication import Implication
 
 A = TypeVar("A")
 O = TypeVar("O")
-
-
-@dataclass(frozen=True)
-class Witness(Generic[A]):
-    """An object known to exist because `implication`, its conclusion a
-    single attribute, is false, though no counterexample is known: it has
-    the attributes of the premise and lacks the one of the conclusion, and
-    nothing else is known about it. The expert showed the implication false,
-    or, if `derived`, the trusted knowledge does."""
-
-    implication: Implication[A]
-    derived: bool = False
-
-    @property
-    def name(self) -> str:
-        return f"{'Derived' if self.derived else 'Witness'} against {self.implication}"
-
-
-@dataclass(frozen=True)
-class Tentative(Generic[A]):
-    """An object taken to exist because `implication`, its conclusion a
-    single attribute, is undecided and tentatively rejected: it has the
-    attributes of the premise and lacks the one of the conclusion. It only
-    steers the questions (see `ExplorationBase.add_tentative`)."""
-
-    implication: Implication[A]
-
-    @property
-    def name(self) -> str:
-        return f"Tentative against {self.implication}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +23,9 @@ class QuestionReport(Generic[O, A]):
     undecided, in which case `undecided` holds its answer. The counts describe
     the theory as it stood when the question was answered, before the answer
     was applied. `added` holds the objects the expert gave besides its answer
-    (`Expert.new_objects`), which are added after it.
+    (`Expert.new_objects`), which are added after it. `tentative` says that
+    what the expert left undecided, and did not reject, is rejected
+    tentatively rather than accepted as unconfirmed.
     """
 
     number: int
@@ -64,6 +36,7 @@ class QuestionReport(Generic[O, A]):
     object_count: int
     undecided: Undecided[O, A] | None = None
     added: tuple[PartialObject[O, A], ...] = ()
+    tentative: bool = False
 
 
 def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
@@ -82,7 +55,8 @@ def report_every(n: int = 1) -> Callable[[QuestionReport[O, A]], None]:
         if question.counterexample is not None:
             print(f'Counterexample found: {question.counterexample}')
         elif question.undecided is not None:
-            outcome = "Rejected" if question.undecided.rejected else "Unconfirmed"
+            outcome = ("Rejected" if question.undecided.rejected
+                       else "Rejected tentatively" if question.tentative else "Unconfirmed")
             proved = ", ".join(map(str, question.undecided.proved))
             print(f'{outcome}{f"; proved {proved}" if proved else ""}')
         else:
@@ -126,8 +100,9 @@ class AttributeExploration:
         steered the enumeration, which has to be resumed from the question it
         was accepted at without it. `state.stopped_by` then holds it.
 
-        A question the trusted knowledge already shows false is not asked
-        (see `_question`). The objects the expert gives besides an answer
+        A question the trusted knowledge already shows false is not asked,
+        nor one equivalent to an implication rejected tentatively (see
+        `_question`). The objects the expert gives besides an answer
         (`Expert.new_objects`) are added once the answer has been applied.
         """
         # Premises and closures are bitmasks over the base's index; only the
@@ -164,10 +139,14 @@ class AttributeExploration:
                     self.state.questions_asked += 1
                     self._added = tuple(self.expert.new_objects())
                     if isinstance(counterexample, Undecided):
-                        premise = self._leave_open(implication, counterexample)
+                        following = self._leave_open(implication, counterexample)
                         self._add_objects()
                         if self._stopped():
                             return self.state
+                        if following is None:
+                            closure = self.base.context_closure_mask(premise)
+                            continue
+                        premise = following
                         break
                     if counterexample:
                         if not counterexample.refutes(implication):
@@ -188,10 +167,14 @@ class AttributeExploration:
                             else ImplicationSource.UNCONFIRMED
                         )
                         if source is ImplicationSource.UNCONFIRMED and self.undecided == "reject":
-                            premise = self._leave_open(implication, Undecided())
+                            following = self._leave_open(implication, Undecided())
                             self._add_objects()
                             if self._stopped():
                                 return self.state
+                            if following is None:
+                                closure = self.base.context_closure_mask(premise)
+                                continue
+                            premise = following
                             break
                         self._report(implication, None, source)
                         self.base.accept(implication, source)
@@ -213,6 +196,15 @@ class AttributeExploration:
         """The conclusion to ask about with `premise`, or 0 if the context
         closure has to be computed again first.
 
+        An attribute of the conclusion for which the trusted implications
+        show the implication from the premise equivalent to one rejected
+        tentatively is not asked about: it gets a tentative object with the
+        premise, standing for that implication (see
+        `ExplorationBase.tentative_equivalent`). Without this, the question
+        at the closure of a premise whose question was left partly
+        undecided, which comes next once the proved part is accepted, would
+        ask about the rest again.
+
         If the trusted knowledge shows the implication with the whole
         conclusion false, it is not asked. Each attribute of the conclusion
         that the trusted knowledge shows not to follow from the premise gets
@@ -220,6 +212,12 @@ class AttributeExploration:
         there is none, the attributes contradict only together, and the
         first of them is asked about alone.
         """
+        equivalent = self.base.tentative_equivalent(premise, conclusion)
+        if equivalent:
+            at = frozenset(self.base.index.decode(premise))
+            for implication in equivalent:
+                self.base.add_tentative(implication, Tentative(implication, at), premise=at)
+            return 0
         if not self.base.known_false_mask(premise, conclusion):
             return conclusion
         if self._settle(premise, conclusion) != conclusion:
@@ -256,9 +254,9 @@ class AttributeExploration:
         self.state.stopped_by = refuted[0]
         return True
 
-    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int:
+    def _leave_open(self, implication: Implication[A], answer: Undecided[O, A]) -> int | None:
         """Take an answer the expert could not decide and return the next
-        premise.
+        premise, or None to compute the question at the same premise again.
 
         The object the answer carries is added first, then the part of the
         conclusion the expert proved is accepted. What the trusted
@@ -275,9 +273,15 @@ class AttributeExploration:
         not contradict anything together and one by one otherwise, or
         rejected tentatively. Nothing is asked again.
 
-        If nothing is accepted, the premise stays closed under the
-        implications, and the enumeration goes on to the next closed set as
-        if the context had no question about this one.
+        If something is accepted, the enumeration goes on from the premise
+        under the new implications. If the rest is rejected, the premise
+        stays closed under the implications, and the enumeration goes on to
+        the next closed set as if the context had no question about this
+        one. Otherwise an object now stands against each attribute of the
+        rest, a witness or tentative objects, and the question at the same
+        premise is computed again: the one asked may have been a part of the
+        context closure (see `_question`), whose other attributes are still
+        to be asked about.
         """
         self._report(implication, None, None, answer)
         if answer.object is not None:
@@ -289,7 +293,7 @@ class AttributeExploration:
         index = self.base.index
         premise = index.encode(implication.premise)
         proved = index.encode(answer.proved & implication.conclusion)
-        accepted = False
+        accepted = rejected = False
         if proved:
             # First, so that a resumed round keeps it.
             confirmed = Implication(implication.premise, index.decode(proved))
@@ -309,6 +313,7 @@ class AttributeExploration:
                 self.state.counterexamples.append(witness)
             else:
                 self.base.reject(rest)
+                rejected = True
         elif rest_mask:
             together = True
             if answer.object is not None and self.base.known_false_mask(premise, rest_mask):
@@ -325,9 +330,11 @@ class AttributeExploration:
                     self.base.accept(unconfirmed, ImplicationSource.UNCONFIRMED)
                     self.state.accepted_implications.append(unconfirmed)
                 accepted = True
-        if not accepted:
+        if accepted:
+            return self._premises.send(True)
+        if rejected:
             return next(self._premises)
-        return self._premises.send(True)
+        return None
 
     def _report(
             self,
@@ -348,5 +355,6 @@ class AttributeExploration:
                 object_count=len(self.base.context.objects),
                 undecided=undecided,
                 added=self._added,
+                tentative=self.undecided == "reject",
             )
         )
