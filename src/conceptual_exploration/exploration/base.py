@@ -41,19 +41,15 @@ class Witness(Generic[A]):
 @dataclass(frozen=True)
 class Tentative(Generic[A]):
     """An object taken to exist because `implication`, its conclusion a
-    single attribute, is undecided and tentatively rejected: it lacks the
-    attribute of the conclusion and has the attributes of the premise, or
-    those of `premise`, a larger set the trusted implications show
-    equivalent to it. It only steers the questions (see
-    `ExplorationBase.add_tentative`)."""
+    single attribute, is undecided and tentatively rejected: it has the
+    attributes of the premise and lacks the one of the conclusion. It only
+    steers the questions (see `ExplorationBase.add_tentative`)."""
 
     implication: Implication[A]
-    premise: frozenset[A] | None = None
 
     @property
     def name(self) -> str:
-        at = "" if self.premise is None else f" at {', '.join(map(str, sorted(self.premise)))}"
-        return f"Tentative against {self.implication}{at}"
+        return f"Tentative against {self.implication}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -410,45 +406,34 @@ class ExplorationBase(Generic[O, A]):
         the order they were first rejected tentatively: the open questions."""
         return list(dict.fromkeys(self._tentative.values()))
 
-    def add_tentative(self, implication: Implication[A], name: O, premise: Iterable[A] | None = None) -> None:
+    def add_tentative(self, implication: Implication[A], name: O) -> None:
         """Add a tentative object `name` standing for the undecided
         `implication`, whose conclusion is a single attribute: it has the
-        premise, or `premise` if given, and lacks that attribute. It is
-        neither completed nor mapped.
+        premise and lacks that attribute. It is neither completed nor mapped.
 
-        `premise` must contain the premise of the implication and be
-        contained in its closure under the trusted implications, which then
-        show the implication with `premise` equivalent to it. The trusted
-        implications must not entail the implication; if the trusted
-        knowledge shows it false, the object is dropped at once (see
-        `settled_tentative`).
+        The trusted implications must not entail the implication. If the
+        trusted knowledge shows it false, the object is dropped at once (see
+        `settled_tentative`). An earlier tentative object for an implication
+        with the same conclusion and a premise P with the trusted closure of
+        P containing the new premise, which contains P, is dropped: the
+        trusted implications show the two implications equivalent, so that
+        whatever decides one decides the other, and the new object refutes
+        everything the earlier one did.
         """
-        positive = self.index.encode(implication.premise if premise is None else premise)
-        own, conclusion = self._masks(implication)
-        closure = self._trusted.closure_mask(own)
-        if own & ~positive or positive & ~closure:
-            raise ValueError(f"{name} does not have a premise equivalent to that of {implication}")
-        if closure & conclusion == conclusion:
+        positive, conclusion = self._masks(implication)
+        if self._trusted.closure_mask(positive) & conclusion == conclusion:
             raise ValueError(f"The trusted implications entail {implication}, which {name} stands for")
         version = VersionedObject(name, 0)
         self._tentative[version] = implication
         self._added_at[version] = len(self._added_at)
         self._store(version, (positive, conclusion))
+        for earlier in self.tentative_implications:
+            own, c = self._masks(earlier)
+            if (earlier != implication and c == conclusion and own & ~positive == 0
+                    and positive & ~self._trusted.closure_mask(own) == 0):
+                for other in [n for n, i in self._tentative.items() if i == earlier]:
+                    self._drop_tentative(other)
         self._settle_tentative(only=implication)
-
-    def tentative_equivalent(self, premise: int, conclusion: int) -> list[Implication[A]]:
-        """The implications tentative objects stand for whose conclusion is in
-        `conclusion` and that the trusted implications show equivalent to the
-        implication from `premise` to it: their premise is contained in
-        `premise`, and `premise` in its closure under them. One for each
-        attribute, the first rejected tentatively."""
-        found = []
-        for implication in self.tentative_implications:
-            own, c = self._masks(implication)
-            if c & conclusion and own & ~premise == 0 and premise & ~self._trusted.closure_mask(own) == 0:
-                found.append(implication)
-                conclusion &= ~c
-        return found
 
     def _settle_tentative(
             self,
@@ -463,9 +448,7 @@ class ExplorationBase(Generic[O, A]):
         implication they entail is settled as true. One shown false (see
         `known_false_mask`) is settled as false, and a derived witness takes
         the place of its objects unless a trusted object refutes it directly.
-        That object, completed, has the closure of the premise, and so every
-        premise of an object standing for the implication: it refutes all
-        they refuted. With `positives`, only objects with these positive
+        That object has the premise, so it refutes all they refuted. With `positives`, only objects with these positive
         sides came in, and an implication is checked only if one of them has
         its premise or the premise of an image. `only` restricts the check to
         one implication.

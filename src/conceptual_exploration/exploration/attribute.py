@@ -100,9 +100,8 @@ class AttributeExploration:
         steered the enumeration, which has to be resumed from the question it
         was accepted at without it. `state.stopped_by` then holds it.
 
-        A question the trusted knowledge already shows false is not asked,
-        nor one equivalent to an implication rejected tentatively (see
-        `_question`). The objects the expert gives besides an answer
+        A question the trusted knowledge already shows false is not asked
+        (see `_question`). The objects the expert gives besides an answer
         (`Expert.new_objects`) are added once the answer has been applied.
         """
         # Premises and closures are bitmasks over the base's index; only the
@@ -196,15 +195,6 @@ class AttributeExploration:
         """The conclusion to ask about with `premise`, or 0 if the context
         closure has to be computed again first.
 
-        An attribute of the conclusion for which the trusted implications
-        show the implication from the premise equivalent to one rejected
-        tentatively is not asked about: it gets a tentative object with the
-        premise, standing for that implication (see
-        `ExplorationBase.tentative_equivalent`). Without this, the question
-        at the closure of a premise whose question was left partly
-        undecided, which comes next once the proved part is accepted, would
-        ask about the rest again.
-
         If the trusted knowledge shows the implication with the whole
         conclusion false, it is not asked. Each attribute of the conclusion
         that the trusted knowledge shows not to follow from the premise gets
@@ -212,12 +202,6 @@ class AttributeExploration:
         there is none, the attributes contradict only together, and the
         first of them is asked about alone.
         """
-        equivalent = self.base.tentative_equivalent(premise, conclusion)
-        if equivalent:
-            at = frozenset(self.base.index.decode(premise))
-            for implication in equivalent:
-                self.base.add_tentative(implication, Tentative(implication, at), premise=at)
-            return 0
         if not self.base.known_false_mask(premise, conclusion):
             return conclusion
         if self._settle(premise, conclusion) != conclusion:

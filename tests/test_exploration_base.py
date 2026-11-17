@@ -736,7 +736,7 @@ def test_undecided_implications_can_be_rejected_tentatively():
     assert [v.original for v in base.tentative_objects] == [Tentative(i) for i in stands_for]
 
 
-def test_a_tentatively_rejected_rest_follows_the_proved_part_and_is_not_asked_again():
+def test_a_tentatively_rejected_rest_is_asked_again_with_the_proved_part():
     from conceptual_exploration import AttributeExploration, Tentative, Undecided
 
     def prove_b(implication, number):
@@ -747,17 +747,13 @@ def test_a_tentatively_rejected_rest_follows_the_proved_part_and_is_not_asked_ag
     expert = _Recording(prove_b)
     AttributeExploration(base, expert, undecided="reject").run(start=frozenset({"a"}))
     assert base.implication_sources[_implication("a", "b")] is ImplicationSource.CONFIRMED
-    # The tentative object is not completed. The question at the closure of
-    # a, ab -> c, is equivalent to a -> c and not asked: a second tentative
-    # object, with the larger premise, stands for a -> c too.
-    assert expert.questions[0] == _implication("a", "bc")
-    assert all(q.premise != {"a", "b"} for q in expert.questions)
-    assert base.tentative_implications == [_implication("a", "c")]
+    # The question at the closure of a, with b in the premise, may be easier
+    # and is asked. Left undecided too, its tentative object takes the place
+    # of the one for a -> c, which the trusted implications show equivalent.
+    assert expert.questions[:2] == [_implication("a", "bc"), _implication("ab", "c")]
+    assert base.tentative_implications == [_implication("ab", "c")]
     rows = {v.original: (o.positive, o.negative) for v, o in base.context.objects.items() if v in base.tentative_objects}
-    assert rows == {
-        Tentative(_implication("a", "c")): ({"a"}, {"c"}),
-        Tentative(_implication("a", "c"), frozenset("ab")): ({"a", "b"}, {"c"}),
-    }
+    assert rows == {Tentative(_implication("ab", "c")): ({"a", "b"}, {"c"})}
 
 
 def test_tentative_objects_are_not_facts():
@@ -786,14 +782,27 @@ def test_a_proof_settles_every_tentative_object_it_entails():
     base = ExplorationBase(attributes=["a", "b", "c", "d"])
     base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
     base.add_tentative(_implication("a", "c"), "t1")
-    base.add_tentative(_implication("a", "c"), "t2", premise={"a", "b"})
-    base.add_tentative(_implication("b", "c"), "t3")
-    base.add_tentative(_implication("a", "d"), "t4")
+    base.add_tentative(_implication("b", "c"), "t2")
+    base.add_tentative(_implication("a", "d"), "t3")
     base.accept(_implication("b", "c"), ImplicationSource.CONFIRMED)
     assert base.settled_tentative == {_implication("a", "c"): True, _implication("b", "c"): True}
     assert base.tentative_implications == [_implication("a", "d")]
-    assert [v.original for v in base.context.objects] == ["t4"]
+    assert [v.original for v in base.context.objects] == ["t3"]
     assert base.context_closure_mask(base.index.encode({"a"})) == base.index.encode({"a", "b", "c"})
+
+
+def test_a_tentative_object_replaces_an_earlier_one_only_for_an_equivalent_implication():
+    base = ExplorationBase(attributes=["a", "b", "c", "d"])
+    base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
+    base.add_tentative(_implication("a", "d"), "t1")
+    base.add_tentative(_implication("c", "d"), "t2")
+    # With a -> b, ab -> d is equivalent to a -> d; bc -> d is weaker than
+    # c -> d, which its proof would leave open.
+    base.add_tentative(_implication("ab", "d"), "t3")
+    base.add_tentative(_implication("bc", "d"), "t4")
+    assert base.tentative_implications == [_implication("c", "d"), _implication("ab", "d"), _implication("bc", "d")]
+    assert [v.original for v in base.context.objects] == ["t2", "t3", "t4"]
+    assert not base.settled_tentative
 
 
 def test_a_tentative_object_is_dropped_when_a_completed_partial_object_refutes_it():
@@ -820,13 +829,9 @@ def test_a_tentative_object_shown_false_by_a_rejected_implication_leaves_a_deriv
         Witness(_implication("a", "b"), derived=True): ({"a", "c"}, {"b"})}
 
 
-def test_a_tentative_object_needs_an_equivalent_premise_and_an_implication_not_entailed():
+def test_a_tentative_object_needs_an_implication_not_entailed():
     base = ExplorationBase(attributes=["a", "b", "c"])
     base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
-    with pytest.raises(ValueError):
-        base.add_tentative(_implication("a", "c"), "t", premise={"a", "c"})
-    with pytest.raises(ValueError):
-        base.add_tentative(_implication("b", "c"), "t", premise={"a", "b"})
     with pytest.raises(ValueError):
         base.add_tentative(_implication("a", "b"), "t")
     assert not base.context.objects
