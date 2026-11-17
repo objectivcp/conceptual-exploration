@@ -176,3 +176,36 @@ def test_tentative_objects_are_saved_as_implications_rejected_tentatively(tmp_pa
     records = json.loads((tmp_path / "implications.json").read_text())
     assert {"premise": [3], "conclusion": [43], "source": "tentatively rejected"} in records
     assert "  Eq3 ==> Eq43" in (tmp_path / "implications.txt").read_text()
+
+
+def test_confirmed_implications_of_earlier_prover_runs_are_seeded_with_their_proofs(tmp_path):
+    import pytest
+    from explorations.equational_theories.explore import run_magma_exploration
+
+    laws = [{"id": 3, "equation": "x = (x * x)"}, {"id": 4, "equation": "x = (x * y)"},
+            {"id": 43, "equation": "(x * y) = (y * x)"}]
+    path = tmp_path / "laws.json"
+    path.write_text(json.dumps(laws))
+    earlier = tmp_path / "earlier"
+    earlier.mkdir()
+    (earlier / "settings.toml").write_text('expert = "vampire"\n')
+    (earlier / "implications.json").write_text(json.dumps([
+        {"premise": [4], "conclusion": [3], "source": "confirmed"},
+        {"premise": [43], "conclusion": [3], "source": "unconfirmed"},
+    ]))
+    proof = {"premise": ["x = x * y"], "conclusion": ["x = x * x"], "prover": "vampire", "proof": "..."}
+    with lzma.open(earlier / "proofs.jsonl.xz", "wt", encoding="utf-8") as file:
+        file.write(json.dumps(proof) + "\n")
+
+    _, base = run_magma_exploration(path, max_search_size=2, report_interval=0, results_dir=tmp_path / "out",
+                                    use_duality_symmetry=False, seed_confirmed=[earlier])
+    by_id = {eq.id: eq for eq in base.attributes}
+    assert base.implication_sources[Implication([by_id[4]], [by_id[3]])] is ImplicationSource.CONFIRMED
+    assert not base.trusted_implications.entails(Implication([by_id[43]], [by_id[3]]))
+    with lzma.open(tmp_path / "out" / "proofs.jsonl.xz", "rt", encoding="utf-8") as file:
+        assert json.loads(file.readline()) == proof
+
+    # Confirmed by a bounded model search, an implication need not hold.
+    (earlier / "settings.toml").write_text('expert = "z3"\n')
+    with pytest.raises(ValueError):
+        run_magma_exploration(path, max_search_size=2, report_interval=0, seed_confirmed=[earlier])

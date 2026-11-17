@@ -488,3 +488,20 @@ def test_a_cached_proof_answers_larger_premises_and_smaller_conclusions_whatever
     assert again.proofs == first.proofs
     # An answer from the cache is not saved again.
     assert len(cache.read_text().splitlines()) == 1
+
+
+def test_an_imported_undecided_answer_matches_whatever_the_premises_of_the_model_searches(tmp_path):
+    import json
+
+    cache = tmp_path / "answers.jsonl"
+    attributes = QUESTION.premise | QUESTION.conclusion
+    expert = VampireExpert(initial_magmas=[], workers=2, answer_cache=cache)
+    keys = lambda laws: sorted(str(law) for law in laws)
+    cache.write_text(json.dumps({
+        "premise": keys(QUESTION.premise), "conclusion": keys(QUESTION.conclusion), "answer": "rejected",
+        "proved": [], "settings": expert._cache_settings, "model_premises": None, "proofs": [],
+    }) + "\n")
+    again = VampireExpert(initial_magmas=[], workers=2, answer_cache=cache)
+    again._run = _no_vampire
+    assert again.validate(QUESTION, attributes).rejected
+    assert again.last_status == "cached rejected"

@@ -64,6 +64,8 @@ python explorations/equational_theories/explore.py --equations explorations/equa
 
 With `--answer-cache FILE`, the Vampire expert keeps its answers across runs in a JSON Lines file, read at the start and added to as the run goes. A proof answers any later question with a larger premise and a smaller conclusion, whatever the settings. An undecided answer is given again only to the same question, with the same settings (time limits, cores, Vampire version) and the same premises for the model searches: a question asked otherwise, even equivalently, may be easier for the provers.
 
+`import_answers.py RESULTS_DIR... --cache FILE` adds the undecided answers in the logs of earlier explorations with `--expert vampire` to such a file; the logs do not record the premises of the model searches, so these answers are given again whatever they are. `--seed-confirmed RESULTS_DIR...` accepts the confirmed implications of earlier explorations with `--expert vampire` or `completion`, all proved, as confirmed before the exploration starts, gives them to the expert as known, and adds their proofs to the run's.
+
 With `--expert completion`, meant for one-variable laws, each question's premise is completed into a convergent rewrite system by Knuth–Bendix completion: the implication is proved if the sides of every law of its conclusion have the same normal form, and refuted otherwise by the free magma over the premise, whose row the normal forms decide completely and certify. Questions whose premise cannot be completed go to Vampire if it is installed. For the 31 one-variable laws of order at most four, completion decides every question, in minutes:
 
 ```bash

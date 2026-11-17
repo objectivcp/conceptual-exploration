@@ -371,6 +371,7 @@ def run_magma_exploration(
     background_files: Sequence[str | Path] = (),
     undecided: str = "accept",
     answer_cache: str | Path | None = None,
+    seed_confirmed: Sequence[str | Path] = (),
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -462,6 +463,32 @@ def run_magma_exploration(
             ]
             background += given
             print(f"\nTook {len(given)} Background Implications from {path}.")
+    # Implications earlier explorations with a prover confirmed, which only
+    # proofs confirm, given to the exploration as confirmed and to the expert
+    # as known, with their proofs.
+    confirmed, seeded_proofs = [], {}
+    for directory in map(Path, seed_confirmed):
+        settings_file = directory / "settings.toml"
+        expert_used = tomllib.loads(settings_file.read_text(encoding="utf-8")).get("expert") if settings_file.exists() else None
+        if expert_used not in ("vampire", "completion"):
+            raise ValueError(f"{directory} was not explored with --expert vampire or completion, "
+                             "so its confirmed implications need not be proved")
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        by_ident = {ident(eq): eq for eq in equations}
+        entries = [e for e in json.loads((directory / "implications.json").read_text(encoding="utf-8"))
+                   if e["source"] == "confirmed"]
+        unknown = {law for e in entries for law in e["premise"] + e["conclusion"]} - set(by_ident)
+        if unknown:
+            raise ValueError(f"Laws of {directory} not among the equations: {sorted(map(str, unknown))[:5]}")
+        given = [Implication([by_ident[law] for law in e["premise"]], [by_ident[law] for law in e["conclusion"]])
+                 for e in entries]
+        confirmed += given
+        if (directory / "proofs.jsonl.xz").exists():
+            with lzma.open(directory / "proofs.jsonl.xz", "rt", encoding="utf-8") as file:
+                for line in file:
+                    seeded_proofs.setdefault(line.strip(), None)
+        print(f"\nTook {len(given)} Confirmed Implications from {directory}.")
+    confirmed = list(dict.fromkeys(confirmed))
     assumed = []
     if axioms:
         # Laws every object satisfies, such as associativity for semigroups.
@@ -487,11 +514,11 @@ def run_magma_exploration(
     def vampire_expert() -> VampireExpert:
         return VampireExpert(
             attributes=equations,
+            background=background + confirmed,
             prove_time_limit=vampire_prove_time_limit,
             first_time_limit=vampire_first_time_limit,
             model_time_limit=vampire_model_time_limit,
             quick_model_time_limit=vampire_quick_model_time_limit,
-            background=background,
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
             model_premise=model_premise,
@@ -587,6 +614,7 @@ def run_magma_exploration(
         on_resume=resumed,
         map_unconfirmed=map_unconfirmed,
         undecided=undecided,
+        confirmed=confirmed,
     )
     base, state = result.base, result.state
     state.questions_asked = result.questions_asked
@@ -702,8 +730,9 @@ def run_magma_exploration(
                 f"{background_premise_size or 'any'}"
             )
         prover = expert.fallback if isinstance(expert, CompletionExpert) else expert
+        proofs = [json.loads(line) for line in seeded_proofs] + list(getattr(prover, "proofs", ()))
         save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted], words=associative,
-                     proofs=getattr(prover, "proofs", ()))
+                     proofs=proofs)
         print(f"\nResults saved to {results_dir}.")
 
     return state, base
@@ -1027,6 +1056,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--seed-confirmed",
+        type=Path,
+        nargs="+",
+        default=[],
+        metavar="RESULTS_DIR",
+        help=(
+            "Results of earlier explorations with --expert vampire or "
+            "completion: their confirmed implications, all proved, are "
+            "accepted as confirmed before the exploration starts and given "
+            "to the expert as known, and their proofs join the run's."
+        ),
+    )
+    parser.add_argument(
         "--answer-cache",
         metavar="FILE",
         help=(
@@ -1218,6 +1260,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 background_files=args.background,
                 undecided=args.undecided,
                 answer_cache=args.answer_cache,
+                seed_confirmed=args.seed_confirmed,
             )
         finally:
             sys.stdout = sys.__stdout__

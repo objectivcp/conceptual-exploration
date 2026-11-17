@@ -235,7 +235,10 @@ class VampireExpert(MagmaExpert):
     again only to the same question, with the same settings (the time
     limits, the cores and the Vampire version) and the same premises for
     the model searches: asked otherwise, even equivalently, a question may
-    be easier for the provers. Laws are identified by their ETP number, or
+    be easier for the provers. An entry imported from an earlier run's log
+    (import_answers.py), which does not record the premises of the model
+    searches, is given again whatever they are. Laws are identified by their
+    ETP number, or
     by their text if they have none. Answers given from the cache are
     counted as "cached proof", "cached unconfirmed" and "cached rejected",
     and their proofs join `proofs`.
@@ -375,8 +378,8 @@ class VampireExpert(MagmaExpert):
                 self.last_status = "cached proof"
                 return True, None
         for entry in self._cached_answers.get((premise, conclusion), []):
-            if (entry["settings"] == self._cache_settings
-                    and entry["model_premises"] == self._model_premise_keys(implication.premise)):
+            if entry["settings"] == self._cache_settings and entry.get("model_premises") in (
+                    None, self._model_premise_keys(implication.premise)):
                 proved = set(entry["proved"])
                 answer = Undecided(frozenset(law for law in implication.conclusion if self._key(law) in proved),
                                    None, entry["answer"] == "rejected")
