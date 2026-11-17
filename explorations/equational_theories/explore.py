@@ -330,6 +330,15 @@ def save_results(
         )
 
 
+def is_rows_file(path: str | Path) -> bool:
+    """Whether `path` is a JSON file of rows in the format of free_magmas.json,
+    rather than of magma tables."""
+    if Path(path).suffix != ".json":
+        return False
+    entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    return bool(entries) and {"premise", "positive", "negative"} <= set(entries[0]) and "table" not in entries[0]
+
+
 def run_magma_exploration(
     equations_path: str | Path = DEFAULT_EQUATIONS_PATH,
     use_duality_symmetry: bool = True,
@@ -511,15 +520,36 @@ def run_magma_exploration(
         # Each table once, evaluated on every equation, and the refutations of
         # the ETP graph, reduced to the objects whose rows the others do not
         # already account for.
+        # Files of rows, in the format of free_magmas.json, give free magmas
+        # known on some laws only; laws are identified as in that file.
         tables: dict[tuple, Magma] = {}
+        rows: list[PartialObject] = []
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        by_ident = {ident(eq): eq for eq in equations}
         for path in seed_context:
+            if is_rows_file(path):
+                entries = json.loads(Path(path).read_text(encoding="utf-8"))
+                unknown = {law for e in entries for law in e["premise"] + e["positive"] + e["negative"]} - set(by_ident)
+                if unknown:
+                    raise ValueError(f"Laws of {path} not among the equations: {sorted(map(str, unknown))[:5]}")
+                for e in entries:
+                    rows.append(PartialObject(
+                        FreeMagma(frozenset(by_ident[law] for law in e["premise"])),
+                        {by_ident[law] for law in e["positive"]},
+                        {by_ident[law] for law in e["negative"]},
+                    ))
+                continue
             for magma in load_magmas(path):
                 tables.setdefault((magma.size, magma.table), magma)
         if axioms:
             kept = {key: m for key, m in tables.items() if all(m.holds(eq) for eq in assumed)}
             print(f"Dropped {len(tables) - len(kept)} of the {len(tables)} magmas to seed, which violate an axiom.")
             tables = kept
-        seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
+            kept_rows = [r for r in rows if set(assumed) <= r.positive]
+            if len(kept_rows) < len(rows):
+                print(f"Dropped {len(rows) - len(kept_rows)} of the {len(rows)} rows to seed, not known to satisfy the axioms.")
+            rows = kept_rows
+        seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()] + rows
         refutations = graph_refutations(equations, graph, laws) if etp_refutations else []
         reduced = reduce_objects(seeds + refutations)
         kept = sum(isinstance(o.object, EtpRefutation) for o in reduced)
@@ -921,7 +951,9 @@ def build_parser() -> argparse.ArgumentParser:
             "Files of magmas, as for --seed-magmas, evaluated on every "
             "equation and added to the context before the exploration "
             "starts, after dropping those whose rows the others account "
-            "for. No question that they refute is asked."
+            "for. No question that they refute is asked. A JSON file of "
+            "rows in the format of free_magmas.json (premise, positive, "
+            "negative) adds free magmas known on those laws only."
         ),
     )
     parser.add_argument(
