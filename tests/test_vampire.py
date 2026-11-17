@@ -434,3 +434,57 @@ def test_prover9_proves_what_vampire_does_not_in_time():
     assert expert.validate(question) is None and expert.last_status == "proved"
     (proof,) = expert.proofs
     assert proof["prover"] == "prover9" and "end of proof" in proof["proof"]
+
+
+PROOF = "% SZS output start Proof for problem\nproof steps\n% SZS output end Proof for problem"
+
+
+def _no_vampire(problem, options, time_limit, cancelled=None):
+    raise AssertionError("Vampire was run")
+
+
+def test_an_undecided_answer_is_given_again_only_to_the_same_question_with_the_same_settings(tmp_path):
+    import json
+    from conceptual_exploration import Undecided
+
+    cache = tmp_path / "answers.jsonl"
+    attributes = QUESTION.premise | QUESTION.conclusion
+    first = VampireExpert(initial_magmas=[], workers=2, answer_cache=cache)
+    scripted(first, laws("Timeout", "Timeout", other="Timeout"))
+    answer = first.validate(QUESTION, attributes)
+    assert isinstance(answer, Undecided) and not answer.rejected
+    [entry] = [json.loads(line) for line in cache.read_text().splitlines()]
+    assert entry["answer"] == "unconfirmed" and entry["settings"]["prove_time_limit"] == 10
+
+    again = VampireExpert(initial_magmas=[], workers=2, answer_cache=cache)
+    again._run = _no_vampire
+    assert again.validate(QUESTION, attributes) == answer
+    assert again.last_status == "cached unconfirmed"
+
+    # Asked with one law of the conclusion only, or with a longer time limit,
+    # the question is asked anew.
+    one_law = implication(["x * x = x * (x * x)"], ["x = x * x"])
+    for expert, question in [(VampireExpert(initial_magmas=[], workers=2, answer_cache=cache), one_law),
+                             (VampireExpert(initial_magmas=[], workers=2, prove_time_limit=20, answer_cache=cache),
+                              QUESTION)]:
+        scripted(expert, laws("Timeout", "Timeout", other="Timeout"))
+        assert isinstance(expert.validate(question, attributes), Undecided)
+        assert expert.last_status == "unconfirmed"
+
+
+def test_a_cached_proof_answers_larger_premises_and_smaller_conclusions_whatever_the_settings(tmp_path):
+    cache = tmp_path / "answers.jsonl"
+    attributes = QUESTION.premise | QUESTION.conclusion
+    first = VampireExpert(initial_magmas=[], workers=2, answer_cache=cache)
+    scripted(first, lambda conjecture, options: ("Timeout", "") if "fmb" in options else ("Theorem", PROOF))
+    assert first.validate(QUESTION, attributes) is None
+    assert len(first.proofs) == 1
+
+    again = VampireExpert(initial_magmas=[], workers=2, prove_time_limit=20, answer_cache=cache)
+    again._run = _no_vampire
+    larger = implication(["x * x = x * (x * x)", "x = x * x"], ["x = x * (x * x)"])
+    assert again.validate(larger, attributes) is None
+    assert again.last_status == "cached proof" and again.is_conclusive()
+    assert again.proofs == first.proofs
+    # An answer from the cache is not saved again.
+    assert len(cache.read_text().splitlines()) == 1

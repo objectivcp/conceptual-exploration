@@ -370,6 +370,7 @@ def run_magma_exploration(
     axioms: Sequence[int | str] = (),
     background_files: Sequence[str | Path] = (),
     undecided: str = "accept",
+    answer_cache: str | Path | None = None,
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -405,6 +406,8 @@ def run_magma_exploration(
     else:
         print(f"Expert:                   Z3, sizes {min_search_size}..{max_search_size}, "
               f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size")
+    if answer_cache is not None and expert_kind in ("vampire", "completion"):
+        print(f"Answer Cache:             {answer_cache}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     if background_order is None:
         print("Background Implications:  off")
@@ -495,6 +498,7 @@ def run_magma_exploration(
             truncation_words=truncation_words,
             eprover_time_limit=eprover_time_limit,
             prover9_time_limit=prover9_time_limit,
+            answer_cache=answer_cache,
         )
 
     if expert_kind == "vampire":
@@ -1023,6 +1027,18 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--answer-cache",
+        metavar="FILE",
+        help=(
+            "A JSON Lines file of the Vampire expert's answers, read at the "
+            "start and added to as the run goes: a proof found earlier "
+            "answers a question with a larger premise and a smaller "
+            "conclusion, and an undecided answer is given again only to the "
+            "same question with the same settings and the same premises for "
+            "the model searches."
+        ),
+    )
+    parser.add_argument(
         "--ask-unconfirmed-duals",
         action="store_true",
         help=(
@@ -1201,6 +1217,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 axioms=args.axiom,
                 background_files=args.background,
                 undecided=args.undecided,
+                answer_cache=args.answer_cache,
             )
         finally:
             sys.stdout = sys.__stdout__
