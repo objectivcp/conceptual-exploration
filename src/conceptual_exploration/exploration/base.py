@@ -125,12 +125,12 @@ class ExplorationBase(Generic[O, A]):
     never completed. It takes part in the context closure, and so in
     choosing the questions, but in nothing that needs facts: it is not
     mapped, and neither shows a question false nor refutes an unconfirmed
-    implication. Once the trusted knowledge decides the implication it
-    stands for, it is dropped (see `settled_tentative`): if the trusted
-    implications entail the implication, or if a trusted object or a
-    rejected implication shows it false, in which case a derived witness
-    takes its place unless a trusted object refutes the implication
-    already. Either way, nothing it steered has to be asked again.
+    implication. Once the trusted implications entail the implication it
+    stands for, it is dropped at once (see `settled_tentative`), since it
+    would otherwise refute a true implication. One that a trusted object or
+    a rejected implication shows false is only redundant, and is settled at
+    the end (`settle_refuted_tentative`). Either way, nothing it steered has
+    to be asked again.
     """
 
     def __init__(
@@ -167,7 +167,8 @@ class ExplorationBase(Generic[O, A]):
         # The tentative objects, each with the implication it stands for.
         self._tentative: dict[VersionedObject[O], Implication[A]] = {}
         # Each implication a tentative object stood for that the trusted
-        # knowledge has since decided: True if it holds, False if not.
+        # knowledge has since decided: True if it holds, False if not (known
+        # only after `settle_refuted_tentative`).
         self.settled_tentative: dict[Implication[A], bool] = {}
         # When each accepted implication and each tentative object was added.
         self._added_at: dict[Implication[A] | VersionedObject[O], int] = {}
@@ -256,7 +257,7 @@ class ExplorationBase(Generic[O, A]):
                         self.implication_sources[image] = ImplicationSource.MAPPED
                 self._settle_untrusted()
                 self._check_untrusted_after_trusted()
-                self._settle_tentative(entailment=True)
+                self._settle_entailed()
             return
         self._added_at[implication] = len(self._added_at)
         masks = self._add_implication(implication, source, trusted)
@@ -266,7 +267,7 @@ class ExplorationBase(Generic[O, A]):
             if not self.map_unconfirmed:
                 self._settle_untrusted()
             self._check_untrusted_after_trusted()
-            self._settle_tentative(entailment=True)
+            self._settle_entailed()
         else:
             self._check_untrusted_implication(implication)
 
@@ -297,7 +298,6 @@ class ExplorationBase(Generic[O, A]):
         masks = self._masks(implication)
         for origin, group in self._untrusted_groups().items():
             self._check_against_rejected(origin, group, implication, masks)
-        self._settle_tentative()
 
     def known_false(self, implication: Implication[A]) -> bool:
         """Whether the trusted knowledge shows `implication` false; see
@@ -402,23 +402,19 @@ class ExplorationBase(Generic[O, A]):
 
     @property
     def tentative_implications(self) -> list[Implication[A]]:
-        """The implications the tentative objects stand for, each once, in
-        the order they were first rejected tentatively: the open questions."""
-        return list(dict.fromkeys(self._tentative.values()))
+        """The implications the tentative objects stand for, in the order
+        they were rejected tentatively: the open questions."""
+        return list(self._tentative.values())
 
     def add_tentative(self, implication: Implication[A], name: O) -> None:
         """Add a tentative object `name` standing for the undecided
         `implication`, whose conclusion is a single attribute: it has the
         premise and lacks that attribute. It is neither completed nor mapped.
 
-        The trusted implications must not entail the implication. If the
-        trusted knowledge shows it false, the object is dropped at once (see
-        `settled_tentative`). An earlier tentative object for an implication
-        with the same conclusion and a premise P with the trusted closure of
-        P containing the new premise, which contains P, is dropped: the
-        trusted implications show the two implications equivalent, so that
-        whatever decides one decides the other, and the new object refutes
-        everything the earlier one did.
+        The trusted implications must not entail the implication. An earlier
+        tentative object is kept even if the trusted implications show its
+        implication equivalent to this one: the two refute the same
+        implications, and nothing decides one without the other.
         """
         positive, conclusion = self._masks(implication)
         if self._trusted.closure_mask(positive) & conclusion == conclusion:
@@ -427,59 +423,46 @@ class ExplorationBase(Generic[O, A]):
         self._tentative[version] = implication
         self._added_at[version] = len(self._added_at)
         self._store(version, (positive, conclusion))
-        for earlier in self.tentative_implications:
-            own, c = self._masks(earlier)
-            if (earlier != implication and c == conclusion and own & ~positive == 0
-                    and positive & ~self._trusted.closure_mask(own) == 0):
-                for other in [n for n, i in self._tentative.items() if i == earlier]:
-                    self._drop_tentative(other)
-        self._settle_tentative(only=implication)
 
-    def _settle_tentative(
-            self,
-            entailment: bool = False,
-            positives: Iterable[int] | None = None,
-            only: Implication[A] | None = None,
-    ) -> None:
-        """Drop the tentative objects whose implication the trusted knowledge
-        has decided, recording the outcome in `settled_tentative`.
+    def _settle_entailed(self) -> None:
+        """Drop the tentative objects whose implication the trusted
+        implications entail, recording it in `settled_tentative` as true.
 
-        With `entailment`, the trusted implications may have grown, and an
-        implication they entail is settled as true. One shown false (see
-        `known_false_mask`) is settled as false, and a derived witness takes
-        the place of its objects unless a trusted object refutes it directly.
-        That object has the premise, so it refutes all they refuted. With `positives`, only objects with these positive
-        sides came in, and an implication is checked only if one of them has
-        its premise or the premise of an image. `only` restricts the check to
-        one implication.
+        Only a new trusted implication can do this. The premise of a
+        tentative object was closed under the trusted implications when it
+        was asked, and later premises come after it in the lectic order, so
+        none is contained in it: its closure grows only with a proof at the
+        premise itself, such as the proved part of the answer, or with an
+        image under a mapping, and after that with proofs at premises within
+        the closure, such as the question asked at it. A tentative object
+        never changes its row, which is the premise and the conclusion.
         """
-        if not self._tentative:
-            return
-        positives = None if positives is None else list(positives)
-        settled = []
-        for implication in [only] if only is not None else self.tentative_implications:
-            premise, conclusion = self._masks(implication)
-            if entailment and self._trusted.closure_mask(premise) & conclusion == conclusion:
-                settled.append((implication, True))
-                continue
-            if positives is not None:
-                premises = [premise] + [p for p, _ in self.mapped_images(premise, conclusion)]
-                if not any(p & positive == p for p in premises for positive in positives):
-                    continue
-            if self.known_false_mask(premise, conclusion):
-                settled.append((implication, False))
+        for name in [n for n in self._tentative if self._trusted.entails_mask(*self._rows[n])]:
+            self.settled_tentative[self._tentative[name]] = True
+            self._drop_tentative(name)
+
+    def settle_refuted_tentative(self) -> None:
+        """Drop the tentative objects whose implication the trusted
+        knowledge shows false (see `known_false_mask`), recording it in
+        `settled_tentative` as false.
+
+        Such an object is redundant rather than wrong, so this waits until
+        the exploration ends. A derived witness takes its place unless a
+        trusted object refutes the implication directly; that object has the
+        premise, so it refutes all the tentative object did.
+        """
+        refuted = [n for n in self._tentative if self.known_false_mask(*self._rows[n])]
         witnesses = []
-        for implication, holds in settled:
-            self.settled_tentative[implication] = holds
-            for name in [n for n, i in self._tentative.items() if i == implication]:
-                self._drop_tentative(name)
-            if not holds:
-                premise, conclusion = self._masks(implication)
-                position = conclusion.bit_length() - 1
-                if not self._rows_having(premise) & self._trusted_rows & self._rows_without.get(position, 0):
-                    witnesses.append(PartialObject(
-                        Witness(implication, derived=True), set(implication.premise), set(implication.conclusion)
-                    ))
+        for name in refuted:
+            implication = self._tentative[name]
+            premise, conclusion = self._rows[name]
+            self.settled_tentative[implication] = False
+            self._drop_tentative(name)
+            position = conclusion.bit_length() - 1
+            if not self._rows_having(premise) & self._trusted_rows & self._rows_without.get(position, 0):
+                witnesses.append(PartialObject(
+                    Witness(implication, derived=True), set(implication.premise), set(implication.conclusion)
+                ))
         for witness in witnesses:
             self.add_counterexample(witness)
 
@@ -638,7 +621,6 @@ class ExplorationBase(Generic[O, A]):
             self.index.encode(example.negative),
         )
         seen = {row}
-        positives = [row[0]]
         for k in range(len(self.mappings)):
             name = VersionedObject(original, k + 1)
             copy = (
@@ -648,8 +630,7 @@ class ExplorationBase(Generic[O, A]):
             if copy in seen and name not in self._rows:
                 continue
             seen.add(copy)
-            positives.append(self._add_row(name, *copy)[0])
-        self._settle_tentative(positives=positives)
+            self._add_row(name, *copy)
 
     def _add_row(
             self,

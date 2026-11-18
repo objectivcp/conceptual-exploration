@@ -103,7 +103,14 @@ class AttributeExploration:
         A question the trusted knowledge already shows false is not asked
         (see `_question`). The objects the expert gives besides an answer
         (`Expert.new_objects`) are added once the answer has been applied.
+        At the end, the tentative objects the trusted knowledge shows false
+        are settled (`ExplorationBase.settle_refuted_tentative`).
         """
+        self._explore(start)
+        self.base.settle_refuted_tentative()
+        return self.state
+
+    def _explore(self, start):
         # Premises and closures are bitmasks over the base's index; only the
         # implication put to the expert is turned back into sets.
         index = self.base.index

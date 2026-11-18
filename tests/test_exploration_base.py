@@ -748,12 +748,13 @@ def test_a_tentatively_rejected_rest_is_asked_again_with_the_proved_part():
     AttributeExploration(base, expert, undecided="reject").run(start=frozenset({"a"}))
     assert base.implication_sources[_implication("a", "b")] is ImplicationSource.CONFIRMED
     # The question at the closure of a, with b in the premise, may be easier
-    # and is asked. Left undecided too, its tentative object takes the place
-    # of the one for a -> c, which the trusted implications show equivalent.
+    # and is asked. Left undecided too, it gets a tentative object besides
+    # the one for a -> c, which the trusted implications show equivalent.
     assert expert.questions[:2] == [_implication("a", "bc"), _implication("ab", "c")]
-    assert base.tentative_implications == [_implication("ab", "c")]
+    assert base.tentative_implications == [_implication("a", "c"), _implication("ab", "c")]
     rows = {v.original: (o.positive, o.negative) for v, o in base.context.objects.items() if v in base.tentative_objects}
-    assert rows == {Tentative(_implication("ab", "c")): ({"a", "b"}, {"c"})}
+    assert rows == {Tentative(_implication("a", "c")): ({"a"}, {"c"}),
+                    Tentative(_implication("ab", "c")): ({"a", "b"}, {"c"})}
 
 
 def test_tentative_objects_are_not_facts():
@@ -791,27 +792,28 @@ def test_a_proof_settles_every_tentative_object_it_entails():
     assert base.context_closure_mask(base.index.encode({"a"})) == base.index.encode({"a", "b", "c"})
 
 
-def test_a_tentative_object_replaces_an_earlier_one_only_for_an_equivalent_implication():
+def test_a_tentative_object_for_an_equivalent_implication_leaves_the_earlier_one():
     base = ExplorationBase(attributes=["a", "b", "c", "d"])
     base.accept(_implication("a", "b"), ImplicationSource.CONFIRMED)
     base.add_tentative(_implication("a", "d"), "t1")
-    base.add_tentative(_implication("c", "d"), "t2")
-    # With a -> b, ab -> d is equivalent to a -> d; bc -> d is weaker than
-    # c -> d, which its proof would leave open.
-    base.add_tentative(_implication("ab", "d"), "t3")
-    base.add_tentative(_implication("bc", "d"), "t4")
-    assert base.tentative_implications == [_implication("c", "d"), _implication("ab", "d"), _implication("bc", "d")]
-    assert [v.original for v in base.context.objects] == ["t2", "t3", "t4"]
-    assert not base.settled_tentative
+    # With a -> b, ab -> d is equivalent to a -> d.
+    base.add_tentative(_implication("ab", "d"), "t2")
+    assert base.tentative_implications == [_implication("a", "d"), _implication("ab", "d")]
+    assert [v.original for v in base.context.objects] == ["t1", "t2"]
+    # Whatever decides one decides the other.
+    base.accept(_implication("ab", "d"), ImplicationSource.CONFIRMED)
+    assert base.settled_tentative == {_implication("a", "d"): True, _implication("ab", "d"): True}
+    assert not base.context.objects
 
 
-def test_a_tentative_object_is_dropped_when_a_completed_partial_object_refutes_it():
+def test_a_tentative_object_a_completed_partial_object_refutes_is_settled_at_the_end():
     base = ExplorationBase(attributes=["a", "b", "c"])
     base.add_tentative(_implication("a", "b"), "t")
     base.add_counterexample(PartialObject("x", {"a"}, {"c"}))
-    assert base.tentative_implications == [_implication("a", "b")]
-    # With b -> c, x lacks b: it refutes a -> b, and takes the place of t.
+    # With b -> c, x lacks b: it refutes a -> b, and t is redundant.
     base.accept(_implication("b", "c"), ImplicationSource.CONFIRMED)
+    assert base.tentative_implications == [_implication("a", "b")]
+    base.settle_refuted_tentative()
     assert base.settled_tentative == {_implication("a", "b"): False}
     assert {v.original: (o.positive, o.negative) for v, o in base.context.objects.items()} == {
         "x": ({"a"}, {"b", "c"})}
@@ -824,6 +826,7 @@ def test_a_tentative_object_shown_false_by_a_rejected_implication_leaves_a_deriv
     base.accept(_implication("a", "c"), ImplicationSource.CONFIRMED)
     base.add_tentative(_implication("a", "b"), "t")
     base.reject(_implication("a", "bc"))
+    base.settle_refuted_tentative()
     assert base.settled_tentative == {_implication("a", "b"): False}
     assert {v.original: (o.positive, o.negative) for v, o in base.context.objects.items()} == {
         Witness(_implication("a", "b"), derived=True): ({"a", "c"}, {"b"})}
