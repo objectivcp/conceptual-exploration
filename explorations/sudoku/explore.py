@@ -23,7 +23,7 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration, simplified_implications
+from conceptual_exploration import AttributeExploration, simplified_implications, trusted_theory
 from conceptual_exploration.exploration.base import ExplorationBase
 from explorations.sudoku.config import ExplorationConfig, available_configs, load_config
 from explorations.sudoku.sudoku import (
@@ -90,11 +90,13 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
         horn = len(rules)
         rules = classical_rules(base, rules)
         count = f"{len(rules)} of {horn} classically irredundant, {time.perf_counter() - start_time:.2f}s"
+    new = compare_without(config, base, rules) if config.compare_without else set()
     lines = []
     print(f"\nDiscovered Rules (Simplified, {count}):")
     for idx, rule in enumerate(rules, start=1):
         fails = counterexamples.get(rule.implication) is not None
         marker = f"   [FAILS FOR BLOCK SIZE {check_size}]" if fails else ""
+        marker += "   [NEW]" if idx - 1 in new else ""
         lines.append(f"{rule}{marker}")
         print(f"  [{idx}] {rule}{marker}")
 
@@ -109,6 +111,30 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
             print(f"\nRule [{idx}]: {counterexample.object}")
     print()
     return lines
+
+
+def compare_without(config: ExplorationConfig, base: ExplorationBase, rules: list) -> set[int]:
+    """Explore again without the predicates `compare_without` names, and
+    return the positions of the rules that the theory found then does not
+    entail classically: what needs those predicates to be said."""
+    left_out = ", ".join(config.compare_without)
+    reduced = config.with_overrides(
+        predicates=tuple(p for p in config.predicates if p not in config.compare_without),
+        compare_without=(),
+    )
+    start_time = time.perf_counter()
+    other = reduced.rule_exploration()
+    other.run()
+    theory = trusted_theory(other.base)
+    everything = base.index.decode(base.full_mask)
+    new = {
+        i for i, rule in enumerate(rules)
+        if not theory.entails(rule.premise, everything if rule.everything else rule.conclusion)
+    }
+    theory.close()
+    print(f"Compared without {left_out}:   {len(new)} of {len(rules)} rules new "
+          f"({time.perf_counter() - start_time:.2f}s)")
+    return new
 
 
 def run_propositional_exploration(config: ExplorationConfig, label: str) -> list[str]:
