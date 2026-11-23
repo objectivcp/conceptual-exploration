@@ -1,0 +1,16 @@
+# Solved 4x4 grids, a set of cells C, a set of digits D, two cells and a
+# digit: the digits of C lie within D or include D, the sizes of C and D,
+# and whether C lies in a unit, alone or with a cell. Read on partial grids, the rules
+# are the naked and hidden subsets of any size, and locked candidates.
+grid = "solved"
+block_size = 2
+cells = ["x", "z"]
+numbers = ["n"]
+cell_sets = ["C"]
+number_sets = ["D"]
+predicates = [
+    "SameCell", "DifferentCells", "Contains", "NotContains",
+    "DigitsWithin", "DigitsInclude", "SameSize", "WithinUnit", "SharesUnit",
+    "CellIn", "CellNotIn", "NumberIn", "NumberNotIn",
+]
+background = true

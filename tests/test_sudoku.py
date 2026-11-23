@@ -13,6 +13,7 @@ from explorations.sudoku import (
     CONFINEMENT_PREDICATES,
     PAIR_CONFINEMENT_PREDICATES,
     PARTIAL_PREDICATES,
+    SET_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -241,7 +242,7 @@ def test_plain_predicates_match_the_z3_predicates():
     z3_names = {p.name for p in z3_predicates}
     # Only the SAT experts evaluate the confinement and partial-grid predicates.
     assert set(PREDICATE_SORTS) - z3_names == set(
-        CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES + PARTIAL_PREDICATES
+        CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES + PARTIAL_PREDICATES + SET_PREDICATES
     )
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
@@ -264,7 +265,12 @@ def test_declared_properties_hold_on_a_solved_grid(block_size):
         p = predicates[name]
         if not properties:
             continue
-        domain = lambda sort: cells if sort is SudokuSort.CELL else numbers
+        domain = lambda sort: {
+            SudokuSort.CELL: cells,
+            SudokuSort.NUMBER: numbers,
+            SudokuSort.CELLSET: [tuple(cells[:1]), tuple(cells[1:3]), tuple(cells[::5])],
+            SudokuSort.NUMBERSET: [(1,), (1, 2), tuple(numbers)],
+        }[sort]
         first, second = p.sorts
         holds = lambda q, a, b: _holds(Atom(q, (u[first], v[second])), witness(a, b), block_size)
         for a in domain(first):
@@ -317,6 +323,10 @@ def _holds(atom, witness, block_size):
         return value(args[0]) == args[1]
     if name in ("NotContains", "Excluded"):
         return value(args[0]) != args[1]
+    if name in ("CellIn", "NumberIn"):
+        return args[0] in args[1]
+    if name in ("CellNotIn", "NumberNotIn"):
+        return args[0] not in args[1]
     if name == "SameNumber":
         return args[0] == args[1]
     if name == "DifferentNumbers":

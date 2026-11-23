@@ -51,6 +51,9 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
     print("=" * 70)
     print(f"Cells:      {', '.join(config.cells) or '-'}")
     print(f"Numbers:    {', '.join(config.numbers) or '-'}")
+    if config.cell_sets or config.number_sets:
+        print(f"Cell sets:  {', '.join(config.cell_sets) or '-'}")
+        print(f"Num. sets:  {', '.join(config.number_sets) or '-'}")
     print(f"Predicates: {', '.join(config.predicates)}")
     print(f"Expert:     {expert_label(config)}")
     background = "on" if config.background else "off"
