@@ -1,0 +1,8 @@
+# Solved 4x4 grids, three cells with all of the geometry: how the units
+# interact.
+grid = "solved"
+block_size = 2
+cells = ["x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Contains", "NotContains"]
+background = true

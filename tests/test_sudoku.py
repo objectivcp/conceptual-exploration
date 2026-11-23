@@ -10,8 +10,8 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
-    COMPLETION_PREDICATES,
-    PAIR_COMPLETION_PREDICATES,
+    CONFINEMENT_PREDICATES,
+    PAIR_CONFINEMENT_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -238,9 +238,8 @@ def test_plain_predicates_match_the_z3_predicates():
     expert = Z3SudokuExpert(block_size=2, variables=variables)
     z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
     z3_names = {p.name for p in z3_predicates}
-    # The completion predicates quantify over a partial grid's completions,
-    # which only the partial-grid experts evaluate.
-    assert set(PREDICATE_SORTS) - z3_names == set(COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES)
+    # Only the SAT expert evaluates the confinement predicates.
+    assert set(PREDICATE_SORTS) - z3_names == set(CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES)
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
     )
@@ -262,15 +261,15 @@ def test_declared_properties_hold_on_a_solved_grid(block_size):
         p = predicates[name]
         if not properties:
             continue
-        domain = cells if p.sorts[0] is SudokuSort.CELL else numbers
-        sort = p.sorts[0]
-        holds = lambda q, a, b: _holds(Atom(q, (u[sort], v[sort])), witness(a, b), block_size)
-        for a in domain:
+        domain = lambda sort: cells if sort is SudokuSort.CELL else numbers
+        first, second = p.sorts
+        holds = lambda q, a, b: _holds(Atom(q, (u[first], v[second])), witness(a, b), block_size)
+        for a in domain(first):
             if p.reflexive:
                 assert holds(p, a, a), name
             if p.irreflexive:
                 assert not holds(p, a, a), name
-            for b in domain:
+            for b in domain(second):
                 if p.symmetric:
                     assert holds(p, a, b) == holds(p, b, a), name
                 if p.complement:
@@ -312,6 +311,8 @@ def _holds(atom, witness, block_size):
     name = atom.predicate.name
     if name == "Contains":
         return value(args[0]) == args[1]
+    if name == "NotContains":
+        return value(args[0]) != args[1]
     if name == "SameNumber":
         return args[0] == args[1]
     if name == "DifferentNumbers":

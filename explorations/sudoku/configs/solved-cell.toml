@@ -1,0 +1,8 @@
+# Solved 4x4 grids, one cell and four digits: read on partial grids, naked
+# singles.
+grid = "solved"
+block_size = 2
+cells = ["x"]
+numbers = ["n1", "n2", "n3", "n4"]
+predicates = ["Contains", "NotContains", "SameNumber", "DifferentNumbers"]
+background = true

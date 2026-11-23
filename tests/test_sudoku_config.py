@@ -11,12 +11,12 @@ from explorations.sudoku.explore import expert_label, main
 @pytest.mark.parametrize("name", available_configs())
 def test_shipped_configurations_load(name):
     config = load_config(name)
-    assert config.grid in ("solved", "partial", "propositional")
+    assert config.grid in ("solved", "propositional")
 
 
 def test_shipped_configurations_include_every_kind_of_grid():
     grids = {load_config(name).grid for name in available_configs()}
-    assert grids == {"solved", "partial", "propositional"}
+    assert grids == {"solved", "propositional"}
 
 
 def _config(**settings):
@@ -28,13 +28,11 @@ def _config(**settings):
     ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "colour": 1}, "unknown configuration keys"),
     ({"grid": "solved", "block_size": "2", "cells": ["x"], "predicates": ["SameRow"]}, "block_size must be"),
     ({"grid": "solved", "background": 1, "cells": ["x"], "predicates": ["SameRow"]}, "background must be"),
-    ({"grid": "solved", "cells": ["x"], "predicates": ["Forced"]}, "do not apply to solved grids"),
-    ({"grid": "partial", "cells": ["x"], "numbers": ["n"], "predicates": ["Contains"]}, "do not apply to partial grids"),
-    ({"grid": "partial", "block_size": 4, "cells": ["x"], "predicates": ["SameRow"]}, "block_size 2"),
-    ({"grid": "partial", "cells": ["x"], "predicates": ["SameRow"], "expert": "z3"}, "expert for partial grids"),
-    ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "expert": "cegar"}, "expert for solved grids"),
-    ({"grid": "partial", "block_size": 3, "cells": ["x"], "predicates": ["SameRow"]}, "use expert = \"cegar\""),
-    ({"grid": "partial", "cells": ["x"], "predicates": ["SameRow"], "check_block_size": 3}, "cannot be re-checked"),
+    ({"grid": "partial", "cells": ["x"], "predicates": ["SameRow"]}, "grid must be"),
+    ({"grid": "solved", "block_size": 1, "cells": ["x"], "predicates": ["SameRow"]}, "at least 2"),
+    ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "expert": "cegar"}, "expert must be"),
+    ({"grid": "solved", "cells": ["x"], "numbers": ["n"], "predicates": ["ConfinedToRowInBlock"], "expert": "z3"}, "no Z3 encoding"),
+    ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "check_block_size": 4}, "check_block_size must be"),
     ({"grid": "solved", "cells": ["x"], "predicates": ["Contains"]}, "needs a number variable"),
     ({"grid": "solved", "cells": ["x", "x"], "predicates": ["SameRow"]}, "distinct"),
     ({"grid": "solved", "cells": ["x"], "predicates": ["SameRoww"]}, "unknown predicates"),
@@ -48,16 +46,15 @@ def test_configurations_that_cannot_run_say_why(settings, message):
 
 
 def test_overrides_are_checked():
-    config = load_config("partial-row")
-    with pytest.raises(ValueError, match="block_size 2"):
-        config.with_overrides(block_size=3)
+    with pytest.raises(ValueError, match="expert must be"):
+        load_config("solved-row").with_overrides(expert="cegar")
     assert load_config("solved-pairs").with_overrides(block_size=3).block_size == 3
 
 
 def test_the_check_defaults_to_the_other_grid_size():
     assert load_config("solved-pairs").effective_check_block_size == 3
     assert load_config("solved-pairs").with_overrides(block_size=3).effective_check_block_size == 2
-    assert load_config("partial-row").effective_check_block_size == 0
+    assert load_config("propositional").effective_check_block_size == 0
 
 
 @pytest.mark.parametrize("name", available_configs())
@@ -93,7 +90,5 @@ def test_runner_checks_every_configuration_before_running(capsys):
 
 
 def test_the_expert_is_named_for_what_it_is():
-    assert expert_label(load_config("partial9-locked")).startswith("CEGAR")
-    assert "listing every solved 4x4 grid" in expert_label(load_config("partial-row"))
     assert expert_label(load_config("solved-pairs")) == "SAT (PySAT)"
     assert expert_label(load_config("solved-pairs").with_overrides(expert="z3")) == "SMT (Z3)"

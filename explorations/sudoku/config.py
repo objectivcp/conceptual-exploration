@@ -2,20 +2,20 @@
 
 A configuration says what kind of grid is explored and how:
 
-    grid = "partial"          # "solved", "partial" or "propositional"
+    grid = "solved"           # "solved" or "propositional"
     block_size = 2
     cells = ["w", "x", "y", "z"]
     numbers = ["n"]
-    predicates = ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded"]
+    predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
     background = true
     geometry_first = false
-    expert = "sat"            # "z3" for solved grids, "cegar" for partial ones
-    check_block_size = 3      # solved grids: re-check rules there; 0 skips
+    expert = "sat"            # or "z3"
+    check_block_size = 3      # re-check the rules there; 0 skips
 
-Solved and partial grids are explored with first-order rules over the cell
-and number variables; propositional exploration has (row, column, digit)
-attributes and takes `block_size`, `background` and `symmetries` only. The
-shipped configurations in `configs/` can be named instead of given by path.
+Solved grids are explored with first-order rules over the cell and number
+variables; propositional exploration has (row, column, digit) attributes
+and takes `block_size`, `background` and `symmetries` only. The shipped
+configurations in `configs/` can be named instead of given by path.
 """
 
 from __future__ import annotations
@@ -83,6 +83,8 @@ class ExplorationConfig:
 
     def check(self) -> None:
         """Raise ValueError, saying why, if the configuration cannot be run."""
+        if self.grid not in ("solved", "propositional"):
+            raise ValueError(f'grid must be "solved" or "propositional", not {self.grid!r}')
         if self.grid == "propositional":
             given = [
                 name for name in _RULE_ONLY
@@ -97,10 +99,8 @@ class ExplorationConfig:
                 )
             return
         check_rule_exploration(
-            self.grid, self.block_size, self.cells, self.numbers, self.predicates, self.expert
+            self.block_size, self.cells, self.numbers, self.predicates, self.expert
         )
-        if self.grid == "partial" and self.check_block_size:
-            raise ValueError("rules about partial grids cannot be re-checked on another grid size")
         if self.check_block_size is not None and self.check_block_size not in (0, 2, 3):
             raise ValueError(f"check_block_size must be 0, 2 or 3, not {self.check_block_size}")
 
@@ -134,7 +134,6 @@ class ExplorationConfig:
         if self.grid == "propositional":
             raise ValueError("propositional exploration is not a rule exploration")
         return sudoku_rule_exploration(
-            self.grid,
             self.block_size,
             self.cells,
             self.numbers,
@@ -194,17 +193,3 @@ def load_config(name_or_path: str | Path) -> ExplorationConfig:
         return ExplorationConfig.from_dict(data)
     except ValueError as error:
         raise ValueError(f"{path}: {error}") from None
-
-
-def partial_grid_exploration(
-    preset: str = "row",
-    on_question: Optional[Callable[[Any], None]] = None,
-    geometry_first: Optional[bool] = None,
-) -> RuleExploration:
-    """The exploration of partial 4x4 grids configured in
-    `configs/partial-<preset>.toml`, optionally with or without the
-    geometry explored first."""
-    config = load_config(f"partial-{preset}")
-    if geometry_first is not None:
-        config = config.with_overrides(geometry_first=geometry_first)
-    return config.rule_exploration(on_question)
