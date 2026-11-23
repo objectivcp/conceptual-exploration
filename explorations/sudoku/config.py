@@ -2,19 +2,22 @@
 
 A configuration says what kind of grid is explored and how:
 
-    grid = "solved"           # "solved" or "propositional"
+    grid = "solved"           # "solved", "partial" or "propositional"
     block_size = 2
     cells = ["w", "x", "y", "z"]
     numbers = ["n"]
     predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
     background = true
     geometry_first = false
-    expert = "sat"            # or "z3"
-    check_block_size = 3      # re-check the rules there; 0 skips
+    classical = true          # drop rules that follow classically from the others
+    expert = "sat"            # or "z3" for solved grids
+    check_block_size = 3      # solved grids: re-check the rules there; 0 skips
 
-Solved grids are explored with first-order rules over the cell and number
-variables; propositional exploration has (row, column, digit) attributes
-and takes `block_size`, `background` and `symmetries` only. The shipped
+Solved and partial grids are explored with first-order rules over the cell
+and number variables; partial grids only at block size 2, with Forced,
+Excluded and Possible in place of Contains and NotContains. Propositional
+exploration has (row, column, digit) attributes and takes `block_size`,
+`background` and `symmetries` only. The shipped
 configurations in `configs/` can be named instead of given by path.
 """
 
@@ -35,7 +38,7 @@ from explorations.sudoku.sudoku import (
 
 CONFIG_DIR = Path(__file__).resolve().parent / "configs"
 
-_RULE_ONLY = ("cells", "numbers", "predicates", "geometry_first", "expert", "check_block_size")
+_RULE_ONLY = ("cells", "numbers", "predicates", "geometry_first", "classical", "expert", "check_block_size")
 
 
 @dataclass(frozen=True)
@@ -47,6 +50,7 @@ class ExplorationConfig:
     predicates: tuple[str, ...] = ()
     background: bool = True
     geometry_first: bool = False
+    classical: bool = True
     expert: str = "sat"
     # None means the default: 9x9 for rules found on 4x4 grids, 4x4 for rules
     # found on larger ones.
@@ -60,7 +64,7 @@ class ExplorationConfig:
         types = {
             "grid": str, "block_size": int, "cells": list, "numbers": list,
             "predicates": list, "background": bool, "geometry_first": bool,
-            "expert": str, "check_block_size": int, "symmetries": bool,
+            "classical": bool, "expert": str, "check_block_size": int, "symmetries": bool,
         }
         unknown = sorted(set(data) - set(types))
         if unknown:
@@ -83,8 +87,8 @@ class ExplorationConfig:
 
     def check(self) -> None:
         """Raise ValueError, saying why, if the configuration cannot be run."""
-        if self.grid not in ("solved", "propositional"):
-            raise ValueError(f'grid must be "solved" or "propositional", not {self.grid!r}')
+        if self.grid not in ("solved", "partial", "propositional"):
+            raise ValueError(f'grid must be "solved", "partial" or "propositional", not {self.grid!r}')
         if self.grid == "propositional":
             given = [
                 name for name in _RULE_ONLY
@@ -99,8 +103,10 @@ class ExplorationConfig:
                 )
             return
         check_rule_exploration(
-            self.block_size, self.cells, self.numbers, self.predicates, self.expert
+            self.block_size, self.cells, self.numbers, self.predicates, self.expert, self.grid
         )
+        if self.grid == "partial" and self.check_block_size:
+            raise ValueError("rules about partial grids cannot be re-checked on another grid size")
         if self.check_block_size is not None and self.check_block_size not in (0, 2, 3):
             raise ValueError(f"check_block_size must be 0, 2 or 3, not {self.check_block_size}")
 
@@ -141,6 +147,7 @@ class ExplorationConfig:
             background=self.background,
             geometry_first=self.geometry_first,
             expert=self.expert,
+            grid=self.grid,
             on_question=on_question,
         )
 

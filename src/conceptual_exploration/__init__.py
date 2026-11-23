@@ -1,6 +1,7 @@
 from .exploration.attribute import AttributeExploration, QuestionReport, Tentative, Witness, report_every
 from .exploration.base import ObjectConflict
 from .exploration.basis import Rule, SimplifiedImplication, reduced_basis, simplified_implications, simplified_rules
+from .exploration.classical import ClassicalTheory, classically_irredundant, trusted_theory
 from .exploration.rounds import RoundsResult, explore_in_rounds
 from .exploration.rule import RuleExploration
 from .core.context import PartialContext, PartialObject
