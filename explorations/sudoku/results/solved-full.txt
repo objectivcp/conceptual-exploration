@@ -7,6 +7,7 @@
 # predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Contains", "NotContains"]
 # background = true
 # geometry_first = true
+# classical = false
 # expert = "sat"
 # check_block_size = 3
 

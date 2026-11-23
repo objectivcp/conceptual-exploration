@@ -12,6 +12,7 @@ from explorations.sudoku import (
     CELL_EQUIVALENCES,
     CONFINEMENT_PREDICATES,
     PAIR_CONFINEMENT_PREDICATES,
+    PARTIAL_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -238,8 +239,10 @@ def test_plain_predicates_match_the_z3_predicates():
     expert = Z3SudokuExpert(block_size=2, variables=variables)
     z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
     z3_names = {p.name for p in z3_predicates}
-    # Only the SAT expert evaluates the confinement predicates.
-    assert set(PREDICATE_SORTS) - z3_names == set(CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES)
+    # Only the SAT experts evaluate the confinement and partial-grid predicates.
+    assert set(PREDICATE_SORTS) - z3_names == set(
+        CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES + PARTIAL_PREDICATES
+    )
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
     )
@@ -309,9 +312,10 @@ def _holds(atom, witness, block_size):
     args = [values[v.name] for v in atom.arguments]
     value = lambda cell: witness.grid[cell[0]][cell[1]]
     name = atom.predicate.name
-    if name == "Contains":
+    # A solved grid is a partial grid that is its own only completion.
+    if name in ("Contains", "Forced", "Possible"):
         return value(args[0]) == args[1]
-    if name == "NotContains":
+    if name in ("NotContains", "Excluded"):
         return value(args[0]) != args[1]
     if name == "SameNumber":
         return args[0] == args[1]

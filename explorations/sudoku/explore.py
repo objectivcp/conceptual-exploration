@@ -1,8 +1,8 @@
 """Conceptual Exploration of Sudoku Rules and Constraints.
 
 Runs the Sudoku explorations described by TOML configuration files (see
-`config.py`): first-order rule exploration of solved grids, or propositional
-attribute exploration of 4x4 grids. Each argument is a configuration file,
+`config.py`): first-order rule exploration of solved grids or of partial 4x4
+grids, or propositional attribute exploration of 4x4 grids. Each argument is a configuration file,
 or the name of one shipped in `configs/`:
 
     python explorations/sudoku/explore.py solved-row
@@ -29,6 +29,7 @@ from explorations.sudoku.config import ExplorationConfig, available_configs, loa
 from explorations.sudoku.sudoku import (
     SudokuExpert,
     check_rules,
+    classical_rules,
     get_sudoku_attributes,
     get_sudoku_background_implications,
     get_sudoku_symmetries,
@@ -37,6 +38,8 @@ from explorations.sudoku.sudoku import (
 
 def expert_label(config: ExplorationConfig) -> str:
     """How the configured expert decides the questions."""
+    if config.grid == "partial":
+        return "SAT (PySAT), listing every solved 4x4 grid"
     return {"sat": "SAT (PySAT)", "z3": "SMT (Z3)"}[config.expert]
 
 
@@ -81,8 +84,14 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
               f"{failing} of {len(counterexamples)} fail ({elapsed:.2f}s)")
 
     rules = simplified_implications(base)
+    count = f"{len(rules)}"
+    if config.classical:
+        start_time = time.perf_counter()
+        horn = len(rules)
+        rules = classical_rules(base, rules)
+        count = f"{len(rules)} of {horn} classically irredundant, {time.perf_counter() - start_time:.2f}s"
     lines = []
-    print(f"\nDiscovered Rules (Simplified, {len(rules)}):")
+    print(f"\nDiscovered Rules (Simplified, {count}):")
     for idx, rule in enumerate(rules, start=1):
         fails = counterexamples.get(rule.implication) is not None
         marker = f"   [FAILS FOR BLOCK SIZE {check_size}]" if fails else ""
@@ -178,6 +187,13 @@ def main(argv: list[str] | None = None) -> None:
         help="explore without the background implications, so they are rediscovered too",
     )
     parser.add_argument(
+        "--no-classical",
+        dest="classical",
+        action="store_false",
+        default=None,
+        help="print all simplified rules, also those that follow classically from the others",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         metavar="PATH",
@@ -192,6 +208,8 @@ def main(argv: list[str] | None = None) -> None:
         overrides["block_size"] = args.block_size
     if args.background is not None:
         overrides["background"] = args.background
+    if args.classical is not None:
+        overrides["classical"] = args.classical
 
     # Check every configuration before running any, so that a mistake in the
     # last one does not show up only after the first has run for minutes.
