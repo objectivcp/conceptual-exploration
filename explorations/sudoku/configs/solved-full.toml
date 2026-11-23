@@ -1,0 +1,11 @@
+# Solved 4x4 grids, four cells with all of the geometry: the techniques of
+# the other configurations, and interactions that need a fourth cell. The
+# geometry is explored first and its rules join the background, so only
+# rules about the digits are reported. Takes longest.
+grid = "solved"
+block_size = 2
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Contains", "NotContains"]
+background = true
+geometry_first = true

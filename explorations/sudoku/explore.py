@@ -1,11 +1,11 @@
 """Conceptual Exploration of Sudoku Rules and Constraints.
 
 Runs the Sudoku explorations described by TOML configuration files (see
-`config.py`): first-order rule exploration of solved grids or of partial 4x4
-grids, or propositional attribute exploration of 4x4 grids. Each argument is
-a configuration file, or the name of one shipped in `configs/`:
+`config.py`): first-order rule exploration of solved grids, or propositional
+attribute exploration of 4x4 grids. Each argument is a configuration file,
+or the name of one shipped in `configs/`:
 
-    python explorations/sudoku/explore.py partial-row
+    python explorations/sudoku/explore.py solved-row
     python explorations/sudoku/explore.py my-exploration.toml --block-size 3
 """
 
@@ -37,10 +37,6 @@ from explorations.sudoku.sudoku import (
 
 def expert_label(config: ExplorationConfig) -> str:
     """How the configured expert decides the questions."""
-    if config.grid == "partial":
-        if config.expert == "cegar":
-            return "CEGAR (counterexample-guided, two PySAT solvers)"
-        return "SAT (PySAT), listing every solved 4x4 grid"
     return {"sat": "SAT (PySAT)", "z3": "SMT (Z3)"}[config.expert]
 
 

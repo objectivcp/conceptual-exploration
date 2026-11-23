@@ -22,7 +22,7 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.experts.base import Expert
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
-from conceptual_exploration.logic.atom import Atom, atoms_over
+from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.predicate import EvaluatablePredicate, Predicate
 from conceptual_exploration.logic.variable import Sort, SortedVariable
 
@@ -531,6 +531,12 @@ def z3predicates(block_size: int, expert: Z3SudokuExpert) -> List[EvaluatablePre
             function=lambda c, n: expert.value(c[0], c[1]) == n,
         ),
         EvaluatablePredicate(
+            "NotContains",
+            2,
+            sorts=(SudokuSort.CELL, SudokuSort.NUMBER),
+            function=lambda c, n: expert.value(c[0], c[1]) != n,
+        ),
+        EvaluatablePredicate(
             "SameNumber",
             2,
             sorts=(SudokuSort.NUMBER, SudokuSort.NUMBER),
@@ -647,6 +653,7 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
     "Same": _CELL_PAIR,
     "Different": _CELL_PAIR,
     "Contains": (SudokuSort.CELL, SudokuSort.NUMBER),
+    "NotContains": (SudokuSort.CELL, SudokuSort.NUMBER),
     "SameNumber": _NUMBER_PAIR,
     "DifferentNumbers": _NUMBER_PAIR,
     "SameBlock": _CELL_PAIR,
@@ -659,10 +666,8 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
     "DifferentBlocks": _CELL_PAIR,
     "SameBand": _CELL_PAIR,
     "SameStack": _CELL_PAIR,
-    # Predicates of partial grids, which only the partial-grid experts
-    # evaluate; see `COMPLETION_PREDICATES`.
-    "Forced": (SudokuSort.CELL, SudokuSort.NUMBER),
-    "Excluded": (SudokuSort.CELL, SudokuSort.NUMBER),
+    # Where a digit lies relative to a cell, which only `SatSudokuRuleExpert`
+    # evaluates; see `CONFINEMENT_PREDICATES`.
     "ConfinedToRowInBlock": (SudokuSort.CELL, SudokuSort.NUMBER),
     "ConfinedToColumnInBlock": (SudokuSort.CELL, SudokuSort.NUMBER),
     "ConfinedToBlockInRow": (SudokuSort.CELL, SudokuSort.NUMBER),
@@ -671,26 +676,28 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
     "ConfinedToPairInColumn": (SudokuSort.CELL, SudokuSort.CELL, SudokuSort.NUMBER),
 }
 
-# Predicates saying what holds in every completion of a partial grid. For
-# P(x, n): Forced, that x holds n; Excluded, that it does not; and the
-# Confined ones, that n's place in x's block lies in x's row (column), or
-# its place in x's row (column) lies in x's block. "Only place" and "only
-# digit" predicates would be Forced again: a digit kept out of every other
-# cell of x's row has to be in x.
-COMPLETION_PREDICATES = (
-    "Forced",
-    "Excluded",
+# Predicates of a cell x and a number n saying where n lies: that its place
+# in x's block lies in x's row (column), or its place in x's row (column)
+# lies in x's block. "Only place" and "only digit" predicates would be
+# Contains again: a digit kept out of every other cell of x's row is in x.
+#
+# Read on a partial grid as holding in all its completions (Contains as
+# forced by the givens, NotContains as excluded by them), these predicates
+# give a partial grid exactly the properties its completions share. It then
+# refutes no rule that every solved grid satisfies, and the rules found on
+# solved grids are the deduction techniques.
+CONFINEMENT_PREDICATES = (
     "ConfinedToRowInBlock",
     "ConfinedToColumnInBlock",
     "ConfinedToBlockInRow",
     "ConfinedToBlockInColumn",
 )
 
-# Completion predicates of two cells and a digit: P(x, y, n) says that n's
-# place in x's row (column) is x or y in every completion, the premise of an
-# X-wing. It is about x's row, so it is symmetric only for y in that row,
-# and P(x, x, n) is Forced(x, n).
-PAIR_COMPLETION_PREDICATES = ("ConfinedToPairInRow", "ConfinedToPairInColumn")
+# Confinement predicates of two cells and a number: P(x, y, n) says that n's
+# place in x's row (column) is x or y, the premise of an X-wing. It is about
+# x's row, so it is symmetric only for y in that row, and P(x, x, n) is
+# Contains(x, n).
+PAIR_CONFINEMENT_PREDICATES = ("ConfinedToPairInRow", "ConfinedToPairInColumn")
 
 
 def pair_confinement_cells(
@@ -743,7 +750,8 @@ PREDICATE_PROPERTIES: Dict[str, Dict[str, Any]] = {
     "Apart": _DISTINCTION,
     "Same": {**_EQUIVALENCE, "complement": "Different"},
     "Different": {**_DISTINCTION, "complement": "Same"},
-    "Contains": {},
+    "Contains": {"complement": "NotContains"},
+    "NotContains": {"complement": "Contains"},
     "SameNumber": {**_EQUIVALENCE, "complement": "DifferentNumbers"},
     "DifferentNumbers": {**_DISTINCTION, "complement": "SameNumber"},
     "SameBlock": {**_EQUIVALENCE, "complement": "DifferentBlocks"},
@@ -756,7 +764,7 @@ PREDICATE_PROPERTIES: Dict[str, Dict[str, Any]] = {
     "DifferentBlocks": {**_DISTINCTION, "complement": "SameBlock"},
     "SameBand": _EQUIVALENCE,
     "SameStack": _EQUIVALENCE,
-    **{name: {} for name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES},
+    **{name: {} for name in CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES},
 }
 
 
@@ -782,8 +790,7 @@ def sudoku_background(
     """Implications that hold in every grid whatever its digits.
 
     They say that the equivalences are equivalences, how the grid's regions
-    nest, and that a cell holds a single value, which for partial grids means
-    a single forced digit, never also excluded; none of them depends on a
+    nest, and that a cell holds a single value; none of them depends on a
     Sudoku rule. Given as background, they leave the exploration to find only
     what the rules add. Implications mentioning a predicate not in
     `predicates` are left out.
@@ -793,16 +800,13 @@ def sudoku_background(
     variables = tuple(variables)
     cells = [v for v in variables if v.sort is SudokuSort.CELL]
     numbers = [v for v in variables if v.sort is SudokuSort.NUMBER]
-    atoms = atoms_over(predicates, variables)
     background: List[Implication] = []
 
-    def rule(premise, conclusion=None) -> None:
-        """Add premise -> conclusion, or premise -> ⊥ without a conclusion."""
-        names = [name for name, _ in premise + (conclusion or [])]
+    def rule(premise, conclusion) -> None:
+        names = [name for name, _ in premise + conclusion]
         if all(name in by_name for name in names):
             background.append(Implication(
                 (Atom(by_name[name], args) for name, args in premise),
-                atoms if conclusion is None else
                 (Atom(by_name[name], args) for name, args in conclusion),
             ))
 
@@ -827,12 +831,8 @@ def sudoku_background(
         rule([("SameBand", (u, v)), ("SameStack", (u, v))], [("SameBlock", (u, v))])
         for n in numbers:
             rule([("Contains", (u, n)), ("Same", (u, v))], [("Contains", (v, n))])
+            rule([("NotContains", (u, n)), ("Same", (u, v))], [("NotContains", (v, n))])
             rule([("Contains", (u, n)), ("Contains", (v, n))], [("Same", (u, v))])
-
-    for u in cells:
-        for n, m in product(numbers, repeat=2):
-            rule([("Contains", (u, n)), ("SameNumber", (n, m))], [("Contains", (u, m))])
-            rule([("Contains", (u, n)), ("Contains", (u, m))], [("SameNumber", (n, m))])
 
     # Distinctness passes along equalities. Horn rules cannot get this from
     # the complements, since it is their contrapositive.
@@ -847,32 +847,32 @@ def sudoku_background(
     for n, m, k in product(numbers, repeat=3):
         rule([("SameNumber", (n, m)), ("DifferentNumbers", (m, k))], [("DifferentNumbers", (n, k))])
 
-    # A cell of a partial grid has at most one forced digit, which is not
-    # also excluded, and equal cells and numbers are interchangeable.
+    # A cell holds one digit, so a digit it holds differs from one it does
+    # not; and equal cells and numbers are interchangeable. Contains and
+    # NotContains exclude each other as complements (see `RuleExploration`).
+    per_cell = ("Contains", "NotContains") + CONFINEMENT_PREDICATES
     for u in cells:
-        for n in numbers:
-            rule([("Forced", (u, n)), ("Excluded", (u, n))])
         for n, m in product(numbers, repeat=2):
-            rule([("Forced", (u, n)), ("Forced", (u, m))], [("SameNumber", (n, m))])
-            rule([("Forced", (u, n)), ("Excluded", (u, m))], [("DifferentNumbers", (n, m))])
-            rule([("Forced", (u, n)), ("DifferentNumbers", (n, m))], [("Excluded", (u, m))])
-            for name in COMPLETION_PREDICATES:
+            rule([("Contains", (u, n)), ("Contains", (u, m))], [("SameNumber", (n, m))])
+            rule([("Contains", (u, n)), ("NotContains", (u, m))], [("DifferentNumbers", (n, m))])
+            rule([("Contains", (u, n)), ("DifferentNumbers", (n, m))], [("NotContains", (u, m))])
+            for name in per_cell:
                 rule([(name, (u, n)), ("SameNumber", (n, m))], [(name, (u, m))])
     for u, v in product(cells, repeat=2):
         for n in numbers:
-            for name in COMPLETION_PREDICATES:
+            for name in per_cell:
                 rule([(name, (u, n)), ("SameCell", (u, v))], [(name, (v, n))])
-            rule([("Forced", (u, n)), ("Excluded", (v, n))], [("DifferentCells", (u, v))])
+            rule([("Contains", (u, n)), ("NotContains", (v, n))], [("DifferentCells", (u, v))])
         for n, m in product(numbers, repeat=2):
             rule(
-                [("Forced", (u, n)), ("Forced", (v, m)), ("DifferentNumbers", (n, m))],
+                [("Contains", (u, n)), ("Contains", (v, m)), ("DifferentNumbers", (n, m))],
                 [("DifferentCells", (u, v))],
             )
 
     # A pair in one row (column) confines n there whichever way round it is
-    # named; a pair of one cell forces n there; and equal cells and numbers
+    # named; a pair of one cell puts n there; and equal cells and numbers
     # are interchangeable.
-    for name, same_line in zip(PAIR_COMPLETION_PREDICATES, ("SameRow", "SameColumn")):
+    for name, same_line in zip(PAIR_CONFINEMENT_PREDICATES, ("SameRow", "SameColumn")):
         for u, v in product(cells, repeat=2):
             for n in numbers:
                 rule([(name, (u, v, n)), (same_line, (u, v))], [(name, (v, u, n))])
@@ -883,8 +883,8 @@ def sudoku_background(
                     rule([(name, (u, v, n)), ("SameNumber", (n, m))], [(name, (u, v, m))])
         for u in cells:
             for n in numbers:
-                rule([(name, (u, u, n))], [("Forced", (u, n))])
-                rule([("Forced", (u, n))], [(name, (u, u, n))])
+                rule([(name, (u, u, n))], [("Contains", (u, n))])
+                rule([("Contains", (u, n))], [(name, (u, u, n))])
 
     return background
 
@@ -933,10 +933,7 @@ class _Definitions:
 
 
 class SudokuRuleWitness:
-    """A grid together with the cells and numbers a rule's variables denote.
-
-    In a partial grid, 0 stands for an empty cell.
-    """
+    """A grid together with the cells and numbers a rule's variables denote."""
 
     def __init__(
         self,
@@ -961,28 +958,27 @@ class SudokuRuleWitness:
         return f"{values}\n{rows}"
 
 
-class _SatRuleExpert(Expert):
-    """What the SAT experts for first-order Sudoku rules share: one-hot rows
-    and columns for the cell variables and digits for the number variables,
-    the predicates of the grid's geometry and of numbers, and the search for
-    a counterexample. Atoms are interpreted by the name of their predicate.
+class SatSudokuRuleExpert(Expert):
+    """SAT-based expert for first-order Sudoku rules, complete at any block size.
 
-    Subclasses supply the clauses that describe the grids, a witness built
-    from a model, and the predicates about the grid's contents.
+    A counterexample is a solved grid together with a cell for each cell
+    variable and a digit for each number variable, encoded as one-hot rows
+    and columns and one-hot digits. Atoms are interpreted by the name of
+    their predicate, so the atoms of an exploration run with
+    `Z3SudokuExpert`, at any block size, can be checked here unchanged.
     """
 
     def __init__(
         self,
         block_size: int,
         variables: Iterable[SortedVariable],
-        clauses: Iterable[List[int]],
-        first_var: int,
         solver_name: str = "g3",
     ) -> None:
         self.block_size = block_size
         self.grid_size = n = block_size**2
-        self._defs = _Definitions(first_var)
-        self._solver = Solver(name=solver_name, bootstrap_with=clauses)
+        formula = sudoku2sat([[0] * n for _ in range(n)], block_size)
+        self._defs = _Definitions(n**3 + 1)
+        self._solver = Solver(name=solver_name, bootstrap_with=formula.clauses)
 
         self._rows: Dict[SortedVariable, List[int]] = {}
         self._columns: Dict[SortedVariable, List[int]] = {}
@@ -1032,16 +1028,22 @@ class _SatRuleExpert(Expert):
         )
 
     def _witness(self, true: Set[int]) -> SudokuRuleWitness:
-        raise NotImplementedError
-
-    def _assignment(self, true: Set[int]) -> Tuple[Tuple[str, Any], ...]:
+        n = self.grid_size
         index = lambda literals: next(i for i, v in enumerate(literals) if v in true)
-        return tuple(
+        assignment = tuple(
             (v.name, (index(self._rows[v]), index(self._columns[v])))
             if v.sort is SudokuSort.CELL
             else (v.name, index(self._digits[v]) + 1)
             for v in self.variables
         )
+        grid = tuple(
+            tuple(
+                next(d for d in range(1, n + 1) if get_var(r, c, d, n) in true)
+                for c in range(n)
+            )
+            for r in range(n)
+        )
+        return SudokuRuleWitness(assignment, grid)
 
     def _literal(self, atom: Any) -> int:
         return self._defined((atom.predicate.name,) + tuple(atom.arguments))
@@ -1050,46 +1052,6 @@ class _SatRuleExpert(Expert):
         if key not in self._memo:
             self._memo[key] = self._define(*key)
         return self._memo[key]
-
-    def _kept_out(self, solution, name: str, x: Any, m: Any) -> int:
-        """Whether the solved grid `solution` keeps the digit of number m out
-        of the cells that Confined predicate `name` names for cell x."""
-        d = self._defs
-        n = self.grid_size
-        position = self._defined(("position", x))
-        return d.disj(
-            d.conj((position[r * n + c], self._digits[m][digit - 1]))
-            for r in range(n)
-            for c in range(n)
-            for digit in range(1, n + 1)
-            if all(
-                solution[br][bc] != digit
-                for br, bc in confinement_cells(name, (r, c), self.block_size)
-            )
-        )
-
-    def _pair_kept_out(self, solution, name: str, x: Any, y: Any, m: Any) -> int:
-        """Whether the solved grid `solution` puts the digit of number m, in
-        x's row (column), in x or in y."""
-        d = self._defs
-        n = self.grid_size
-        by_row = name == "ConfinedToPairInRow"
-        # x's line and the digit decide the one cell holding it there.
-        line_x, across_x = (self._rows[x], self._columns[x]) if by_row else (self._columns[x], self._rows[x])
-        line_y, across_y = (self._rows[y], self._columns[y]) if by_row else (self._columns[y], self._rows[y])
-        cases = []
-        for line in range(n):
-            for digit in range(1, n + 1):
-                place = next(
-                    i for i in range(n)
-                    if (solution[line][i] if by_row else solution[i][line]) == digit
-                )
-                cases.append(d.conj((
-                    line_x[line],
-                    self._digits[m][digit - 1],
-                    d.disj((across_x[place], d.conj((line_y[line], across_y[place])))),
-                )))
-        return d.disj(cases)
 
     def _same(self, xs: List[int], ys: List[int]) -> int:
         """True where two one-hot encodings pick the same position."""
@@ -1115,12 +1077,67 @@ class _SatRuleExpert(Expert):
                 for r in range(n)
                 for c in range(n)
             ]
+        if name == "value":
+            (x,) = args
+            position = self._defined(("position", x))
+            return [
+                d.disj(
+                    d.conj((position[r * n + c], get_var(r, c, digit, n)))
+                    for r in range(n)
+                    for c in range(n)
+                )
+                for digit in range(1, n + 1)
+            ]
 
         if name in ("SameNumber", "DifferentNumbers"):
             lit = self._same(self._digits[args[0]], self._digits[args[1]])
             return lit if name == "SameNumber" else -lit
+        if name in ("Contains", "NotContains"):
+            x, number = args
+            lit = self._same(self._defined(("value", x)), self._digits[number])
+            return lit if name == "Contains" else -lit
+        if name in CONFINEMENT_PREDICATES:
+            # Wherever x is and whatever digit m is, the grid has that digit
+            # in none of the cells the predicate keeps it out of.
+            x, m = args
+            position = self._defined(("position", x))
+            return d.conj(
+                d.disj((
+                    -position[r * n + c],
+                    -self._digits[m][digit - 1],
+                    d.conj(
+                        -get_var(br, bc, digit, n)
+                        for br, bc in confinement_cells(name, (r, c), k)
+                    ),
+                ))
+                for r in range(n)
+                for c in range(n)
+                for digit in range(1, n + 1)
+            )
+        if name in PAIR_CONFINEMENT_PREDICATES:
+            # In x's row (column), the digit of m is in x or in y: wherever
+            # the grid has it in that line, x or y is there.
+            x, y, m = args
+            by_row = name == "ConfinedToPairInRow"
+            line_x, across_x = (self._rows[x], self._columns[x]) if by_row else (self._columns[x], self._rows[x])
+            line_y, across_y = (self._rows[y], self._columns[y]) if by_row else (self._columns[y], self._rows[y])
+            return d.conj(
+                d.disj((
+                    -line_x[line],
+                    -self._digits[m][digit - 1],
+                    -(get_var(line, i, digit, n) if by_row else get_var(i, line, digit, n)),
+                    across_x[i],
+                    d.conj((line_y[line], across_y[i])),
+                ))
+                for line in range(n)
+                for i in range(n)
+                for digit in range(1, n + 1)
+            )
 
         x, y = args
+        if name in ("Same", "Different"):
+            lit = self._same(self._defined(("value", x)), self._defined(("value", y)))
+            return lit if name == "Same" else -lit
         if name == "SameRow":
             return self._same(self._rows[x], self._rows[y])
         if name == "SameColumn":
@@ -1154,60 +1171,6 @@ class _SatRuleExpert(Expert):
         raise ValueError(f"No SAT encoding for predicate {name!r}")
 
 
-class SatSudokuRuleExpert(_SatRuleExpert):
-    """SAT-based expert for first-order Sudoku rules, complete at any block size.
-
-    A counterexample is a solved grid together with a cell for each cell
-    variable and a digit for each number variable. Atoms are interpreted by
-    the name of their predicate, so the atoms of an exploration run with
-    `Z3SudokuExpert`, at any block size, can be checked here unchanged.
-    """
-
-    def __init__(
-        self,
-        block_size: int,
-        variables: Iterable[SortedVariable],
-        solver_name: str = "g3",
-    ) -> None:
-        n = block_size**2
-        formula = sudoku2sat([[0] * n for _ in range(n)], block_size)
-        super().__init__(block_size, variables, formula.clauses, n**3 + 1, solver_name)
-
-    def _witness(self, true: Set[int]) -> SudokuRuleWitness:
-        n = self.grid_size
-        grid = tuple(
-            tuple(
-                next(d for d in range(1, n + 1) if get_var(r, c, d, n) in true)
-                for c in range(n)
-            )
-            for r in range(n)
-        )
-        return SudokuRuleWitness(self._assignment(true), grid)
-
-    def _define(self, name: str, *args: Any):
-        d = self._defs
-        n = self.grid_size
-        if name == "value":
-            (x,) = args
-            position = self._defined(("position", x))
-            return [
-                d.disj(
-                    d.conj((position[r * n + c], get_var(r, c, digit, n)))
-                    for r in range(n)
-                    for c in range(n)
-                )
-                for digit in range(1, n + 1)
-            ]
-        if name == "Contains":
-            x, number = args
-            return self._same(self._defined(("value", x)), self._digits[number])
-        if name in ("Same", "Different"):
-            x, y = args
-            lit = self._same(self._defined(("value", x)), self._defined(("value", y)))
-            return lit if name == "Same" else -lit
-        return super()._define(name, *args)
-
-
 def sudoku_solutions(block_size: int) -> List[Tuple[Tuple[int, ...], ...]]:
     """Every solved grid of the given block size; feasible for 4x4 grids
     (288 of them), not for 9x9 ones."""
@@ -1218,423 +1181,6 @@ def sudoku_solutions(block_size: int) -> List[Tuple[Tuple[int, ...], ...]]:
             tuple(map(tuple, assemble_solution(model, block_size)))
             for model in solver.enum_models()
         ]
-
-
-class PartialGridExpert(_SatRuleExpert):
-    """SAT-based expert for rules about partial 4x4 grids and what follows
-    from them.
-
-    An object is a partial grid with at least one completion, together with
-    a cell for each cell variable and a digit for each number variable.
-    `Forced(x, n)` says that every completion has `n` in `x`, so that it
-    follows from the givens; `Excluded(x, n)` says that none does. Rules
-    over these predicates are deduction techniques.
-
-    The givens are SAT variables, and each solved grid is consistent with
-    them or not; deciding Forced and Excluded quantifies over those grids, so
-    they are enumerated up front, which only 4x4 grids allow.
-    """
-
-    def __init__(
-        self,
-        variables: Iterable[SortedVariable],
-        block_size: int = 2,
-        solver_name: str = "g3",
-    ) -> None:
-        if block_size != 2:
-            raise ValueError(
-                "PartialGridExpert enumerates every solved grid, which only "
-                "4x4 grids (block size 2) allow"
-            )
-        n = block_size**2
-        # Variable get_var(r, c, d) says that cell (r, c) is given digit d.
-        given = lambda r, c, d: get_var(r, c, d, n)
-        clauses = [
-            [-given(r, c, d), -given(r, c, e)]
-            for r in range(n)
-            for c in range(n)
-            for d, e in combinations(range(1, n + 1), 2)
-        ]
-        super().__init__(block_size, variables, clauses, n**3 + 1, solver_name)
-
-        # A solved grid is consistent with the givens when none of them
-        # contradicts it; at least one must be.
-        self._solutions = sudoku_solutions(block_size)
-        self._consistent = [
-            self._defs.conj(
-                -given(r, c, d)
-                for r in range(n)
-                for c in range(n)
-                for d in range(1, n + 1)
-                if d != solution[r][c]
-            )
-            for solution in self._solutions
-        ]
-        self._defs.pending.append(list(self._consistent))
-
-    def _witness(self, true: Set[int]) -> SudokuRuleWitness:
-        n = self.grid_size
-        grid = tuple(
-            tuple(
-                next((d for d in range(1, n + 1) if get_var(r, c, d, n) in true), 0)
-                for c in range(n)
-            )
-            for r in range(n)
-        )
-        return SudokuRuleWitness(self._assignment(true), grid)
-
-    def _define(self, name: str, *args: Any):
-        d = self._defs
-        n = self.grid_size
-        if name == "holds":
-            # Whether solved grid i has, in cell x, the digit of number m.
-            i, x, m = args
-            position = self._defined(("position", x))
-            solution = self._solutions[i]
-            return d.disj(
-                d.conj((
-                    self._digits[m][digit - 1],
-                    d.disj(
-                        position[r * n + c]
-                        for r in range(n)
-                        for c in range(n)
-                        if solution[r][c] == digit
-                    ),
-                ))
-                for digit in range(1, n + 1)
-            )
-        if name in ("Forced", "Excluded"):
-            x, m = args
-            return d.conj(
-                d.disj((
-                    -consistent,
-                    self._defined(("holds", i, x, m)) * (1 if name == "Forced" else -1),
-                ))
-                for i, consistent in enumerate(self._consistent)
-            )
-        if name == "kept_out":
-            i, confined, x, m = args
-            return self._kept_out(self._solutions[i], confined, x, m)
-        if name == "pair_kept_out":
-            i, confined, x, y, m = args
-            return self._pair_kept_out(self._solutions[i], confined, x, y, m)
-        if name in PAIR_COMPLETION_PREDICATES:
-            x, y, m = args
-            return d.conj(
-                d.disj((-consistent, self._defined(("pair_kept_out", i, name, x, y, m))))
-                for i, consistent in enumerate(self._consistent)
-            )
-        if name in COMPLETION_PREDICATES:
-            x, m = args
-            return d.conj(
-                d.disj((-consistent, self._defined(("kept_out", i, name, x, m))))
-                for i, consistent in enumerate(self._consistent)
-            )
-        return super()._define(name, *args)
-
-
-class CegarPartialGridExpert(_SatRuleExpert):
-    """Expert for rules about partial grids of any block size (prototype).
-
-    It decides the same predicates as `PartialGridExpert` without listing
-    the solved grids, which 9x9 grids have too many of. A counterexample has
-    givens, a placement of the variables, and a completion W that breaks the
-    conclusion; the premise's Forced and Excluded atoms must hold in every
-    completion. That is an exists-forall question, decided by counterexample-
-    guided refinement:
-
-    - a SAT solver guesses givens, a placement and W, where W and every
-      completion found so far that is consistent with the givens satisfy the
-      premise;
-    - a second SAT solver looks, under the guessed givens, for a completion
-      that breaks a premise atom; one it finds joins the completions found
-      so far and the guess is repeated;
-    - a guess no completion breaks is a counterexample, and no guess at all
-      means the implication holds.
-
-    The completions found are kept for later questions. `refinements`
-    counts them, and `rounds` the guesses made.
-    """
-
-    def __init__(
-        self,
-        variables: Iterable[SortedVariable],
-        block_size: int = 2,
-        solver_name: str = "g3",
-    ) -> None:
-        k, n = block_size, block_size**2
-        self._n3 = n**3
-        given = lambda r, c, d: get_var(r, c, d, n)
-        witness = lambda r, c, d: self._n3 + get_var(r, c, d, n)
-        # At most one given per cell; W is a solved grid that keeps them.
-        clauses = [
-            [-given(r, c, d), -given(r, c, e)]
-            for r in range(n)
-            for c in range(n)
-            for d, e in combinations(range(1, n + 1), 2)
-        ]
-        clauses += [
-            [lit + self._n3 if lit > 0 else lit - self._n3 for lit in clause]
-            for clause in sudoku2sat([[0] * n for _ in range(n)], k).clauses
-        ]
-        clauses += [
-            [-given(r, c, d), witness(r, c, d)]
-            for r in range(n)
-            for c in range(n)
-            for d in range(1, n + 1)
-        ]
-        super().__init__(block_size, variables, clauses, 2 * self._n3 + 1, solver_name)
-        self._given = given
-        self._witness_var = witness
-
-        # Completions found to break a premise, shared by later questions.
-        self._completions: List[Tuple[Tuple[int, ...], ...]] = []
-        self._verifier = Solver(
-            name=solver_name,
-            bootstrap_with=sudoku2sat([[0] * n for _ in range(n)], k).clauses,
-        )
-        self.refinements = 0
-        self.rounds = 0
-
-    def validate(
-        self,
-        implication: Implication,
-        attributes: Optional[Iterable[Any]] = None,
-    ) -> Optional[PartialObject]:
-        semantic = lambda a: a.predicate.name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES
-        premise_static = [self._literal(a) for a in implication.premise if not semantic(a)]
-        premise_semantic = [
-            (a.predicate.name, a.arguments)
-            for a in implication.premise if semantic(a)
-        ]
-
-        # Only the call that assumes `active` needs these.
-        active = self._defs.var()
-        failing = [
-            -self._in_witness(a.predicate.name, *a.arguments)
-            if semantic(a) else -self._literal(a)
-            for a in implication.conclusion
-        ]
-        self._defs.pending.append([-active] + failing)
-        for name, args in premise_semantic:
-            self._defs.pending.append([-active, self._in_witness(name, *args)])
-
-        def require(completion: int) -> None:
-            """Completion number `completion`, if consistent with the givens,
-            satisfies the premise's completion predicates."""
-            consistent = self._defined(("consistent", completion))
-            for name, args in premise_semantic:
-                self._defs.pending.append(
-                    [-active, -consistent, self._in_completion(completion, name, *args)]
-                )
-
-        for completion in range(len(self._completions)):
-            require(completion)
-
-        while True:
-            self.rounds += 1
-            self._solver.append_formula(self._defs.pending)
-            self._defs.pending = []
-            if not self._solver.solve(assumptions=premise_static + [active]):
-                return None
-            true = {v for v in self._solver.get_model() if v > 0}
-            givens = self._givens(true)
-            places = self._places(true)
-            broken = None
-            for name, args in premise_semantic:
-                broken = self._breaking(givens, name, [places[a] for a in args])
-                if broken is not None:
-                    break
-            if broken is None:
-                return self._counterexample(implication, attributes, true, givens, places)
-            self._completions.append(broken)
-            self.refinements += 1
-            require(len(self._completions) - 1)
-
-    def _givens(self, true: Set[int]) -> Dict[Tuple[int, int], int]:
-        n = self.grid_size
-        return {
-            (r, c): d
-            for r in range(n)
-            for c in range(n)
-            for d in range(1, n + 1)
-            if self._given(r, c, d) in true
-        }
-
-    def _places(self, true: Set[int]) -> Dict[SortedVariable, Any]:
-        index = lambda literals: next(i for i, v in enumerate(literals) if v in true)
-        return {
-            v: (index(self._rows[v]), index(self._columns[v]))
-            if v.sort is SudokuSort.CELL
-            else index(self._digits[v]) + 1
-            for v in self.variables
-        }
-
-    def _in_witness(self, name: str, *args: Any) -> int:
-        """Whether the guessed completion W satisfies name(*args)."""
-        if name in PAIR_COMPLETION_PREDICATES:
-            return self._defined(("witness_pair_kept_out", name, *args))
-        x, m = args
-        if name == "Forced":
-            return self._defined(("witness_holds", x, m))
-        if name == "Excluded":
-            return -self._defined(("witness_holds", x, m))
-        return self._defined(("witness_kept_out", name, x, m))
-
-    def _in_completion(self, i: int, name: str, *args: Any) -> int:
-        """Whether completion number i satisfies name(*args)."""
-        if name in PAIR_COMPLETION_PREDICATES:
-            return self._defined(("pair_kept_out_in", i, name, *args))
-        x, m = args
-        if name == "Forced":
-            return self._defined(("holds_in", i, x, m))
-        if name == "Excluded":
-            return -self._defined(("holds_in", i, x, m))
-        return self._defined(("kept_out_in", i, name, x, m))
-
-    def _breaking(self, givens, name: str, places: List[Any]):
-        """A completion of the givens in which name(*places) fails, or None
-        if it holds in all of them; `places` are the arguments' cells and
-        digit."""
-        *cells, digit = places
-        r, c = cells[0]
-        if name == "Forced":
-            return self._completion(givens, r, c, digit, False)
-        if name == "Excluded":
-            return self._completion(givens, r, c, digit, True)
-        kept_out = (
-            pair_confinement_cells(name, cells[0], cells[1], self.block_size)
-            if name in PAIR_COMPLETION_PREDICATES
-            else confinement_cells(name, cells[0], self.block_size)
-        )
-        for br, bc in kept_out:
-            broken = self._completion(givens, br, bc, digit, True)
-            if broken is not None:
-                return broken
-        return None
-
-    def _completion(self, givens, r, c, digit, has_digit):
-        """A completion of the givens with (has_digit) or without digit in
-        cell (r, c), or None if there is none."""
-        n = self.grid_size
-        assumptions = [get_var(gr, gc, d, n) for (gr, gc), d in givens.items()]
-        cell = get_var(r, c, digit, n)
-        if not self._verifier.solve(assumptions=assumptions + [cell if has_digit else -cell]):
-            return None
-        return tuple(map(tuple, assemble_solution(self._verifier.get_model(), self.block_size)))
-
-    def _counterexample(self, implication, attributes, true, givens, places):
-        if attributes is None:
-            attributes = implication.premise | implication.conclusion
-        n = self.grid_size
-        positive = set()
-        for a in attributes:
-            if a.predicate.name in COMPLETION_PREDICATES + PAIR_COMPLETION_PREDICATES:
-                arguments = [places[argument] for argument in a.arguments]
-                holds = self._breaking(givens, a.predicate.name, arguments) is None
-            else:
-                lit = self._literal(a)
-                holds = lit in true if lit > 0 else -lit not in true
-            if holds:
-                positive.add(a)
-        grid = tuple(
-            tuple(givens.get((r, c), 0) for c in range(n))
-            for r in range(n)
-        )
-        assignment = tuple((v.name, places[v]) for v in self.variables)
-        return PartialObject(
-            SudokuRuleWitness(assignment, grid),
-            positive,
-            set(attributes) - positive,
-        )
-
-    def _define(self, name: str, *args: Any):
-        d = self._defs
-        n = self.grid_size
-        if name == "witness_holds":
-            # Whether W has, in cell x, the digit of number m.
-            x, m = args
-            position = self._defined(("position", x))
-            return d.disj(
-                d.conj((
-                    self._digits[m][digit - 1],
-                    d.disj(
-                        d.conj((position[r * n + c], self._witness_var(r, c, digit)))
-                        for r in range(n)
-                        for c in range(n)
-                    ),
-                ))
-                for digit in range(1, n + 1)
-            )
-        if name == "witness_kept_out":
-            # Whether W keeps the digit of m out of the Confined cells for x.
-            confined, x, m = args
-            position = self._defined(("position", x))
-            return d.conj(
-                d.disj((
-                    -position[r * n + c],
-                    -self._digits[m][digit - 1],
-                    d.conj(
-                        -self._witness_var(br, bc, digit)
-                        for br, bc in confinement_cells(confined, (r, c), self.block_size)
-                    ),
-                ))
-                for r in range(n)
-                for c in range(n)
-                for digit in range(1, n + 1)
-            )
-        if name == "kept_out_in":
-            i, confined, x, m = args
-            return self._kept_out(self._completions[i], confined, x, m)
-        if name == "pair_kept_out_in":
-            i, confined, x, y, m = args
-            return self._pair_kept_out(self._completions[i], confined, x, y, m)
-        if name == "witness_pair_kept_out":
-            # Whether W, in x's row (column), has the digit of m only in x or y.
-            confined, x, y, m = args
-            by_row = confined == "ConfinedToPairInRow"
-            line_x, across_x = (self._rows[x], self._columns[x]) if by_row else (self._columns[x], self._rows[x])
-            line_y, across_y = (self._rows[y], self._columns[y]) if by_row else (self._columns[y], self._rows[y])
-            return d.conj(
-                d.disj((
-                    -line_x[line],
-                    -self._digits[m][digit - 1],
-                    -(self._witness_var(line, i, digit) if by_row else self._witness_var(i, line, digit)),
-                    across_x[i],
-                    d.conj((line_y[line], across_y[i])),
-                ))
-                for line in range(n)
-                for i in range(n)
-                for digit in range(1, n + 1)
-            )
-        if name == "consistent":
-            (i,) = args
-            solution = self._completions[i]
-            return d.conj(
-                -self._given(r, c, digit)
-                for r in range(n)
-                for c in range(n)
-                for digit in range(1, n + 1)
-                if digit != solution[r][c]
-            )
-        if name == "holds_in":
-            # Whether completion i has, in cell x, the digit of number m.
-            i, x, m = args
-            position = self._defined(("position", x))
-            solution = self._completions[i]
-            return d.disj(
-                d.conj((
-                    self._digits[m][digit - 1],
-                    d.disj(
-                        position[r * n + c]
-                        for r in range(n)
-                        for c in range(n)
-                        if solution[r][c] == digit
-                    ),
-                ))
-                for digit in range(1, n + 1)
-            )
-        return super()._define(name, *args)
 
 
 def check_rules(
@@ -1686,7 +1232,7 @@ def _primitive_rule_exploration(
     cells = [v.name for v in variables if v.sort is SudokuSort.CELL]
     numbers = [v.name for v in variables if v.sort is SudokuSort.NUMBER]
     exploration = sudoku_rule_exploration(
-        "solved", block_size, cells, numbers, names, on_question=report_every(20)
+        block_size, cells, numbers, names, on_question=report_every(20)
     )
     exploration.run()
     return exploration.base
@@ -1728,24 +1274,13 @@ def geometry_basis(
     return list(exploration.base.accepted_implications)
 
 
-# What each kind of grid lets the predicates talk about: solved grids have
-# values but nothing follows from anything, partial grids have forced and
-# excluded digits but no values of their own.
-_GRID_PREDICATES: Dict[str, Set[str]] = {
-    "solved": set(PREDICATE_SORTS) - set(COMPLETION_PREDICATES) - set(PAIR_COMPLETION_PREDICATES),
-    "partial": set(GEOMETRIC_PREDICATES) | set(COMPLETION_PREDICATES) | set(PAIR_COMPLETION_PREDICATES) | {
-        "Peers", "Apart", "SameNumber", "DifferentNumbers",
-    },
-}
-
-# Which experts decide rules about which grids: SAT and Z3 for solved grids;
-# for partial ones, "sat" lists every solved 4x4 grid, and "cegar" decides
-# by counterexample-guided refinement, at any block size.
-_GRID_EXPERTS = {"solved": ("sat", "z3"), "partial": ("sat", "cegar")}
+# The experts of the rule exploration: SAT decides every predicate, Z3 all
+# but the confinement ones.
+_EXPERTS = ("sat", "z3")
+_NO_Z3_ENCODING = CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES
 
 
 def check_rule_exploration(
-    grid: str,
     block_size: int,
     cells: Iterable[str],
     numbers: Iterable[str],
@@ -1755,19 +1290,10 @@ def check_rule_exploration(
     """Raise ValueError, saying why, if a rule exploration with these
     settings cannot be run."""
     cells, numbers, predicates = list(cells), list(numbers), list(predicates)
-    if grid not in _GRID_PREDICATES:
-        raise ValueError(f"grid must be one of {sorted(_GRID_PREDICATES)}, not {grid!r}")
     if block_size < 2:
         raise ValueError(f"block_size must be at least 2, not {block_size}")
-    if expert not in _GRID_EXPERTS[grid]:
-        raise ValueError(
-            f"the expert for {grid} grids must be one of {list(_GRID_EXPERTS[grid])}, not {expert!r}"
-        )
-    if grid == "partial" and expert == "sat" and block_size != 2:
-        raise ValueError(
-            "the sat expert for partial grids needs block_size 2: it lists every "
-            "solved grid, which only 4x4 grids allow; use expert = \"cegar\""
-        )
+    if expert not in _EXPERTS:
+        raise ValueError(f"the expert must be one of {list(_EXPERTS)}, not {expert!r}")
     names = cells + numbers
     if not names:
         raise ValueError("at least one cell or number variable is needed")
@@ -1778,9 +1304,9 @@ def check_rule_exploration(
     unknown = [p for p in predicates if p not in PREDICATE_SORTS]
     if unknown:
         raise ValueError(f"unknown predicates {unknown}; known are {sorted(PREDICATE_SORTS)}")
-    unsupported = [p for p in predicates if p not in _GRID_PREDICATES[grid]]
-    if unsupported:
-        raise ValueError(f"predicates {unsupported} do not apply to {grid} grids")
+    unsupported = [p for p in predicates if p in _NO_Z3_ENCODING]
+    if expert == "z3" and unsupported:
+        raise ValueError(f"predicates {unsupported} have no Z3 encoding; use expert = \"sat\"")
     for p in predicates:
         sorts = set(PREDICATE_SORTS[p])
         if SudokuSort.CELL in sorts and not cells:
@@ -1790,7 +1316,6 @@ def check_rule_exploration(
 
 
 def sudoku_rule_exploration(
-    grid: str,
     block_size: int,
     cells: Iterable[str],
     numbers: Iterable[str],
@@ -1801,7 +1326,7 @@ def sudoku_rule_exploration(
     expert: str = "sat",
     on_question: Optional[Callable[[Any], None]] = None,
 ) -> RuleExploration:
-    """Build a rule exploration of solved or partial Sudoku grids.
+    """Build a rule exploration of solved Sudoku grids.
 
     `cells` and `numbers` name the variables of each sort, and `predicates`
     the predicates to explore (see `PREDICATE_SORTS`). With `background`,
@@ -1812,18 +1337,12 @@ def sudoku_rule_exploration(
     `check_rule_exploration`.
     """
     cells, numbers, names = list(cells), list(numbers), list(predicates)
-    check_rule_exploration(grid, block_size, cells, numbers, names, expert)
+    check_rule_exploration(block_size, cells, numbers, names, expert)
     variables = (
         [SortedVariable(name, SudokuSort.CELL) for name in cells]
         + [SortedVariable(name, SudokuSort.NUMBER) for name in numbers]
     )
-    if grid == "partial" and expert == "cegar":
-        rule_expert = CegarPartialGridExpert(variables, block_size)
-        selected = sudoku_predicates(names)
-    elif grid == "partial":
-        rule_expert = PartialGridExpert(variables)
-        selected = sudoku_predicates(names)
-    elif expert == "sat":
+    if expert == "sat":
         rule_expert = SatSudokuRuleExpert(block_size, variables)
         selected = sudoku_predicates(names)
     else:

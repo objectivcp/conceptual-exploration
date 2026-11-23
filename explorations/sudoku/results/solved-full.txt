@@ -1,0 +1,93 @@
+# Sudoku exploration: solved-full
+#
+# grid = "solved"
+# block_size = 2
+# cells = ["w", "x", "y", "z"]
+# numbers = ["n"]
+# predicates = ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock", "Contains", "NotContains"]
+# background = true
+# geometry_first = true
+# expert = "sat"
+# check_block_size = 3
+
+Contains(y, n), Contains(z, n), SameBlock(y, z) -> SameCell(y, z)
+Contains(y, n), Contains(z, n), SameColumn(y, z) -> SameCell(y, z)
+Contains(y, n), Contains(z, n), SameRow(y, z) -> SameCell(y, z)
+Contains(z, n), DifferentCells(y, z), SameBlock(y, z) -> NotContains(y, n)
+Contains(z, n), DifferentCells(y, z), SameColumn(y, z) -> NotContains(y, n)
+DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(x, z), SameBlock(y, z), SameColumn(x, z), SameColumn(y, z) -> NotContains(x, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(z, n), DifferentCells(y, z), SameRow(y, z) -> NotContains(y, n)
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameBlock(x, y), SameColumn(w, z), SameRow(x, z) -> DifferentCells(w, x)
+Contains(w, n), Contains(x, n), DifferentCells(y, z), SameBlock(x, y), SameColumn(w, z), SameRow(x, z) -> DifferentCells(w, y)
+Contains(x, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, y), SameColumn(w, z), SameRow(x, z) -> DifferentCells(w, x)
+Contains(w, n), Contains(x, n), DifferentCells(y, z), SameBlock(w, y), SameColumn(w, z), SameRow(x, z) -> DifferentCells(x, y)
+Contains(x, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, z), SameBlock(x, z), SameColumn(w, z), SameRow(x, z) -> DifferentCells(w, y)
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, z), SameBlock(x, z), SameColumn(w, z), SameRow(x, z) -> DifferentCells(x, y)
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameColumn(w, z), SameColumn(x, y), SameRow(x, z) -> DifferentCells(w, x)
+Contains(w, n), Contains(x, n), DifferentCells(y, z), SameColumn(w, z), SameColumn(x, y), SameRow(x, z) -> DifferentCells(w, y)
+Contains(x, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, y), SameBlock(x, z), SameColumn(w, y), SameRow(x, z) -> DifferentCells(w, z)
+Contains(w, n), Contains(z, n), DifferentCells(y, z), SameBlock(w, y), SameBlock(x, z), SameColumn(w, y), SameRow(x, z) -> DifferentCells(x, y)
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameBlock(x, y), SameColumn(w, x), SameRow(x, z) -> DifferentCells(w, z)
+Contains(x, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, y), SameColumn(w, x), SameRow(x, z) -> DifferentCells(w, z)
+Contains(w, n), Contains(z, n), DifferentCells(y, z), SameBlock(w, y), SameBlock(x, z), SameColumn(w, x), SameRow(x, z) -> DifferentCells(x, y)
+DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(x, z), SameBlock(y, z), SameRow(x, z), SameRow(y, z) -> NotContains(x, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameColumn(x, z), SameRow(w, z), SameRow(x, y) -> DifferentCells(w, x)
+Contains(w, n), Contains(x, n), DifferentCells(y, z), SameColumn(x, z), SameRow(w, z), SameRow(x, y) -> DifferentCells(w, y)
+Contains(x, n), Contains(z, n), DifferentCells(y, z), SameColumn(w, x), SameRow(w, z), SameRow(x, y) -> DifferentCells(w, y)
+Contains(w, n), Contains(y, n), DifferentCells(y, z), SameBlock(x, y), SameColumn(x, z), SameRow(w, x) -> DifferentCells(w, z)
+Contains(x, n), Contains(y, n), DifferentCells(y, z), SameBlock(w, y), SameColumn(x, z), SameRow(w, x) -> DifferentCells(w, z)
+Contains(w, n), Contains(z, n), DifferentCells(y, z), SameBlock(w, y), SameBlock(x, z), SameColumn(x, z), SameRow(w, x) -> DifferentCells(x, y)
+Contains(x, n), Contains(z, n), DifferentCells(y, z), SameColumn(w, z), SameColumn(x, y), SameRow(w, x) -> DifferentCells(w, y)
+DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(w, x), SameRow(y, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(x, y), SameRow(w, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(w, z), SameColumn(x, y) -> SameCell(x, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, z), SameColumn(x, z), SameColumn(y, z) -> SameCell(x, y)   [FAILS FOR BLOCK SIZE 3]
+Contains(z, n), DifferentCells(w, z), NotContains(x, n), NotContains(y, n), SameBlock(w, y), SameBlock(x, z), SameColumn(w, y), SameColumn(x, z), SameRow(x, y) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameRow(w, z), SameRow(x, y) -> SameCell(x, y)   [FAILS FOR BLOCK SIZE 3]
+Contains(z, n), DifferentCells(x, z), NotContains(w, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, y), SameRow(w, z), SameRow(x, y) -> NotContains(x, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, y), SameRow(w, z), SameRow(x, z), SameRow(y, z) -> SameCell(x, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(w, z), SameColumn(x, y) -> SameColumn(y, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, z), SameColumn(x, z), SameColumn(y, z) -> SameBlock(y, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameRow(w, z), SameRow(x, y) -> SameRow(y, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, y), SameRow(w, z), SameRow(x, z), SameRow(y, z) -> SameBlock(y, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), Contains(z, n), DifferentCells(y, z), SameBlock(w, y), SameBlock(x, z) -> DifferentCells(w, x)
+Contains(y, n), Contains(z, n), DifferentCells(y, z), SameColumn(w, y), SameColumn(x, z) -> DifferentCells(w, x)
+Contains(z, n), DifferentCells(w, z), DifferentCells(x, y), NotContains(y, n), SameBlock(w, y), SameBlock(x, y), SameColumn(w, y), SameColumn(x, y), SameRow(x, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), Contains(z, n), DifferentCells(y, z), SameRow(w, y), SameRow(x, z) -> DifferentCells(w, x)
+Contains(y, n), DifferentCells(w, z), DifferentCells(x, y), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameColumn(w, y), SameRow(w, z), SameRow(x, z) -> NotContains(x, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(x, y) -> SameColumn(w, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(x, y), SameColumn(w, z), SameColumn(x, z), SameColumn(y, z) -> SameBlock(w, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(w, x), SameRow(y, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameRow(x, y) -> SameRow(w, y)   [FAILS FOR BLOCK SIZE 3]
+Contains(z, n), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, y), SameColumn(x, y), SameRow(w, z) -> SameBlock(y, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z), SameColumn(x, z), SameRow(w, y) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(z, n), DifferentCells(x, y), NotContains(w, n), NotContains(x, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, z), SameRow(w, y), SameRow(x, y) -> SameBlock(y, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(x, y), SameRow(w, z), SameRow(x, z), SameRow(y, z) -> SameBlock(w, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z) -> SameCell(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(x, z), SameColumn(y, z) -> SameColumn(w, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(x, z), SameBlock(y, z), SameColumn(w, x), SameColumn(y, z) -> SameBlock(w, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameColumn(w, z), SameColumn(x, z), SameColumn(y, z) -> SameCell(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(y, n), DifferentCells(w, y), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(x, z), SameRow(y, z) -> SameColumn(w, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(y, n), DifferentCells(w, y), DifferentCells(x, z), SameBlock(w, z), SameBlock(x, z), SameColumn(x, z), SameRow(y, z) -> SameRow(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), DifferentCells(w, z), DifferentCells(x, z), NotContains(w, n), NotContains(x, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(w, z), SameColumn(x, z), SameRow(y, z) -> SameCell(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(y, n), DifferentCells(w, y), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(y, z), SameRow(x, z) -> SameRow(w, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(y, n), DifferentCells(w, y), DifferentCells(x, z), SameBlock(w, z), SameBlock(x, z), SameColumn(y, z), SameRow(x, z) -> SameColumn(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), Contains(z, n), DifferentCells(y, z), NotContains(x, n), SameBlock(w, z), SameBlock(x, z), SameColumn(w, y), SameRow(x, z) -> SameColumn(x, y)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), Contains(z, n), DifferentCells(y, z), NotContains(w, n), SameBlock(w, y), SameBlock(x, y), SameColumn(w, y), SameRow(x, z) -> SameRow(w, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameRow(x, z), SameRow(y, z) -> SameRow(w, z)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(w, x), SameRow(x, z), SameRow(y, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(x, z), SameColumn(y, z), SameRow(w, x) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(x, z), SameBlock(y, z), SameRow(w, x), SameRow(y, z) -> SameBlock(w, z)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), DifferentCells(w, z), DifferentCells(x, z), NotContains(w, n), NotContains(x, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(y, z), SameRow(w, z), SameRow(x, z) -> SameCell(w, x)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameRow(w, z), SameRow(x, z), SameRow(y, z) -> SameCell(w, x)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, x), DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, z), SameBlock(y, z) -> Contains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, x), DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameColumn(w, z), SameColumn(x, z), SameColumn(y, z) -> Contains(w, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(x, n), DifferentCells(w, y), DifferentCells(w, z), DifferentCells(y, z), NotContains(w, n), NotContains(y, n), NotContains(z, n), SameBlock(w, y), SameBlock(x, z), SameColumn(x, z), SameRow(y, z) -> SameRow(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(z, n), DifferentCells(w, z), NotContains(x, n), SameBlock(w, y), SameBlock(x, z), SameColumn(x, z), SameRow(y, z) -> SameRow(w, x)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), DifferentCells(w, x), DifferentCells(w, z), DifferentCells(x, z), NotContains(w, n), NotContains(x, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(x, z), SameRow(y, z) -> SameColumn(w, y)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), Contains(z, n), DifferentCells(w, z), NotContains(y, n), SameBlock(w, x), SameBlock(y, z), SameColumn(x, z), SameRow(y, z) -> SameColumn(w, y)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, x), DifferentCells(w, z), DifferentCells(x, z), DifferentCells(y, z), NotContains(w, n), NotContains(x, n), SameBlock(w, x), SameBlock(y, z), SameColumn(w, z), SameColumn(x, z), SameRow(y, z) -> NotContains(y, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(y, n), DifferentCells(w, x), DifferentCells(w, z), DifferentCells(x, z), NotContains(x, n), NotContains(z, n), SameBlock(w, x), SameBlock(y, z), SameColumn(w, z), SameColumn(x, z), SameRow(y, z) -> Contains(w, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, z), SameRow(x, z), SameRow(y, z) -> NotContains(w, n)   [FAILS FOR BLOCK SIZE 3]
+Contains(w, n), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(y, n), NotContains(z, n), SameBlock(w, z), SameBlock(x, y), SameColumn(w, z), SameRow(x, z), SameRow(y, z) -> Contains(x, n)   [FAILS FOR BLOCK SIZE 3]
+DifferentCells(w, x), DifferentCells(w, y), DifferentCells(w, z), DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), NotContains(x, n), NotContains(y, n), NotContains(z, n), SameRow(w, z), SameRow(x, z), SameRow(y, z) -> Contains(w, n)   [FAILS FOR BLOCK SIZE 3]
