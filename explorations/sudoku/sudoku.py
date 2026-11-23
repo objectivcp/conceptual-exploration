@@ -349,9 +349,12 @@ def get_sudoku_symmetries(
 # ---------------------------------------------------------------------------
 
 class SudokuSort(Sort):
-    """Sorts for multi-sorted first-order Sudoku variables."""
+    """Sorts for multi-sorted first-order Sudoku variables: cells, numbers,
+    and non-empty sets of each."""
     CELL = auto()
     NUMBER = auto()
+    CELLSET = auto()
+    NUMBERSET = auto()
 
 
 def z3_variables(variables: Iterable[SortedVariable]) -> Dict[SortedVariable, Any]:
@@ -679,7 +682,33 @@ PREDICATE_SORTS: Dict[str, Tuple[Sort, ...]] = {
     "Forced": (SudokuSort.CELL, SudokuSort.NUMBER),
     "Excluded": (SudokuSort.CELL, SudokuSort.NUMBER),
     "Possible": (SudokuSort.CELL, SudokuSort.NUMBER),
+    # Predicates of sets of cells and of numbers; see `SET_PREDICATES`.
+    "DigitsWithin": (SudokuSort.CELLSET, SudokuSort.NUMBERSET),
+    "DigitsInclude": (SudokuSort.CELLSET, SudokuSort.NUMBERSET),
+    "SameSize": (SudokuSort.CELLSET, SudokuSort.NUMBERSET),
+    "WithinUnit": (SudokuSort.CELLSET,),
+    "SharesUnit": (SudokuSort.CELLSET, SudokuSort.CELL),
+    "CellIn": (SudokuSort.CELL, SudokuSort.CELLSET),
+    "CellNotIn": (SudokuSort.CELL, SudokuSort.CELLSET),
+    "NumberIn": (SudokuSort.NUMBER, SudokuSort.NUMBERSET),
+    "NumberNotIn": (SudokuSort.NUMBER, SudokuSort.NUMBERSET),
 }
+
+# Predicates of a non-empty set of cells C and a non-empty set of numbers D:
+# DigitsWithin(C, D), that the digits of C's cells all lie in D;
+# DigitsInclude(C, D), that they include every digit of D; SameSize(C, D),
+# that C and D have as many elements; WithinUnit(C), that some unit holds
+# all of C; SharesUnit(C, z), that some unit holds all of C together with
+# the cell z; and membership with its complement.
+# Read on a partial grid as holding in all completions, DigitsWithin says
+# that the candidates of C's cells lie in D, and DigitsInclude that every
+# digit of D is forced into C, which for C within a unit means that its
+# places there all lie in C. Like the Confined predicates, they keep
+# Proposition 1 of the write-up: solved grids are the only objects needed.
+SET_PREDICATES = (
+    "DigitsWithin", "DigitsInclude", "SameSize", "WithinUnit", "SharesUnit",
+    "CellIn", "CellNotIn", "NumberIn", "NumberNotIn",
+)
 
 # Predicates of a partial grid's cell x and a number n: Forced, that every
 # completion has n in x; Excluded, that none does; Possible, that some does,
@@ -783,6 +812,15 @@ PREDICATE_PROPERTIES: Dict[str, Dict[str, Any]] = {
     "Forced": {},
     "Excluded": {"complement": "Possible"},
     "Possible": {"complement": "Excluded"},
+    "DigitsWithin": {},
+    "DigitsInclude": {},
+    "SameSize": {},
+    "WithinUnit": {},
+    "SharesUnit": {},
+    "CellIn": {"complement": "CellNotIn"},
+    "CellNotIn": {"complement": "CellIn"},
+    "NumberIn": {"complement": "NumberNotIn"},
+    "NumberNotIn": {"complement": "NumberIn"},
 }
 
 
@@ -916,6 +954,44 @@ def sudoku_background(
                 [("DifferentCells", (u, v))],
             )
 
+    # Membership and SharesUnit do not tell equal cells or numbers apart; a
+    # member and a non-member differ; a set shares a unit with a cell just
+    # when it lies within a unit, if the cell is a member, and then the
+    # member shares a unit with the other cells there. A cell of C, whose
+    # digits lie within D, holds no digit outside D. These follow from the definitions; how the size of a
+    # set bears on its digits is left to the exploration.
+    cell_sets = [v for v in variables if v.sort is SudokuSort.CELLSET]
+    number_sets = [v for v in variables if v.sort is SudokuSort.NUMBERSET]
+    for c in cell_sets:
+        for u, v in product(cells, repeat=2):
+            for name in ("CellIn", "CellNotIn"):
+                rule([(name, (u, c)), ("SameCell", (u, v))], [(name, (v, c))])
+            rule([("CellIn", (u, c)), ("CellNotIn", (v, c))], [("DifferentCells", (u, v))])
+            rule([("SharesUnit", (c, u)), ("SameCell", (u, v))], [("SharesUnit", (c, v))])
+            rule([("CellIn", (u, c)), ("SharesUnit", (c, v)), ("DifferentCells", (u, v))], [("Peers", (u, v))])
+        for u in cells:
+            rule([("SharesUnit", (c, u))], [("WithinUnit", (c,))])
+            rule([("WithinUnit", (c,)), ("CellIn", (u, c))], [("SharesUnit", (c, u))])
+        for numbers_set in number_sets:
+            for u in cells:
+                for m in numbers:
+                    rule(
+                        [("DigitsWithin", (c, numbers_set)), ("CellIn", (u, c)), ("NumberNotIn", (m, numbers_set))],
+                        [("NotContains", (u, m))],
+                    )
+                    rule(
+                        [("DigitsWithin", (c, numbers_set)), ("CellIn", (u, c)), ("Contains", (u, m))],
+                        [("NumberIn", (m, numbers_set))],
+                    )
+    for numbers_set in number_sets:
+        for m1, m2 in product(numbers, repeat=2):
+            for name in ("NumberIn", "NumberNotIn"):
+                rule([(name, (m1, numbers_set)), ("SameNumber", (m1, m2))], [(name, (m2, numbers_set))])
+            rule([("NumberIn", (m1, numbers_set)), ("NumberNotIn", (m2, numbers_set))], [("DifferentNumbers", (m1, m2))])
+    for c1, c2 in product(cell_sets, repeat=2):
+        for d1, d2 in product(number_sets, repeat=2):
+            rule([("SameSize", (c1, d1)), ("SameSize", (c2, d1)), ("SameSize", (c2, d2))], [("SameSize", (c1, d2))])
+
     # A pair in one row (column) confines n there whichever way round it is
     # named; a pair of one cell puts n there; and equal cells and numbers
     # are interchangeable.
@@ -1035,6 +1111,9 @@ class _SatRuleExpert(Expert):
         self._rows: Dict[SortedVariable, List[int]] = {}
         self._columns: Dict[SortedVariable, List[int]] = {}
         self._digits: Dict[SortedVariable, List[int]] = {}
+        # Membership of each cell (r * n + c) or digit (d - 1) in a set
+        # variable, which must not be empty.
+        self._members: Dict[SortedVariable, List[int]] = {}
         self.variables = tuple(variables)
         for v in self.variables:
             if v.sort is SudokuSort.CELL:
@@ -1042,9 +1121,13 @@ class _SatRuleExpert(Expert):
                 self._columns[v] = [self._defs.var() for _ in range(n)]
                 self._defs.exactly_one(self._rows[v])
                 self._defs.exactly_one(self._columns[v])
-            else:
+            elif v.sort is SudokuSort.NUMBER:
                 self._digits[v] = [self._defs.var() for _ in range(n)]
                 self._defs.exactly_one(self._digits[v])
+            else:
+                size = n * n if v.sort is SudokuSort.CELLSET else n
+                self._members[v] = [self._defs.var() for _ in range(size)]
+                self._defs.pending.append(list(self._members[v]))
 
         self._memo: Dict[Tuple[Any, ...], Any] = {}
 
@@ -1083,13 +1166,57 @@ class _SatRuleExpert(Expert):
         raise NotImplementedError
 
     def _assignment(self, true: Set[int]) -> Tuple[Tuple[str, Any], ...]:
+        n = self.grid_size
         index = lambda literals: next(i for i, v in enumerate(literals) if v in true)
-        return tuple(
-            (v.name, (index(self._rows[v]), index(self._columns[v])))
-            if v.sort is SudokuSort.CELL
-            else (v.name, index(self._digits[v]) + 1)
-            for v in self.variables
-        )
+        members = lambda v: [i for i, lit in enumerate(self._members[v]) if lit in true]
+
+        def value(v: SortedVariable) -> Any:
+            if v.sort is SudokuSort.CELL:
+                return index(self._rows[v]), index(self._columns[v])
+            if v.sort is SudokuSort.NUMBER:
+                return index(self._digits[v]) + 1
+            if v.sort is SudokuSort.CELLSET:
+                return tuple(divmod(i, n) for i in members(v))
+            return tuple(i + 1 for i in members(v))
+
+        return tuple((v.name, value(v)) for v in self.variables)
+
+    def _at_least(self, bits: List[int], limit: int) -> List[int]:
+        """Literals saying that at least k of `bits` are true, for k from 0
+        to `limit`: a unary counter, with each count an equivalence."""
+        d = self._defs
+        true = d.conj(())
+        false = -true
+        counts = [true] + [false] * limit
+        for bit in bits:
+            new = [true]
+            for k in range(1, limit + 1):
+                below, before = counts[k - 1], counts[k]
+                with_bit = false if below == false else bit if below == true else d.conj((below, bit))
+                if before == false or with_bit == true:
+                    new.append(with_bit)
+                elif with_bit == false or before == true:
+                    new.append(before)
+                else:
+                    new.append(d.disj((before, with_bit)))
+            counts = new
+        return counts
+
+    def _units(self) -> List[Tuple[str, int, List[int]]]:
+        """The rows, columns and blocks, each as its kind, its index and the
+        positions r * n + c of its cells."""
+        k, n = self.block_size, self.grid_size
+        rows = [("row", r, [r * n + c for c in range(n)]) for r in range(n)]
+        columns = [("column", c, [r * n + c for r in range(n)]) for c in range(n)]
+        blocks = [
+            ("block", b, [
+                r * n + c
+                for r in range((b // k) * k, (b // k + 1) * k)
+                for c in range((b % k) * k, (b % k + 1) * k)
+            ])
+            for b in range(n)
+        ]
+        return rows + columns + blocks
 
     def _grid(self, true: Set[int], empty: Optional[int] = None) -> Tuple[Tuple[int, ...], ...]:
         """The digits that the grid variables get_var(r, c, d) set true,
@@ -1146,6 +1273,46 @@ class _SatRuleExpert(Expert):
         if name in ("SameNumber", "DifferentNumbers"):
             lit = self._same(self._digits[args[0]], self._digits[args[1]])
             return lit if name == "SameNumber" else -lit
+        if name in ("CellIn", "CellNotIn"):
+            x, cells = args
+            lit = self._same(self._defined(("position", x)), self._members[cells])
+            return lit if name == "CellIn" else -lit
+        if name in ("NumberIn", "NumberNotIn"):
+            m, numbers = args
+            lit = self._same(self._digits[m], self._members[numbers])
+            return lit if name == "NumberIn" else -lit
+        if name == "count":
+            # At least k members, for k up to one more than a unit holds.
+            (v,) = args
+            return self._at_least(self._members[v], n + 1)
+        if name == "SameSize":
+            cells, numbers = args
+            c, m = self._defined(("count", cells)), self._defined(("count", numbers))
+            return d.disj(
+                d.conj((c[size], -c[size + 1], m[size], -m[size + 1]))
+                for size in range(1, n + 1)
+            )
+        if name == "inside":
+            # Whether every member of the cell set lies in unit u.
+            cells, u = args
+            positions = set(self._units()[u][2])
+            return d.conj(-lit for p, lit in enumerate(self._members[cells]) if p not in positions)
+        if name == "WithinUnit":
+            (cells,) = args
+            return d.disj(self._defined(("inside", cells, u)) for u in range(len(self._units())))
+        if name == "SharesUnit":
+            cells, z = args
+            placed = {
+                "row": lambda i: self._rows[z][i],
+                "column": lambda i: self._columns[z][i],
+                "block": lambda i: d.conj((
+                    self._defined(("band", z))[i // k], self._defined(("stack", z))[i % k],
+                )),
+            }
+            return d.disj(
+                d.conj((self._defined(("inside", cells, u)), placed[kind](i)))
+                for u, (kind, i, _) in enumerate(self._units())
+            )
 
         x, y = args
         if name == "SameRow":
@@ -1225,6 +1392,50 @@ class SatSudokuRuleExpert(_SatRuleExpert):
             x, y = args
             lit = self._same(self._defined(("value", x)), self._defined(("value", y)))
             return lit if name == "Same" else -lit
+        if name == "digits_of":
+            # Which digits the cells of the set hold. Counting them is what
+            # the questions about sizes come down to, and SAT solvers prove
+            # such counting arguments (pigeonhole) badly, so two facts that
+            # hold in every solved grid are added: a set has no more digits
+            # than cells, and one within a unit has exactly as many.
+            # Third, a set with as many digits as cells holds no digit
+            # twice.
+            (cells,) = args
+            held = [
+                [d.conj((lit, get_var(p // n, p % n, digit, n))) for p, lit in enumerate(self._members[cells])]
+                for digit in range(1, n + 1)
+            ]
+            digits = [d.disj(cells_holding) for cells_holding in held]
+            at_least_digits = self._at_least(digits, n + 1)
+            at_least_cells = self._defined(("count", cells))
+            within = self._defined(("WithinUnit", cells))
+            for size in range(1, n + 2):
+                d.pending.append([-at_least_digits[size], at_least_cells[size]])
+                d.pending.append([-within, -at_least_cells[size], at_least_digits[size]])
+            as_many = d.conj(
+                d.disj((-at_least_cells[size], at_least_digits[size])) for size in range(1, n + 2)
+            )
+            for cells_holding in held:
+                # At most one of them, by a sequential counter, if as_many.
+                seen = None
+                for h in cells_holding:
+                    if seen is not None:
+                        d.pending.append([-as_many, -seen, -h])
+                        now = d.var()
+                        d.pending.append([-seen, now])
+                        d.pending.append([-h, now])
+                        seen = now
+                    else:
+                        seen = h
+            return digits
+        if name == "DigitsWithin":
+            cells, numbers = args
+            digits = self._defined(("digits_of", cells))
+            return d.conj(d.disj((-lit, member)) for lit, member in zip(digits, self._members[numbers]))
+        if name == "DigitsInclude":
+            cells, numbers = args
+            digits = self._defined(("digits_of", cells))
+            return d.conj(d.disj((-member, lit)) for lit, member in zip(digits, self._members[numbers]))
         if name in CONFINEMENT_PREDICATES:
             # Wherever x is and whatever digit m is, the grid has that digit
             # in none of the cells the predicate keeps it out of.
@@ -1547,7 +1758,7 @@ _GRID_PREDICATES: Dict[str, Set[str]] = {
 # predicate and Z3 all but the confinement ones; on partial grids, SAT lists
 # every solved 4x4 grid.
 _GRID_EXPERTS = {"solved": ("sat", "z3"), "partial": ("sat",)}
-_NO_Z3_ENCODING = CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES
+_NO_Z3_ENCODING = CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES + SET_PREDICATES
 
 
 def check_rule_exploration(
@@ -1557,10 +1768,13 @@ def check_rule_exploration(
     predicates: Iterable[str],
     expert: str = "sat",
     grid: str = "solved",
+    cell_sets: Iterable[str] = (),
+    number_sets: Iterable[str] = (),
 ) -> None:
     """Raise ValueError, saying why, if a rule exploration with these
     settings cannot be run."""
     cells, numbers, predicates = list(cells), list(numbers), list(predicates)
+    cell_sets, number_sets = list(cell_sets), list(number_sets)
     if grid not in _GRID_PREDICATES:
         raise ValueError(f"grid must be one of {sorted(_GRID_PREDICATES)}, not {grid!r}")
     if block_size < 2:
@@ -1574,9 +1788,11 @@ def check_rule_exploration(
             "partial grids need block_size 2: their expert lists every solved "
             "grid, which only 4x4 grids allow"
         )
-    names = cells + numbers
+    names = cells + numbers + cell_sets + number_sets
     if not names:
         raise ValueError("at least one cell or number variable is needed")
+    if expert == "z3" and (cell_sets or number_sets):
+        raise ValueError('set variables have no Z3 encoding; use expert = "sat"')
     if len(set(names)) != len(names):
         raise ValueError(f"variable names must be distinct: {names}")
     if not predicates:
@@ -1590,12 +1806,17 @@ def check_rule_exploration(
     unsupported = [p for p in predicates if p in _NO_Z3_ENCODING]
     if expert == "z3" and unsupported:
         raise ValueError(f"predicates {unsupported} have no Z3 encoding; use expert = \"sat\"")
+    given = {
+        SudokuSort.CELL: ("a cell variable", cells),
+        SudokuSort.NUMBER: ("a number variable", numbers),
+        SudokuSort.CELLSET: ("a cell set variable", cell_sets),
+        SudokuSort.NUMBERSET: ("a number set variable", number_sets),
+    }
     for p in predicates:
-        sorts = set(PREDICATE_SORTS[p])
-        if SudokuSort.CELL in sorts and not cells:
-            raise ValueError(f"predicate {p} needs a cell variable")
-        if SudokuSort.NUMBER in sorts and not numbers:
-            raise ValueError(f"predicate {p} needs a number variable")
+        for sort in set(PREDICATE_SORTS[p]):
+            kind, variables = given[sort]
+            if not variables:
+                raise ValueError(f"predicate {p} needs {kind}")
 
 
 def sudoku_rule_exploration(
@@ -1608,11 +1829,14 @@ def sudoku_rule_exploration(
     geometry_first: bool = False,
     expert: str = "sat",
     grid: str = "solved",
+    cell_sets: Iterable[str] = (),
+    number_sets: Iterable[str] = (),
     on_question: Optional[Callable[[Any], None]] = None,
 ) -> RuleExploration:
     """Build a rule exploration of solved or partial Sudoku grids.
 
-    `cells` and `numbers` name the variables of each sort, and `predicates`
+    `cells`, `numbers`, `cell_sets` and `number_sets` name the variables
+    of each sort, and `predicates`
     the predicates to explore (see `PREDICATE_SORTS`; `PARTIAL_PREDICATES`
     apply to partial grids only, Contains and NotContains to solved ones). With `background`,
     what holds in any grid is given as background (`sudoku_background`);
@@ -1622,10 +1846,13 @@ def sudoku_rule_exploration(
     `check_rule_exploration`.
     """
     cells, numbers, names = list(cells), list(numbers), list(predicates)
-    check_rule_exploration(block_size, cells, numbers, names, expert, grid)
+    cell_sets, number_sets = list(cell_sets), list(number_sets)
+    check_rule_exploration(block_size, cells, numbers, names, expert, grid, cell_sets, number_sets)
     variables = (
         [SortedVariable(name, SudokuSort.CELL) for name in cells]
         + [SortedVariable(name, SudokuSort.NUMBER) for name in numbers]
+        + [SortedVariable(name, SudokuSort.CELLSET) for name in cell_sets]
+        + [SortedVariable(name, SudokuSort.NUMBERSET) for name in number_sets]
     )
     if grid == "partial":
         rule_expert = PartialGridExpert(variables, block_size)

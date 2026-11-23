@@ -24,7 +24,12 @@ Sudoku can be modeled conceptually at three levels:
    - Read on a partial grid as holding in all its completions, these predicates give it exactly the properties its completions share, so the rules found on solved grids are deduction techniques: naked and hidden singles, locked candidates.
    - The shipped configurations pick the variables and predicates: `solved-cell` (one cell, four digits), `solved-row`, `solved-column` and `solved-block` (the four cells of a unit), `solved-units` (three cells, all of the geometry), `solved-full` (four cells, all of the geometry), and `solved-locked` (two cells with the Confined predicates). `solved-full` explores the geometry alone first and adds its rules to the background, so that only rules about the digits are reported.
 
-4. **Partial Grids with `Possible` (SAT-based, 4x4)**:
+4. **Sets of Cells and Digits (SAT-based)**:
+   - Variables of two more sorts, non-empty sets of cells (`C`) and of digits (`D`), with `DigitsWithin(C, D)` (the digits of `C` lie within `D`), `DigitsInclude(C, D)` (they include all of `D`), `SameSize(C, D)`, `WithinUnit(C)` (some unit holds `C`), `SharesUnit(C, z)` (some unit holds `C` and the cell `z`), and membership (`CellIn`, `NumberIn` and their complements). Read on partial grids, `DigitsWithin` bounds the candidates of `C`'s cells and `DigitsInclude` forces the digits of `D` into `C`.
+   - `solved-sets` finds the same seven rules on 4x4 and 9x9 grids. Among them: in a unit, sets of equal size have `DigitsWithin` exactly when they have `DigitsInclude`, and a digit forced into `C` is excluded from the rest of `C`'s unit. The naked and hidden subsets of any size, and locked candidates, follow.
+   - SAT solvers prove counting arguments badly, so the expert adds facts that hold in every solved grid: a set of cells holds no more digits than it has cells, exactly as many if it lies in a unit, and then none twice.
+
+5. **Partial Grids with `Possible` (SAT-based, 4x4)**:
    - `grid = "partial"`: objects are partial 4x4 grids with at least one completion. `Forced(x, n)` holds if every completion has `n` in `x`, `Excluded(x, n)` if none does, and `Possible(x, n)`, the complement of `Excluded`, if some does. With `Possible`, a partial grid is no longer determined by what its completions share.
    - `PartialGridExpert` decides these predicates by listing the 288 solved 4x4 grids.
    - The shipped configurations `partial-cell`, `partial-row`, `partial-units`, `partial-two-digits` and `partial-rows-columns` set `compare_without = ["Possible"]`: the runner explores again without `Possible` and marks `[NEW]` the rules that this theory does not entail classically. Only `partial-row` has one, and `partial-rows-columns` shows that it follows once columns are in the vocabulary.
@@ -54,6 +59,8 @@ grid = "solved"           # "solved", "partial" or "propositional"
 block_size = 2            # 3 for 9x9 grids
 cells = ["w", "x", "y", "z"]
 numbers = ["n"]
+cell_sets = []            # variables for non-empty sets of cells
+number_sets = []          # and of digits
 predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
 background = true         # what holds in any grid
 geometry_first = false    # explore the geometry first and add it to the background
@@ -65,7 +72,7 @@ check_block_size = 3      # solved grids: re-check the rules there; 0 skips
 
 `grid = "propositional"` explores (row, column, digit) attributes and takes only `block_size`, `background` and `symmetries`. Settings that cannot be run, such as a Confined predicate with the Z3 expert or a misspelt key, are reported before anything runs.
 
-The shipped configurations are `solved-pairs`, `solved-triples` and `solved-quads` (the rules of Sudoku), `solved-cell`, `solved-row`, `solved-column`, `solved-block`, `solved-units`, `solved-full` and `solved-locked` (deduction techniques), `partial-cell`, `partial-row`, `partial-units`, `partial-two-digits` and `partial-rows-columns` (partial grids with `Possible`), and `propositional`.
+The shipped configurations are `solved-pairs`, `solved-triples` and `solved-quads` (the rules of Sudoku), `solved-cell`, `solved-row`, `solved-column`, `solved-block`, `solved-units`, `solved-full` and `solved-locked` (deduction techniques), `solved-sets` (sets of cells and digits), `partial-cell`, `partial-row`, `partial-units`, `partial-two-digits` and `partial-rows-columns` (partial grids with `Possible`), and `propositional`.
 
 By default (`classical`), rules that follow from the others in propositional logic, with complements such as `Possible` and `Excluded` total, are dropped; contrapositive forms go first, so that rules concluding about digits are kept.
 

@@ -6,6 +6,8 @@ A configuration says what kind of grid is explored and how:
     block_size = 2
     cells = ["w", "x", "y", "z"]
     numbers = ["n"]
+    cell_sets = []            # variables for non-empty sets of cells
+    number_sets = []          # and of numbers
     predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
     background = true
     geometry_first = false
@@ -40,7 +42,7 @@ from explorations.sudoku.sudoku import (
 CONFIG_DIR = Path(__file__).resolve().parent / "configs"
 
 _RULE_ONLY = (
-    "cells", "numbers", "predicates", "geometry_first", "classical", "compare_without",
+    "cells", "numbers", "cell_sets", "number_sets", "predicates", "geometry_first", "classical", "compare_without",
     "expert", "check_block_size",
 )
 
@@ -51,6 +53,8 @@ class ExplorationConfig:
     block_size: int = 2
     cells: tuple[str, ...] = ()
     numbers: tuple[str, ...] = ()
+    cell_sets: tuple[str, ...] = ()
+    number_sets: tuple[str, ...] = ()
     predicates: tuple[str, ...] = ()
     background: bool = True
     geometry_first: bool = False
@@ -68,6 +72,7 @@ class ExplorationConfig:
         raise ValueError, so that a misspelt key is not silently ignored."""
         types = {
             "grid": str, "block_size": int, "cells": list, "numbers": list,
+            "cell_sets": list, "number_sets": list,
             "predicates": list, "background": bool, "geometry_first": bool,
             "classical": bool, "compare_without": list, "expert": str, "check_block_size": int, "symmetries": bool,
         }
@@ -108,7 +113,8 @@ class ExplorationConfig:
                 )
             return
         check_rule_exploration(
-            self.block_size, self.cells, self.numbers, self.predicates, self.expert, self.grid
+            self.block_size, self.cells, self.numbers, self.predicates, self.expert, self.grid,
+            self.cell_sets, self.number_sets,
         )
         stray = [p for p in self.compare_without if p not in self.predicates]
         if stray:
@@ -122,10 +128,12 @@ class ExplorationConfig:
 
     @property
     def variables(self) -> list[SortedVariable]:
-        """The cell variables, then the number variables."""
+        """The cell variables, the number variables, then the set variables."""
         return (
             [SortedVariable(name, SudokuSort.CELL) for name in self.cells]
             + [SortedVariable(name, SudokuSort.NUMBER) for name in self.numbers]
+            + [SortedVariable(name, SudokuSort.CELLSET) for name in self.cell_sets]
+            + [SortedVariable(name, SudokuSort.NUMBERSET) for name in self.number_sets]
         )
 
     @property
@@ -158,6 +166,8 @@ class ExplorationConfig:
             geometry_first=self.geometry_first,
             expert=self.expert,
             grid=self.grid,
+            cell_sets=self.cell_sets,
+            number_sets=self.number_sets,
             on_question=on_question,
         )
 
