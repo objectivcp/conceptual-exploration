@@ -11,12 +11,12 @@ from explorations.sudoku.explore import expert_label, main
 @pytest.mark.parametrize("name", available_configs())
 def test_shipped_configurations_load(name):
     config = load_config(name)
-    assert config.grid in ("solved", "propositional")
+    assert config.grid in ("solved", "partial", "propositional")
 
 
 def test_shipped_configurations_include_every_kind_of_grid():
     grids = {load_config(name).grid for name in available_configs()}
-    assert grids == {"solved", "propositional"}
+    assert grids == {"solved", "partial", "propositional"}
 
 
 def _config(**settings):
@@ -36,6 +36,8 @@ def _config(**settings):
     ({"grid": "partial", "block_size": 3, "cells": ["x"], "predicates": ["SameRow"]}, "block_size 2"),
     ({"grid": "partial", "cells": ["x"], "predicates": ["SameRow"], "expert": "z3"}, "expert for partial grids"),
     ({"grid": "partial", "cells": ["x"], "predicates": ["SameRow"], "check_block_size": 3}, "cannot be re-checked"),
+    ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "compare_without": ["SameColumn"]}, "not explored"),
+    ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "compare_without": ["SameRow"]}, "no predicate"),
     ({"grid": "solved", "cells": ["x"], "numbers": ["n"], "predicates": ["ConfinedToRowInBlock"], "expert": "z3"}, "no Z3 encoding"),
     ({"grid": "solved", "cells": ["x"], "predicates": ["SameRow"], "check_block_size": 4}, "check_block_size must be"),
     ({"grid": "solved", "cells": ["x"], "predicates": ["Contains"]}, "needs a number variable"),
@@ -115,3 +117,15 @@ def test_the_runner_drops_rules_that_follow_classically(tmp_path):
     assert len(rules) == 2
     assert rules[0] == "Contains(z, n), DifferentCells(y, z), SameRow(y, z) -> NotContains(y, n)"
     assert rules[1].endswith("-> Contains(w, n)   [FAILS FOR BLOCK SIZE 3]")
+
+
+def test_the_runner_marks_what_needs_the_predicates_compared(tmp_path, capsys):
+    """On partial grids, one rule of the four cells of a row needs Possible."""
+    output = tmp_path / "rules.txt"
+    main(["partial-row", "--output", str(output)])
+    rules = output.read_text().split("\n\n", 1)[1].splitlines()
+    assert [rule for rule in rules if rule.endswith("[NEW]")] == [
+        "DifferentCells(x, y), DifferentCells(x, z), DifferentCells(y, z), Forced(x, n), "
+        "Forced(y, n), Forced(z, n), Possible(w, n) -> Forced(w, n)   [NEW]"
+    ]
+    assert "Compared without Possible:   1 of 3 rules new" in capsys.readouterr().out

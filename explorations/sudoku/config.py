@@ -10,6 +10,7 @@ A configuration says what kind of grid is explored and how:
     background = true
     geometry_first = false
     classical = true          # drop rules that follow classically from the others
+    compare_without = []      # mark the rules not entailed when these are left out
     expert = "sat"            # or "z3" for solved grids
     check_block_size = 3      # solved grids: re-check the rules there; 0 skips
 
@@ -38,7 +39,10 @@ from explorations.sudoku.sudoku import (
 
 CONFIG_DIR = Path(__file__).resolve().parent / "configs"
 
-_RULE_ONLY = ("cells", "numbers", "predicates", "geometry_first", "classical", "expert", "check_block_size")
+_RULE_ONLY = (
+    "cells", "numbers", "predicates", "geometry_first", "classical", "compare_without",
+    "expert", "check_block_size",
+)
 
 
 @dataclass(frozen=True)
@@ -51,6 +55,7 @@ class ExplorationConfig:
     background: bool = True
     geometry_first: bool = False
     classical: bool = True
+    compare_without: tuple[str, ...] = ()
     expert: str = "sat"
     # None means the default: 9x9 for rules found on 4x4 grids, 4x4 for rules
     # found on larger ones.
@@ -64,7 +69,7 @@ class ExplorationConfig:
         types = {
             "grid": str, "block_size": int, "cells": list, "numbers": list,
             "predicates": list, "background": bool, "geometry_first": bool,
-            "classical": bool, "expert": str, "check_block_size": int, "symmetries": bool,
+            "classical": bool, "compare_without": list, "expert": str, "check_block_size": int, "symmetries": bool,
         }
         unknown = sorted(set(data) - set(types))
         if unknown:
@@ -105,6 +110,11 @@ class ExplorationConfig:
         check_rule_exploration(
             self.block_size, self.cells, self.numbers, self.predicates, self.expert, self.grid
         )
+        stray = [p for p in self.compare_without if p not in self.predicates]
+        if stray:
+            raise ValueError(f"compare_without names predicates that are not explored: {stray}")
+        if self.compare_without and set(self.predicates) <= set(self.compare_without):
+            raise ValueError("compare_without leaves no predicate to compare with")
         if self.grid == "partial" and self.check_block_size:
             raise ValueError("rules about partial grids cannot be re-checked on another grid size")
         if self.check_block_size is not None and self.check_block_size not in (0, 2, 3):
