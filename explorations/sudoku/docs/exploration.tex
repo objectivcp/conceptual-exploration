@@ -50,7 +50,7 @@
 \maketitle
 
 \begin{abstract}
-This document describes how the \code{conceptual-exploration} library explores Sudoku. It is written for a reader who knows attribute and rule exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is specific to this application. Sudoku is explored in three ways: with first-order rules about \emph{solved} grids, where the exploration rediscovers the constraints of the game; with the same rules extended by a predicate for a digit a cell does not hold and by predicates confining a digit within a unit, which read on \emph{partial} grids are solving techniques such as naked and hidden singles and locked candidates; and propositionally, with cell assignments as attributes. A partial grid has exactly the properties its completions share, so solved grids are the only objects needed; they are decided by a SAT encoding at any block size (or by the Z3 SMT solver), the propositional exploration by a SAT solver of its own. Partial grids become objects of their own with a predicate for a digit that is still \emph{possible}; on $4 \times 4$ grids, in the vocabularies tried, this adds no knowledge beyond the techniques, only shorter statements of it. Printed rules are reduced classically, with complements total, which removes contrapositive forms. The document also describes the features of the general library that the application led to: declared properties of predicates, variable substitutions whose images may be truth values, bit-set closures, and the simplified form in which implications are printed. It closes with a user's guide, the limits met so far, and directions for further work.
+This document describes how the \code{conceptual-exploration} library explores Sudoku. It is written for a reader who knows attribute and rule exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is specific to this application. Sudoku is explored in three ways: with first-order rules about \emph{solved} grids, where the exploration rediscovers the constraints of the game; with the same rules extended by a predicate for a digit a cell does not hold and by predicates confining a digit within a unit, which read on \emph{partial} grids are solving techniques such as naked and hidden singles and locked candidates; and propositionally, with cell assignments as attributes. A partial grid has exactly the properties its completions share, so solved grids are the only objects needed; they are decided by a SAT encoding at any block size (or by the Z3 SMT solver), the propositional exploration by a SAT solver of its own. Partial grids become objects of their own with a predicate for a digit that is still \emph{possible}; on $4 \times 4$ grids, in the vocabularies tried, this adds no knowledge beyond the techniques, only shorter statements of it. With variables for sets of cells and of digits, a few generic predicates yield the naked and hidden subsets of every size on $9 \times 9$ grids. Printed rules are reduced classically, with complements total, which removes contrapositive forms. The document also describes the features of the general library that the application led to: declared properties of predicates, variable substitutions whose images may be truth values, bit-set closures, and the simplified form in which implications are printed. It closes with a user's guide, the limits met so far, and directions for further work.
 \end{abstract}
 
 \tableofcontents
@@ -61,15 +61,16 @@ This document describes how the \code{conceptual-exploration} library explores S
 
 A Sudoku grid of \emph{block size} $k$ has $n = k^2$ rows and $n$ columns. Its $n^2$ cells are partitioned into $n$ \emph{rows}, $n$ \emph{columns} and $n$ \emph{blocks} of $k \times k$ cells; these are the \emph{units}. Rows are grouped into $k$ \emph{bands} of $k$ consecutive rows, and columns into $k$ \emph{stacks}; a block is the intersection of a band and a stack. A \emph{solved grid} assigns a digit from $\{1, \dots, n\}$ to every cell so that every unit contains every digit exactly once; a \emph{partial grid} assigns digits, the \emph{givens}, to some cells, and a \emph{completion} of it is a solved grid that agrees with its givens. The classic puzzle has $k = 3$; most experiments below use $k = 2$ as well, where there are $288$ solved grids and everything can be checked by brute force.
 
-The aim is to find, by conceptual exploration, the implicational knowledge about Sudoku that can be expressed in a given vocabulary, and to see what kinds of knowledge different vocabularies give access to. Four explorations are implemented.
+The aim is to find, by conceptual exploration, the implicational knowledge about Sudoku that can be expressed in a given vocabulary, and to see what kinds of knowledge different vocabularies give access to. Five explorations are implemented.
 \begin{description}
   \item[Solved grids (Section~\ref{sec:solved}).] First-order rules over variables for cells and digits, with predicates such as \emph{same row} and \emph{same value}. Given what holds in any grid whatever its digits, the exploration finds exactly the constraints of the game: two cells holding the same digit in a row, column or block are the same cell.
   \item[Deduction techniques (Section~\ref{sec:techniques}).] The same rules, with a predicate for a digit a cell does not hold and predicates confining a digit within a unit. Read on a partial grid as holding in all its completions, these say that a digit is \emph{forced} in a cell or \emph{excluded} from it, and the rules become solving techniques; the exploration finds naked and hidden singles, elimination and locked candidates, and the X-wing can be stated and confirmed. Partial grids add nothing as objects (Proposition~\ref{prop:reduction}).
+  \item[Sets of cells and digits (Section~\ref{sec:sets}).] Variables for non-empty sets of cells and of digits, with predicates saying that the digits of a set of cells lie within or include a set of digits, comparing sizes, and placing sets in units. The exploration finds a principle of sizes from which the naked and hidden subsets of every size follow, and finds the same rules on $4 \times 4$ and $9 \times 9$ grids.
   \item[Possibility (Section~\ref{sec:possible}).] Partial $4 \times 4$ grids with a predicate for a digit some completion has in a cell. In the vocabularies tried, it adds no knowledge beyond the techniques.
   \item[Propositional (Section~\ref{sec:propositional}).] The attributes are the assignments ``cell $(r,c)$ holds digit $d$'' of the $4 \times 4$ grid, the constraints of the game are background knowledge, and the symmetry group of the grid acts on everything. Four implications are found, each a concrete deduction.
 \end{description}
 
-Section~\ref{sec:library} describes the rule exploration of the general library, in particular the features that this application led to. Sections~\ref{sec:solved}--\ref{sec:propositional} describe the four explorations, their experts and their results. Section~\ref{sec:verification} explains how the results were checked, Section~\ref{sec:guide} how to run explorations, Section~\ref{sec:limits} what does not work (yet), and Section~\ref{sec:future} how the project could develop.
+Section~\ref{sec:library} describes the rule exploration of the general library, in particular the features that this application led to. Sections~\ref{sec:solved}--\ref{sec:propositional} describe the five explorations, their experts and their results. Section~\ref{sec:verification} explains how the results were checked, Section~\ref{sec:guide} how to run explorations, Section~\ref{sec:limits} what does not work (yet), and Section~\ref{sec:future} how the project could develop.
 
 A companion document, \emph{Conceptual Exploration of Equational Theories of Magmas}, describes the general exploration loop in more detail, including its handling of experts that cannot always decide; that part plays no role here, since all Sudoku experts decide every question.
 
@@ -89,7 +90,7 @@ Rule exploration \tocheck{in the sense of the book~\cite{GO16}}{that the book's 
 \]
 and it holds in the class of structures exactly if no structure with an assignment refutes it.
 
-In the library, \code{RuleExploration} takes a list of predicates and of variables and builds the atoms (\code{atoms\_over}): every predicate applied to every tuple of variables of the right length. Variables may be \emph{sorted} (\code{SortedVariable}); a predicate declares the sorts of its argument positions, and only atoms of matching sorts are built. The Sudoku explorations have two sorts, \code{CELL} and \code{NUMBER}. The structure of an object is a solved grid, and the assignment sends cell variables to cells and number variables to digits.
+In the library, \code{RuleExploration} takes a list of predicates and of variables and builds the atoms (\code{atoms\_over}): every predicate applied to every tuple of variables of the right length. Variables may be \emph{sorted} (\code{SortedVariable}); a predicate declares the sorts of its argument positions, and only atoms of matching sorts are built. The Sudoku explorations have four sorts, \code{CELL} and \code{NUMBER} and non-empty sets of each, \code{CELLSET} and \code{NUMBERSET}. The structure of an object is a solved grid, and the assignment sends cell variables to cells, number variables to digits, and set variables to sets of them.
 
 \subsection{Variable maps}\label{sec:maps}
 
@@ -173,9 +174,12 @@ four $\pred{Confined}$ predicates & cell, number & --- (SAT expert only) \\
 $\pred{ConfinedToPairInRow}$, $\pred{ConfinedToPairInColumn}$ & cell, cell, number & --- (SAT expert only) \\
 $\Forced$ & cell, number & --- (partial grids only) \\
 $\Excluded$, $\pred{Possible}$ & cell, number & complemented (partial grids only) \\
+$\pred{DigitsWithin}$, $\pred{DigitsInclude}$, $\pred{SameSize}$ & cell set, number set & --- (SAT expert only) \\
+$\pred{WithinUnit}$, $\pred{SharesUnit}$ & cell set (, cell) & --- (SAT expert only) \\
+$\pred{CellIn}$, $\pred{CellNotIn}$, $\pred{NumberIn}$, $\pred{NumberNotIn}$ & element, set & complemented (SAT expert only) \\
 \bottomrule
 \end{tabularx}
-\caption{The predicates. $^{\ast}$\,$\pred{Same}$ and $\pred{Different}$ are complements of each other. The predicates below the line are explained in Sections~\ref{sec:techniques} and~\ref{sec:possible}.}
+\caption{The predicates. $^{\ast}$\,$\pred{Same}$ and $\pred{Different}$ are complements of each other. The predicates below the line are explained in Sections~\ref{sec:techniques}, \ref{sec:sets} and~\ref{sec:possible}.}
 \label{tab:predicates}
 \end{table}
 
@@ -385,6 +389,83 @@ The X-wing can be stated with five cell variables and the pair predicates:
 Asked directly, the SAT expert confirms it on $9 \times 9$ grids in seconds and refutes, with concrete counterexamples, the variants without $\pred{DifferentRows}(a, c)$, without $\pred{SameColumn}(b, d)$, and without the second pair. An exploration that would discover it, however, does not finish: see Section~\ref{sec:limits}.
 
 %======================================================================
+\section{Sets of cells and digits}\label{sec:sets}
+%======================================================================
+
+\subsection{Vocabulary}
+
+Techniques such as naked and hidden pairs speak about several cells and digits at once. Predicates shaped after one technique, such as the pair predicates of Section~\ref{sec:confined} or ``$x$ holds $a$ or $b$'', give its premise away and cover a single size: pairs, but not triples or quadruples. The explorations of this section instead have variables of two more sorts, \emph{non-empty sets of cells} and \emph{non-empty sets of digits}, and a few generic predicates about them (Table~\ref{tab:sets}). One rule over set variables then covers every size.
+
+\begin{table}[t]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Predicate & On a solved grid & Read on a partial grid \\
+\midrule
+$\pred{DigitsWithin}(C, D)$ & every cell of $C$ holds a digit of $D$ & the candidates of $C$'s cells lie in $D$ \\
+$\pred{DigitsInclude}(C, D)$ & every digit of $D$ is held by a cell of $C$ & every digit of $D$ is forced into $C$; for $C$ within a unit, its places there lie in $C$ \\
+$\pred{SameSize}(C, D)$ & $\lvert C\rvert = \lvert D\rvert$ & the same \\
+$\pred{WithinUnit}(C)$ & some unit holds all of $C$ & the same \\
+$\pred{SharesUnit}(C, z)$ & some unit holds all of $C$ and the cell $z$ & the same \\
+$\pred{CellIn}(x, C)$, $\pred{CellNotIn}(x, C)$ & membership and its complement & the same \\
+$\pred{NumberIn}(n, D)$, $\pred{NumberNotIn}(n, D)$ & membership and its complement & the same \\
+\bottomrule
+\end{tabularx}
+\caption{Predicates of a set of cells $C$ and a set of digits $D$.}
+\label{tab:sets}
+\end{table}
+
+$\pred{DigitsWithin}$ and $\pred{DigitsInclude}$ say that the digits of $C$ lie within $D$ or include $D$: the two inclusions between the set of digits in $C$ and $D$. Read through completions, they hold in a partial grid if they hold in all its completions, so Proposition~\ref{prop:reduction} still applies and solved grids remain the only objects needed. $\pred{DigitsInclude}(C, D)$ mentions no unit, since ``the places of $D$'s digits lie in $C$'' would otherwise require $C$ to contain every occurrence of each digit, one per row; for $C$ within a unit, where each digit occurs once, it says just that.
+
+Sets may have any size. A bound would bring artefacts of its own, rules that hold only because the sets are small, as rules hold on $4 \times 4$ grids only because the grid is small; and the SAT solver chooses a set as freely as a cell, so a larger set does not mean more atoms or questions.
+
+There are two unit predicates rather than three for rows, columns and blocks: the rules found do not need to tell the kinds of unit apart. They are a unary and a binary one because the size principle below needs only that $C$ lies in some unit. With the binary predicate alone, the exploration stated this as $\pred{SharesUnit}(C, z)$ for a cell $z$ occurring nowhere else in the rule: a variable that can only stand for ``some cell''.
+
+\paragraph{Background.} Membership and $\pred{SharesUnit}$ do not tell equal cells or digits apart, and a member and a non-member differ. The unit predicates are linked by
+\[
+  \pred{SharesUnit}(C, z) \to \pred{WithinUnit}(C), \qquad
+  \pred{WithinUnit}(C) \wedge \pred{CellIn}(x, C) \to \pred{SharesUnit}(C, x),
+\]
+and a member of a set sharing a unit with $z$ is a peer of $z$ or $z$ itself. From the definition of $\pred{DigitsWithin}$, a cell of $C$ holds no digit outside $D$:
+\[
+  \pred{DigitsWithin}(C, D) \wedge \pred{CellIn}(x, C) \wedge \pred{NumberNotIn}(n, D) \to \NotContains(x, n),
+\]
+together with its contrapositive form. How the size of a set bears on its digits is left to the exploration.
+
+\subsection{The expert}
+
+\code{SatSudokuRuleExpert} gives each set variable one membership variable per cell ($n^2$ of them) or per digit ($n$), with a clause requiring one of them. Membership atoms are disjunctions over positions, the unit predicates disjunctions over the $3n$ units of conjunctions saying that no member lies outside the unit, and $\pred{SameSize}$ compares unary counters of the members (``at least $k$'', each count an equivalence). For a set of cells $C$, a vector of $n$ variables says which digits its cells hold, and $\pred{DigitsWithin}(C, D)$ and $\pred{DigitsInclude}(C, D)$ are the inclusions between this vector and the members of $D$.
+
+\paragraph{Counting.} The rules about sizes are counting arguments, and SAT solvers prove counting arguments, such as the pigeonhole principle, badly. In a first version, three questions about sizes were still undecided after $200\,000$ conflicts on $9 \times 9$ grids, one of them after more than a minute. The expert therefore adds three facts that hold in every solved grid:
+\begin{enumerate}
+  \item a set of cells holds at most as many digits as it has cells;
+  \item a set within a unit holds exactly as many;
+  \item a set holding as many digits as cells holds no digit twice (an at-most-one constraint per digit, guarded by the equality of the counts).
+\end{enumerate}
+Since every solved grid satisfies them, the models of the encoding, and with them the answers of the expert, stay the same; only the proofs get shorter. With them, the whole exploration of $9 \times 9$ grids takes seconds. A wrong fact of this kind would silently reject genuine counterexamples, so the tests were also run with the second fact stated for every set rather than for sets within a unit: the expert then accepted a false rule, which the test of accepted rules on random grids caught.
+
+\subsection{Results}\label{sec:sets-results}
+
+Configuration \code{solved-sets} has two cells $x$, $z$, a digit $n$, a set of cells $C$ and a set of digits $D$, with the predicates of Table~\ref{tab:sets} together with $\pred{SameCell}$, $\pred{DifferentCells}$, $\Contains$ and $\NotContains$: $18$ atoms and $3$ mappings. On $4 \times 4$ grids it asks $204$ questions in $0.1$\,s, and all $16$ accepted implications hold on $9 \times 9$ grids as well (checked in $2.9$\,s); explored on $9 \times 9$ grids directly, it asks $224$ questions in $3.4$\,s. It finds the same six rules on both sizes, so none of them depends on the size of the grid:
+\begin{quote}\small\raggedright
+[1] \texttt{CellNotIn(z,~C)}, \allowbreak \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{NumberIn(n,~D)}, \allowbreak \texttt{SharesUnit(C,~z)} \;$\to$\; \texttt{NotContains(z,~n)}\\
+{}[2] \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{SameSize(C,~D)} \;$\to$\; \texttt{DigitsWithin(C,~D)}\\
+{}[3] \texttt{DigitsWithin(C,~D)}, \allowbreak \texttt{SameSize(C,~D)}, \allowbreak \texttt{WithinUnit(C)} \;$\to$\; \texttt{DigitsInclude(C,~D)}\\
+{}[4] \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{DigitsWithin(C,~D)}, \allowbreak \texttt{WithinUnit(C)} \;$\to$\; \texttt{SameSize(C,~D)}\\
+{}[5] \texttt{CellIn(x,~C)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{SharesUnit(C,~z)} \;$\to$\; \texttt{NotContains(x,~n)}\\
+{}[6] \texttt{CellIn(x,~C)}, \allowbreak \texttt{CellIn(z,~C)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{SameSize(C,~D)} \;$\to$\; \texttt{NotContains(x,~n)}
+\end{quote}
+Rules [2]--[4] are a principle of sizes: within a unit, a set of cells and a set of digits of the same size satisfy $\pred{DigitsWithin}$ exactly when they satisfy $\pred{DigitsInclude}$, and a set whose digits are exactly $D$ has the size of $D$. [2] needs no unit, since $\lvert D\rvert$ different digits occupy $\lvert D\rvert$ different cells; [3] does, since only within a unit do the cells hold different digits. [1] is elimination over sets: a digit forced into $C$ is excluded from the rest of $C$'s unit. [5] is the elimination of Section~\ref{sec:techniques}, stated through $C$'s unit, and [6] says that a set with as many digits as cells holds none twice.
+
+The techniques follow from these by Horn closure, at any size of the sets:
+\begin{itemize}
+  \item the \emph{naked subset} (pair, triple, \dots): the candidates of $k$ cells of a unit lie within $k$ digits, so those digits are excluded from the rest of the unit; by [3], then [1];
+  \item the \emph{hidden subset}: $k$ digits can go, within a unit, only in $k$ cells, so those cells hold no other digit; by [2], then the background;
+  \item \emph{locked candidates}: [1] with $D$ a single digit and $C$ within a block and a row, its places in the block confined to $C$, excludes it from the rest of the row; likewise for claiming.
+\end{itemize}
+The tests check the naked and hidden subsets on $9 \times 9$ grids, and that neither follows without $\pred{SameSize}$. Of the $16$ accepted implications, the classical reduction keeps these six.
+
+%======================================================================
 \section{Possibility}\label{sec:possible}
 %======================================================================
 
@@ -483,6 +564,7 @@ The experts are programs, and an error in an encoding would silently produce a w
   \item \textbf{Agreement of experts.} The SAT and Z3 experts must produce identical theories on the same vocabulary. The explorations of Section~\ref{sec:techniques} reproduce exactly the rules of the earlier version that explored partial grids with experts of its own (Section~\ref{sec:techniques-results}).
   \item \textbf{Across sizes.} Rules found on $4 \times 4$ grids are re-checked on $9 \times 9$ grids; for the propositional exploration, the accepted implications and all their images under the group are checked against all $288$ grids.
   \item \textbf{The simplified implications.} A theory is rebuilt from them together with the background and the mappings, and must entail and be entailed by the accepted implications.
+  \item \textbf{Sets.} Counterexamples of the set exploration are re-evaluated against their grids on $4 \times 4$ and $9 \times 9$ grids, accepted rules are tested on random $4 \times 4$ grids with random sets (half of them within a unit), the background is checked against the expert on both sizes, and the counting facts of Section~\ref{sec:sets} were mutated to make sure that the tests notice.
   \item \textbf{The classical reduction.} Tests check contraposition and case distinction through complements, guarded clauses, images under the mappings, and that unconfirmed implications are kept; on partial grids, that the rules kept, with the background and the images, entail every simplified rule classically; and that the four cells of a row have exactly the one new rule of Section~\ref{sec:possible-results}.
   \item \textbf{Mutation checks.} The tests were run against deliberately broken code ($\Contains$ and $\NotContains$ swapped in an encoding, wrong confinement cells, a missing update of the transposed rows, a wrong closure condition, an implication allowed to cut itself with its own images) to make sure they fail.
 \end{itemize}
@@ -509,6 +591,8 @@ grid = "solved"           # "solved", "partial" or "propositional"
 block_size = 2            # 3 for 9x9 grids
 cells = ["w", "x", "y", "z"]
 numbers = ["n"]
+cell_sets = []            # variables for non-empty sets of cells
+number_sets = []          # and of digits
 predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
 background = true         # what holds in any grid
 geometry_first = false    # explore the geometry first, add it to the background
@@ -533,6 +617,7 @@ Name & Content \\
 \code{solved-units} & three cells, all geometry: interaction of units \\
 \code{solved-full} & four cells, all geometry, geometry first \\
 \code{solved-locked} & two cells with the Confined predicates: locked candidates \\
+\code{solved-sets} & a set of cells, a set of digits, two cells and a digit: naked and hidden subsets \\
 \code{partial-cell}, \code{-row}, \code{-units}, \code{-two-digits}, \code{-rows-columns} & partial grids with $\pred{Possible}$, compared without it (Table~\ref{tab:possible}) \\
 \code{propositional} & cell assignments of the $4 \times 4$ grid \\
 \bottomrule
@@ -576,7 +661,7 @@ The exploration enumerates every set closed under the current theory, and in mos
 Rules are universal Horn sentences over positive atoms. Many interesting statements are disjunctive or negative, and complements recover only part of them. A consequence is that many printed rules are contrapositive forms of simpler ones, for instance ``if $y$ and $z$ are distinct cells holding the same digit and $w$, $x$ lie in their rows, then $w$ and $x$ are distinct'', a restatement of the fact that a digit is in at most one cell of a unit. They are correct but make long outputs hard to read. The classical reduction (Section~\ref{sec:classical}) removes them from what is printed, $81$ of the four-cell rules leaving 20, but the exploration still asks them.
 
 \paragraph{Variables per unit.}
-A technique that speaks about a whole unit needs a variable for each of its cells unless a predicate quantifies over the unit. For $4 \times 4$ grids four variables suffice and hidden singles appear as rules, which the re-check marks as failing on $9 \times 9$ grids; there they would need nine. Predicates quantifying over a unit coincide with $\Contains$ (Proposition~\ref{prop:onlyplace}), so the techniques that become accessible on $9 \times 9$ grids are those with genuinely new premises, such as confinement.
+A technique that speaks about a whole unit needs a variable for each of its cells unless a predicate quantifies over the unit or a set variable stands for several cells (Section~\ref{sec:sets}). For $4 \times 4$ grids four variables suffice and hidden singles appear as rules, which the re-check marks as failing on $9 \times 9$ grids; there they would need nine. Predicates quantifying over a unit coincide with $\Contains$ (Proposition~\ref{prop:onlyplace}), so the techniques that become accessible on $9 \times 9$ grids are those with genuinely new premises, such as confinement.
 
 \paragraph{Artefacts of small grids.}
 On $4 \times 4$ grids, bands and blocks have two rows, and many rules hold for that reason only (Section~\ref{sec:solved-results}); confinement to a block within a row then even implies confinement to a row within the block, so claiming collapses into pointing. Rules found on $4 \times 4$ grids should be re-checked on $9 \times 9$ grids, which the runner does by default (\code{check\_rules}); of the $84$ implications accepted by \code{solved-full}, $52$ fail there.
@@ -584,6 +669,9 @@ On $4 \times 4$ grids, bands and blocks have two rows, and many rules hold for t
 %======================================================================
 \section{Directions for further development}\label{sec:future}
 %======================================================================
+
+\paragraph{Sets of units.}
+The X-wing generalizes to the swordfish and the jellyfish: when a digit's places in $k$ rows lie within $k$ columns, it is excluded from the rest of those columns, and likewise with rows and columns exchanged. Variables for sets of rows and of columns, with predicates in the manner of Section~\ref{sec:sets}, should give these by a principle of sizes as well, one rule for every $k$, instead of one configuration per technique.
 
 \paragraph{Exploring around a fixed configuration.}
 The X-wing, swordfish and similar techniques have a fixed geometric configuration. Instead of discovering the configuration together with the technique, the expert could be restricted to placements of the variables in that configuration, and only the atoms about digits explored, with the symmetries of the configuration (for the X-wing, exchanging the two rows or the two columns where this preserves the other relations) as mappings in place of substitutions. This would reduce the X-wing vocabulary from about $50$ to about $30$ atoms with strong structure. Configurations could also be enumerated systematically, up to symmetry, for a given number of cells.
