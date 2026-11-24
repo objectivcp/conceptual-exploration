@@ -1,5 +1,9 @@
 """Unit tests for the Magma and Equational Theories Project (ETP) exploration domain."""
 
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from conceptual_exploration import AttributeExploration, Implication
@@ -313,3 +317,10 @@ def test_expert_pool_can_be_seeded_from_a_file(tmp_path):
     counterexample = expert.validate(Implication({commutative}, {idempotent}))
     assert counterexample is not None
     assert counterexample.object.table == magmas[1].table
+
+
+def test_the_runner_imports_without_z3():
+    # Only the z3 expert searches with Z3, so the runner, and with it the
+    # Vampire expert, must not need z3-solver.
+    code = "import sys; sys.modules['z3'] = None; import explorations.equational_theories.explore"
+    subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parent.parent, check=True)
