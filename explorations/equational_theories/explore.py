@@ -355,6 +355,7 @@ def run_magma_exploration(
     expert_kind: str = "z3",
     vampire_prove_time_limit: int = 10,
     vampire_first_time_limit: int | None = None,
+    vampire_workers: int | None = None,
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
@@ -385,9 +386,10 @@ def run_magma_exploration(
     ) + (f", truncated free semigroups of up to {truncation_words} words" if truncation_words > 0 else ""
     ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else ""
     ) + (f", Prover9 {prover9_time_limit} s per law" if prover9_time_limit > 0 else "")
+    cores = "all cores" if vampire_workers is None else f"{vampire_workers} cores"
     first_setting = (
-        "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
-    )
+        "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on {cores} first)"
+    ) + ("" if vampire_workers is None else f", searches on {cores}")
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -517,6 +519,7 @@ def run_magma_exploration(
             background=background + confirmed,
             prove_time_limit=vampire_prove_time_limit,
             first_time_limit=vampire_first_time_limit,
+            workers=vampire_workers,
             model_time_limit=vampire_model_time_limit,
             quick_model_time_limit=vampire_quick_model_time_limit,
             row_time_limit=vampire_row_time_limit,
@@ -795,8 +798,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="S",
         help=(
-            "Seconds Vampire gets, on all cores, for its first attempt at the whole "
-            "question (default: the proving time limit; 3 is enough)."
+            "Seconds Vampire gets, on all cores (--vampire-workers), for its first "
+            "attempt at the whole question (default: the proving time limit; 3 is enough)."
+        ),
+    )
+    parser.add_argument(
+        "--vampire-workers",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Cores the Vampire expert uses: Vampire's in its first attempt, and "
+            "the provers and model searches it runs at once (default: all cores). "
+            "Cached undecided answers are given again only with the same number."
         ),
     )
     parser.add_argument(
@@ -843,7 +857,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Seconds the Mace4 model finder gets in all, alongside Vampire's "
             "second search, for finite counterexamples to the laws of the "
-            "conclusion not proved, sweeping the sizes on all cores, one law "
+            "conclusion not proved, sweeping the sizes on all cores (--vampire-workers), one law "
             "and one size per search (default: 0, Mace4 not used)."
         ),
     )
@@ -1215,6 +1229,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("--etp-refutations needs --etp-graph")
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
+    if args.vampire_workers is not None and args.vampire_workers < 1:
+        parser.error("--vampire-workers must be at least 1")
     results_dir = args.results_dir or (
         RESULTS_PATH / f"{args.equations.stem}_{datetime.now():%Y-%m-%d_%H%M%S}"
     )
@@ -1244,6 +1260,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 expert_kind=args.expert,
                 vampire_prove_time_limit=args.vampire_prove_time_limit,
                 vampire_first_time_limit=args.vampire_first_time_limit,
+                vampire_workers=args.vampire_workers,
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,
