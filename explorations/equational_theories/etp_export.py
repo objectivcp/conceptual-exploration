@@ -216,12 +216,14 @@ class Export:
     def magmas(self, reduce: bool) -> list[tuple[list[list[int]], list[int], list[int]]]:
         """Each finite magma of the context, a table once: its table, the
         laws it satisfies and those it refutes; with `reduce`, only those
-        whose rows are not intersections of the rows of other objects."""
+        whose rows are not intersections of the rows of other objects with
+        tables: a free magma without a finite stand-in is not written, so it
+        does not replace one that is."""
         objects, names, rows = read_context(self.results / "context.cxt")
         tables = object_tables(self.results)
         numbers = [self.number[self.by_key[_context_key(name)]] for name in names]
         masks = {name: sum(1 << j for j, entry in enumerate(row) if entry == "X") for name, row in zip(objects, rows)}
-        kept = irreducible(masks) if reduce else set(objects)
+        kept = irreducible({name: mask for name, mask in masks.items() if name in tables}) if reduce else set(objects)
         found, seen = [], set()
         for name in objects:
             if name in tables and name in kept and (masks[name], json.dumps(tables[name])) not in seen:
@@ -248,8 +250,10 @@ class Export:
                 "refutes": sorted(self.number[self.by_key[k]] for k in magma["negative"]),
             }
             certificate = certificates.get(frozenset(map(str, magma["premise"])))
-            if certificate is not None:
+            if certificate is not None and "rules" in certificate:  # not where completion failed
                 entry["rewrite_system"] = certificate["rules"]
+                if "order" in certificate:  # see completion.ORDERS
+                    entry["termination_order"] = certificate["order"]
                 entry["certified_refutations"] = sorted(self.number[self.by_key[k]] for k in certificate["certified"])
             listed.append(entry)
         return listed
