@@ -2,14 +2,25 @@
 completion.
 
 A rewrite system R certifies that the laws P do not imply a law s = t when
-- every rule of R decreases in the Knuth-Bendix order (all weights 1), so
-  that R terminates;
+- every rule of R decreases in one of the simplification orders of
+  `ORDERS`, so that R terminates: the Knuth-Bendix order with all weights 1,
+  or the lexicographic path order with the two arguments of the operation
+  compared left to right or right to left;
 - every critical pair of R is joinable, so that R is confluent;
 - every law of P is joinable in R, so that R entails P;
 - s and t have different normal forms, so that R does not entail s = t.
 Then P does not imply s = t either. The conditions are checked on R itself,
 however it was found; `complete` finds R by Huet's completion of P, which
 may fail on an equation that the order cannot orient or run out of time.
+The path orders orient some equations that the Knuth-Bendix order cannot,
+such as x * x = (x * y) * z, whose right side has fewer x.
+
+R may also use constants c0, c1, ..., which no order needs to compare with
+a variable. Completion introduces one where the two sides of an equation
+have no variable in common, such as x * (x * x) = y * (y * y): each side then
+takes a single value, the constant, and rewrites to it. The normal forms
+with the constants still form a magma that satisfies P and in which s = t
+fails at distinct elements, so the conditions above suffice.
 
 `CompletionExpert` answers the questions of an exploration this way: it
 completes the premise and decides every law by normal forms, which gives the
@@ -17,10 +28,12 @@ whole row of the free magma over the premise. For one-variable laws,
 completion has so far always succeeded; where it fails, the expert passes the
 question to a fallback expert, such as the Vampire expert.
 
-usage: completion.py RESULTS_DIR --equations FILE [-o CERTIFICATES]
+usage: completion.py RESULTS_DIR --equations FILE [-o CERTIFICATES] [--time-limit SECONDS]
 
 certifies the negative entries of the free magmas in RESULTS_DIR/free_magmas.json,
-which rest on Vampire's saturation, with the laws of FILE.
+which rest on Vampire's saturation, with the laws of FILE. Each premise is
+completed with the orders of `ORDERS` in turn, until one succeeds, each for
+at most SECONDS (10 by default); its certificate records the order.
 """
 
 from __future__ import annotations
@@ -45,13 +58,40 @@ from conceptual_exploration.experts.base import Expert, Undecided
 from explorations.equational_theories.magma import ETP, Equation, Term, Var
 from explorations.equational_theories.vampire import FreeMagma
 
-# A term is a variable name or a pair of terms, and a rule a pair of terms.
+# A term is a variable name, a constant or a pair of terms, and a rule a pair of terms.
 Tree = str | tuple
 Rule = tuple[Tree, Tree]
 
 
 class CompletionFailed(Exception):
     pass
+
+
+class Const(str):
+    """A constant c0, c1, ... that completion introduces: a name, but never
+    equal to a variable, even one of the same name. The constants come below
+    the operation in the path orders and in the order of their numbers."""
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Const) and str.__eq__(self, other)
+
+    def __ne__(self, other: object) -> bool:
+        return not self == other
+
+    __hash__ = str.__hash__
+
+    def rank(self) -> int:
+        return int(self[1:])
+
+
+def _is_var(t: Tree) -> bool:
+    return isinstance(t, str) and not isinstance(t, Const)
+
+
+def _variables(t: Tree) -> set[str]:
+    if isinstance(t, str):
+        return {t} if _is_var(t) else set()
+    return _variables(t[0]) | _variables(t[1])
 
 
 def tree(term: Term) -> Tree:
@@ -71,9 +111,10 @@ def _size(t: Tree) -> int:
 
 
 def _occurrences(t: Tree, counts: dict[str, int]) -> dict[str, int]:
-    if isinstance(t, str):
+    """The number of occurrences of each variable of t."""
+    if _is_var(t):
         counts[t] = counts.get(t, 0) + 1
-    else:
+    elif not isinstance(t, str):
         _occurrences(t[0], counts)
         _occurrences(t[1], counts)
     return counts
@@ -89,11 +130,47 @@ def kbo_greater(s: Tree, t: Tree) -> bool:
     if _size(s) != _size(t):
         return _size(s) > _size(t)
     if isinstance(s, str) or isinstance(t, str):
-        return False
+        return isinstance(s, Const) and isinstance(t, Const) and s.rank() > t.rank()
     return kbo_greater(s[0], t[0]) if s[0] != t[0] else kbo_greater(s[1], t[1])
 
 
+def _contains(t: Tree, v: str) -> bool:
+    return t == v if isinstance(t, str) else _contains(t[0], v) or _contains(t[1], v)
+
+
+def lpo_greater(s: Tree, t: Tree, right_to_left: bool = False) -> bool:
+    """s > t in the lexicographic path order, the two arguments of the
+    operation compared left to right, or right to left."""
+    if s == t or _is_var(s):
+        return False
+    if _is_var(t):
+        return _contains(s, t)
+    if isinstance(s, Const):
+        return isinstance(t, Const) and s.rank() > t.rank()
+    if isinstance(t, Const):
+        return True
+    if any(u == t or lpo_greater(u, t, right_to_left) for u in s):
+        return True
+    if not all(lpo_greater(s, u, right_to_left) for u in t):
+        return False
+    for i in (1, 0) if right_to_left else (0, 1):
+        if s[i] != t[i]:
+            return lpo_greater(s[i], t[i], right_to_left)
+    return False
+
+
+# The orders that rewrite systems may decrease in, by name, in the order
+# the command tries them.
+ORDERS = {
+    "kbo": kbo_greater,
+    "lpo": lambda s, t: lpo_greater(s, t),
+    "lpo-rl": lambda s, t: lpo_greater(s, t, right_to_left=True),
+}
+
+
 def _match(pattern: Tree, t: Tree, sub: dict[str, Tree]) -> dict[str, Tree] | None:
+    if isinstance(pattern, Const):
+        return sub if pattern == t else None
     if isinstance(pattern, str):
         if pattern in sub:
             return sub if sub[pattern] == t else None
@@ -127,10 +204,12 @@ def _unify(a: Tree, b: Tree, sub: dict[str, Tree]) -> dict[str, Tree] | None:
     a, b = _walk(a, sub), _walk(b, sub)
     if a == b:
         return sub
-    if isinstance(a, str):
+    if _is_var(a):
         return None if _occurs(a, b, sub) else {**sub, a: b}
-    if isinstance(b, str):
+    if _is_var(b):
         return _unify(b, a, sub)
+    if isinstance(a, Const) or isinstance(b, Const):
+        return None
     sub = _unify(a[0], b[0], sub)
     return None if sub is None else _unify(a[1], b[1], sub)
 
@@ -162,13 +241,16 @@ def normal_form(t: Tree, rules: Sequence[Rule]) -> Tree:
 
 
 def _renamed(t: Tree, suffix: str) -> Tree:
-    return t + suffix if isinstance(t, str) else (_renamed(t[0], suffix), _renamed(t[1], suffix))
+    if isinstance(t, str):
+        return t + suffix if _is_var(t) else t
+    return _renamed(t[0], suffix), _renamed(t[1], suffix)
 
 
 def _subterms(t: Tree, path: tuple[int, ...] = ()) -> Iterator[tuple[tuple[int, ...], Tree]]:
     """The subterms of t that are not variables, with their positions."""
-    if not isinstance(t, str):
+    if not _is_var(t):
         yield path, t
+    if not isinstance(t, str):
         yield from _subterms(t[0], path + (0,))
         yield from _subterms(t[1], path + (1,))
 
@@ -197,22 +279,27 @@ def _canonical(pair: Rule) -> Rule:
 
     def rename(t: Tree) -> Tree:
         if isinstance(t, str):
-            return names.setdefault(t, f"x{len(names)}")
+            return names.setdefault(t, f"x{len(names)}") if _is_var(t) else t
         return rename(t[0]), rename(t[1])
 
     return rename(pair[0]), rename(pair[1])
 
 
-def complete(equations: Iterable[Rule], max_rules: int = 400, time_limit: float = 10.0) -> list[Rule]:
+def complete(equations: Iterable[Rule], max_rules: int = 400, time_limit: float = 10.0,
+             order: str = "kbo") -> list[Rule]:
     """A convergent rewrite system equivalent to the equations, by Huet's
-    completion with the Knuth-Bendix order.
+    completion with the order of `ORDERS` named `order`. An equation whose
+    sides, neither a variable, have no variable in common gets a new
+    constant, to which both sides rewrite.
 
     Raises CompletionFailed if an equation cannot be oriented, or the limits
     are reached.
     """
+    greater = ORDERS[order]
     start = time.monotonic()
     pending = [_canonical(e) for e in equations]
     rules: list[Rule] = []
+    constants = 0
     while pending:
         if time.monotonic() - start > time_limit:
             raise CompletionFailed("time limit")
@@ -221,10 +308,15 @@ def complete(equations: Iterable[Rule], max_rules: int = 400, time_limit: float 
         a, b = normal_form(a, rules), normal_form(b, rules)
         if a == b:
             continue
-        if kbo_greater(a, b):
+        if greater(a, b):
             rule = _canonical((a, b))
-        elif kbo_greater(b, a):
+        elif greater(b, a):
             rule = _canonical((b, a))
+        elif not (_is_var(a) or _is_var(b) or _variables(a) & _variables(b)):
+            constant = Const(f"c{constants}")
+            constants += 1
+            pending += [(a, constant), (b, constant)]
+            continue
         else:
             raise CompletionFailed(f"cannot orient {show(a)} = {show(b)}")
         kept = []
@@ -243,12 +335,15 @@ def complete(equations: Iterable[Rule], max_rules: int = 400, time_limit: float 
     return rules
 
 
-def certified(rules: Sequence[Rule], premise: Iterable[Rule], laws: Sequence[Rule]) -> list[bool]:
+def certified(rules: Sequence[Rule], premise: Iterable[Rule], laws: Sequence[Rule],
+              order: str = "kbo") -> list[bool]:
     """For each law, whether `rules` certify that the premise does not imply
     it; raises ValueError if `rules` are not a certificate for the premise at
-    all (see the module docstring)."""
+    all (see the module docstring), their rules decreasing in the order of
+    `ORDERS` named `order`."""
+    greater = ORDERS[order]
     for lhs, rhs in rules:
-        if not kbo_greater(lhs, rhs):
+        if not greater(lhs, rhs):
             raise ValueError(f"rule {show(lhs)} -> {show(rhs)} does not decrease")
     for outer in rules:
         for inner in rules:
@@ -330,13 +425,19 @@ class CompletionExpert(Expert[FreeMagma, Equation]):
         return self.fallback.is_conclusive() if self._by_fallback else True
 
 
-def _certify(job: tuple[list[Rule], list[Rule]]) -> tuple[list[Rule] | None, list[bool] | str]:
-    premise, laws = job
-    try:
-        rules = complete(premise)
-    except CompletionFailed as failure:
-        return None, str(failure)
-    return rules, certified(rules, premise, laws)
+def _certify(job: tuple[list[Rule], list[Rule], float]) -> tuple[str, list[Rule] | None, list[bool] | str]:
+    """The first order of `ORDERS` that completes the premise, its rewrite
+    system and verdicts on the laws; or the failures of all of them."""
+    premise, laws, time_limit = job
+    failures = []
+    for order in ORDERS:
+        try:
+            rules = complete(premise, time_limit=time_limit, order=order)
+        except CompletionFailed as failure:
+            failures.append(f"{order}: {failure}")
+            continue
+        return order, rules, certified(rules, premise, laws, order)
+    return "", None, "; ".join(failures)
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -347,6 +448,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--equations", type=Path, required=True, metavar="FILE", help="the laws it explored")
     parser.add_argument("-o", "--output", type=Path, metavar="CERTIFICATES",
                         help="write each premise's rewrite system and the laws it certifies here")
+    parser.add_argument("--time-limit", type=float, default=10.0, metavar="SECONDS",
+                        help="the time for completing a premise with each order (default 10)")
     args = parser.parse_args(argv)
     equations = ETP.load_equations(args.equations)
     ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
@@ -362,10 +465,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         key = tuple(sorted(ident(eq) for eq in premise))
         groups.setdefault(key, set()).update(magma["negative"])
     keys = list(groups)
-    jobs = [([law(by_ident[n]) for n in key], [law(by_ident[n]) for n in sorted(groups[key])]) for key in keys]
+    jobs = [([law(by_ident[n]) for n in key], [law(by_ident[n]) for n in sorted(groups[key])], args.time_limit)
+            for key in keys]
     certificates, total, certified_count, failed = [], 0, 0, 0
     with ProcessPoolExecutor() as pool:
-        for key, (rules, verdicts) in zip(keys, pool.map(_certify, jobs, chunksize=4)):
+        for key, (order, rules, verdicts) in zip(keys, pool.map(_certify, jobs, chunksize=4)):
             negative = sorted(groups[key])
             total += len(negative)
             if rules is None:
@@ -376,6 +480,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             certified_count += len(good)
             certificates.append({
                 "premise": list(key),
+                "order": order,
                 "rules": [f"{show(lhs)} -> {show(rhs)}" for lhs, rhs in rules],
                 "certified": good,
                 "uncertified": [n for n in negative if n not in good],
