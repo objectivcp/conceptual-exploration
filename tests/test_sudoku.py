@@ -2,7 +2,7 @@
 
 import pytest
 
-from conceptual_exploration import AttributeExploration, Implication, reduced_basis
+from conceptual_exploration import AttributeExploration, Implication, simplified_implications
 from conceptual_exploration.exploration.base import ExplorationBase
 from conceptual_exploration.exploration.rule import RuleExploration
 from conceptual_exploration.logic.variable import SortedVariable
@@ -10,7 +10,10 @@ from conceptual_exploration.core.theory import ImplicationTheory
 from conceptual_exploration.logic.atom import Atom, atoms_over
 from explorations.sudoku import (
     CELL_EQUIVALENCES,
-    COMPLETION_PREDICATES,
+    CONFINEMENT_PREDICATES,
+    PAIR_CONFINEMENT_PREDICATES,
+    PARTIAL_PREDICATES,
+    SET_PREDICATES,
     PREDICATE_PROPERTIES,
     PREDICATE_SORTS,
     PRIMITIVE_PREDICATES,
@@ -221,7 +224,7 @@ def test_primitive_exploration_finds_the_sudoku_rules(block_size):
     exploration.run()
     base = exploration.base
 
-    assert sorted(str(rule) for rule in reduced_basis(base)) == [
+    assert sorted(str(rule) for rule in simplified_implications(base)) == [
         "Same(x, y), SameBlock(x, y) -> SameCell(x, y)",
         "Same(x, y), SameColumn(x, y) -> SameCell(x, y)",
         "Same(x, y), SameRow(x, y) -> SameCell(x, y)",
@@ -237,9 +240,10 @@ def test_plain_predicates_match_the_z3_predicates():
     expert = Z3SudokuExpert(block_size=2, variables=variables)
     z3_predicates = get_sudoku_predicates(block_size=2, expert=expert)
     z3_names = {p.name for p in z3_predicates}
-    # The completion predicates quantify over a partial grid's completions,
-    # which only the partial-grid experts evaluate.
-    assert set(PREDICATE_SORTS) - z3_names == set(COMPLETION_PREDICATES)
+    # Only the SAT experts evaluate the confinement and partial-grid predicates.
+    assert set(PREDICATE_SORTS) - z3_names == set(
+        CONFINEMENT_PREDICATES + PAIR_CONFINEMENT_PREDICATES + PARTIAL_PREDICATES + SET_PREDICATES
+    )
     assert sorted(map(_declaration, z3_predicates)) == sorted(
         map(_declaration, sudoku_predicates(z3_names))
     )
@@ -261,15 +265,20 @@ def test_declared_properties_hold_on_a_solved_grid(block_size):
         p = predicates[name]
         if not properties:
             continue
-        domain = cells if p.sorts[0] is SudokuSort.CELL else numbers
-        sort = p.sorts[0]
-        holds = lambda q, a, b: _holds(Atom(q, (u[sort], v[sort])), witness(a, b), block_size)
-        for a in domain:
+        domain = lambda sort: {
+            SudokuSort.CELL: cells,
+            SudokuSort.NUMBER: numbers,
+            SudokuSort.CELLSET: [tuple(cells[:1]), tuple(cells[1:3]), tuple(cells[::5])],
+            SudokuSort.NUMBERSET: [(1,), (1, 2), tuple(numbers)],
+        }[sort]
+        first, second = p.sorts
+        holds = lambda q, a, b: _holds(Atom(q, (u[first], v[second])), witness(a, b), block_size)
+        for a in domain(first):
             if p.reflexive:
                 assert holds(p, a, a), name
             if p.irreflexive:
                 assert not holds(p, a, a), name
-            for b in domain:
+            for b in domain(second):
                 if p.symmetric:
                     assert holds(p, a, b) == holds(p, b, a), name
                 if p.complement:
@@ -309,8 +318,15 @@ def _holds(atom, witness, block_size):
     args = [values[v.name] for v in atom.arguments]
     value = lambda cell: witness.grid[cell[0]][cell[1]]
     name = atom.predicate.name
-    if name == "Contains":
+    # A solved grid is a partial grid that is its own only completion.
+    if name in ("Contains", "Forced", "Possible"):
         return value(args[0]) == args[1]
+    if name in ("NotContains", "Excluded"):
+        return value(args[0]) != args[1]
+    if name in ("CellIn", "NumberIn"):
+        return args[0] in args[1]
+    if name in ("CellNotIn", "NumberNotIn"):
+        return args[0] not in args[1]
     if name == "SameNumber":
         return args[0] == args[1]
     if name == "DifferentNumbers":

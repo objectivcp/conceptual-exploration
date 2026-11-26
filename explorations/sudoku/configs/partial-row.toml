@@ -1,7 +1,11 @@
-# Partial 4x4 grids, the four cells of a row: hidden singles and elimination.
+# Partial 4x4 grids, four cells and the rows, with Possible. One rule is
+# new: with a digit forced in three distinct cells, every cell is decided
+# for it. It is new only because the rows alone cannot say where the fourth
+# place is; see partial-rows-columns.
 grid = "partial"
 block_size = 2
 cells = ["w", "x", "y", "z"]
 numbers = ["n"]
-predicates = ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded"]
+predicates = ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded", "Possible"]
 background = true
+compare_without = ["Possible"]

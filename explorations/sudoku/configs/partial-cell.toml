@@ -1,7 +1,10 @@
-# Partial 4x4 grids, one cell and four digits: naked singles.
+# Partial 4x4 grids, one cell and four digits, with Possible: does knowing
+# which digits remain possible add to the naked single? Rules that need
+# Possible to be stated are marked [NEW].
 grid = "partial"
 block_size = 2
 cells = ["x"]
 numbers = ["n1", "n2", "n3", "n4"]
-predicates = ["Forced", "Excluded", "SameNumber", "DifferentNumbers"]
+predicates = ["Forced", "Excluded", "Possible", "SameNumber", "DifferentNumbers"]
 background = true
+compare_without = ["Possible"]

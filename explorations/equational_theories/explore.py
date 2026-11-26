@@ -291,7 +291,7 @@ def save_results(
         premise = sorted(implication.premise, key=order)
         conclusion = sorted(implication.conclusion, key=order)
         records.append({"premise": ids(premise), "conclusion": ids(conclusion), "source": "rejected"})
-    for implication in base.tentative_objects.values():
+    for implication in base.tentative_implications:
         records.append({"premise": ids(implication.premise), "conclusion": ids(implication.conclusion),
                         "source": "tentatively rejected"})
     conflicts = base.joint_conflicts()
@@ -310,9 +310,9 @@ def save_results(
     if base.rejected_implications:
         extra += ["", "Rejected implications:"]
         extra += [f"  {show(i)}" for i in base.rejected_implications]
-    if base.tentative_objects:
+    if base.tentative_implications:
         extra += ["", "Undecided implications rejected tentatively, still open:"]
-        extra += [f"  {show(i)}" for i in base.tentative_objects.values()]
+        extra += [f"  {show(i)}" for i in base.tentative_implications]
     if conflicts:
         extra += ["", "Unconfirmed implications contradicting an object or a rejected implication only together:"]
         for conflict in conflicts:
@@ -328,6 +328,15 @@ def save_results(
         (directory / "joint_conflicts.json").write_text(
             "[\n" + ",\n".join("  " + json.dumps(r) for r in joint) + "\n]\n", encoding="utf-8"
         )
+
+
+def is_rows_file(path: str | Path) -> bool:
+    """Whether `path` is a JSON file of rows in the format of free_magmas.json,
+    rather than of magma tables."""
+    if Path(path).suffix != ".json":
+        return False
+    entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    return bool(entries) and {"premise", "positive", "negative"} <= set(entries[0]) and "table" not in entries[0]
 
 
 def run_magma_exploration(
@@ -346,6 +355,7 @@ def run_magma_exploration(
     expert_kind: str = "z3",
     vampire_prove_time_limit: int = 10,
     vampire_first_time_limit: int | None = None,
+    vampire_workers: int | None = None,
     vampire_model_time_limit: int = 10,
     vampire_quick_model_time_limit: int = 1,
     vampire_row_time_limit: int | None = None,
@@ -361,6 +371,8 @@ def run_magma_exploration(
     axioms: Sequence[int | str] = (),
     background_files: Sequence[str | Path] = (),
     undecided: str = "accept",
+    answer_cache: str | Path | None = None,
+    seed_confirmed: Sequence[str | Path] = (),
 ):
     if (etp_graph is None) != (etp_equations is None):
         raise ValueError("The ETP graph needs the ETP's equations, and vice versa")
@@ -374,9 +386,10 @@ def run_magma_exploration(
     ) + (f", truncated free semigroups of up to {truncation_words} words" if truncation_words > 0 else ""
     ) + (f", E {eprover_time_limit} s per law" if eprover_time_limit > 0 else ""
     ) + (f", Prover9 {prover9_time_limit} s per law" if prover9_time_limit > 0 else "")
+    cores = "all cores" if vampire_workers is None else f"{vampire_workers} cores"
     first_setting = (
-        "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on all cores first)"
-    )
+        "" if vampire_first_time_limit is None else f" ({vampire_first_time_limit} s on {cores} first)"
+    ) + ("" if vampire_workers is None else f", searches on {cores}")
     print("=" * 70)
     print("EQUATIONAL THEORIES PROJECT (ETP) — MAGMA EXPLORATION")
     print(f"Equations File:           {Path(equations_path).name}")
@@ -396,6 +409,8 @@ def run_magma_exploration(
     else:
         print(f"Expert:                   Z3, sizes {min_search_size}..{max_search_size}, "
               f"{f'{z3_timeout_ms} ms' if z3_timeout_ms else 'unbounded'} per size")
+    if answer_cache is not None and expert_kind in ("vampire", "completion"):
+        print(f"Answer Cache:             {answer_cache}")
     print(f"Question Reporting:       {f'every {report_interval}' if report_interval >= 1 else 'off'}")
     if background_order is None:
         print("Background Implications:  off")
@@ -450,6 +465,32 @@ def run_magma_exploration(
             ]
             background += given
             print(f"\nTook {len(given)} Background Implications from {path}.")
+    # Implications earlier explorations with a prover confirmed, which only
+    # proofs confirm, given to the exploration as confirmed and to the expert
+    # as known, with their proofs.
+    confirmed, seeded_proofs = [], {}
+    for directory in map(Path, seed_confirmed):
+        settings_file = directory / "settings.toml"
+        expert_used = tomllib.loads(settings_file.read_text(encoding="utf-8")).get("expert") if settings_file.exists() else None
+        if expert_used not in ("vampire", "completion"):
+            raise ValueError(f"{directory} was not explored with --expert vampire or completion, "
+                             "so its confirmed implications need not be proved")
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        by_ident = {ident(eq): eq for eq in equations}
+        entries = [e for e in json.loads((directory / "implications.json").read_text(encoding="utf-8"))
+                   if e["source"] == "confirmed"]
+        unknown = {law for e in entries for law in e["premise"] + e["conclusion"]} - set(by_ident)
+        if unknown:
+            raise ValueError(f"Laws of {directory} not among the equations: {sorted(map(str, unknown))[:5]}")
+        given = [Implication([by_ident[law] for law in e["premise"]], [by_ident[law] for law in e["conclusion"]])
+                 for e in entries]
+        confirmed += given
+        if (directory / "proofs.jsonl.xz").exists():
+            with lzma.open(directory / "proofs.jsonl.xz", "rt", encoding="utf-8") as file:
+                for line in file:
+                    seeded_proofs.setdefault(line.strip(), None)
+        print(f"\nTook {len(given)} Confirmed Implications from {directory}.")
+    confirmed = list(dict.fromkeys(confirmed))
     assumed = []
     if axioms:
         # Laws every object satisfies, such as associativity for semigroups.
@@ -475,17 +516,19 @@ def run_magma_exploration(
     def vampire_expert() -> VampireExpert:
         return VampireExpert(
             attributes=equations,
+            background=background + confirmed,
             prove_time_limit=vampire_prove_time_limit,
             first_time_limit=vampire_first_time_limit,
+            workers=vampire_workers,
             model_time_limit=vampire_model_time_limit,
             quick_model_time_limit=vampire_quick_model_time_limit,
-            background=background,
             row_time_limit=vampire_row_time_limit,
             mace4_time_limit=mace4_time_limit,
             model_premise=model_premise,
             truncation_words=truncation_words,
             eprover_time_limit=eprover_time_limit,
             prover9_time_limit=prover9_time_limit,
+            answer_cache=answer_cache,
         )
 
     if expert_kind == "vampire":
@@ -511,15 +554,36 @@ def run_magma_exploration(
         # Each table once, evaluated on every equation, and the refutations of
         # the ETP graph, reduced to the objects whose rows the others do not
         # already account for.
+        # Files of rows, in the format of free_magmas.json, give free magmas
+        # known on some laws only; laws are identified as in that file.
         tables: dict[tuple, Magma] = {}
+        rows: list[PartialObject] = []
+        ident = lambda eq: eq.id if eq.id is not None else eq.name or f"{eq.lhs} = {eq.rhs}"
+        by_ident = {ident(eq): eq for eq in equations}
         for path in seed_context:
+            if is_rows_file(path):
+                entries = json.loads(Path(path).read_text(encoding="utf-8"))
+                unknown = {law for e in entries for law in e["premise"] + e["positive"] + e["negative"]} - set(by_ident)
+                if unknown:
+                    raise ValueError(f"Laws of {path} not among the equations: {sorted(map(str, unknown))[:5]}")
+                for e in entries:
+                    rows.append(PartialObject(
+                        FreeMagma(frozenset(by_ident[law] for law in e["premise"])),
+                        {by_ident[law] for law in e["positive"]},
+                        {by_ident[law] for law in e["negative"]},
+                    ))
+                continue
             for magma in load_magmas(path):
                 tables.setdefault((magma.size, magma.table), magma)
         if axioms:
             kept = {key: m for key, m in tables.items() if all(m.holds(eq) for eq in assumed)}
             print(f"Dropped {len(tables) - len(kept)} of the {len(tables)} magmas to seed, which violate an axiom.")
             tables = kept
-        seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()]
+            kept_rows = [r for r in rows if set(assumed) <= r.positive]
+            if len(kept_rows) < len(rows):
+                print(f"Dropped {len(rows) - len(kept_rows)} of the {len(rows)} rows to seed, not known to satisfy the axioms.")
+            rows = kept_rows
+        seeds = [PartialObject(m, *m.evaluate_all(equations)) for m in tables.values()] + rows
         refutations = graph_refutations(equations, graph, laws) if etp_refutations else []
         reduced = reduce_objects(seeds + refutations)
         kept = sum(isinstance(o.object, EtpRefutation) for o in reduced)
@@ -553,6 +617,7 @@ def run_magma_exploration(
         on_resume=resumed,
         map_unconfirmed=map_unconfirmed,
         undecided=undecided,
+        confirmed=confirmed,
     )
     base, state = result.base, result.state
     state.questions_asked = result.questions_asked
@@ -571,8 +636,10 @@ def run_magma_exploration(
     print(f"Rejected Implications:        {len(base.rejected_implications)}")
     conflicts = base.joint_conflicts()
     print(f"Joint Conflicts:              {len(conflicts)}")
-    if base.tentative_objects:
-        print(f"Rejected Tentatively:         {len(base.tentative_objects)}")
+    if base.tentative_objects or base.settled_tentative:
+        print(f"Rejected Tentatively:         {len(base.tentative_implications)} open")
+        settled = list(base.settled_tentative.values())
+        print(f"  settled later:              {settled.count(True)} proved, {settled.count(False)} refuted")
     print(f"Rounds:                       {rounds}")
     if isinstance(expert, (VampireExpert, CompletionExpert)):
         answers = ", ".join(f"{kind} {count}" for kind, count in expert.answers.most_common())
@@ -602,9 +669,9 @@ def run_magma_exploration(
         print("\nRejected Implications (shown false as a whole, but no law of the conclusion known to fail):")
         for implication in base.rejected_implications:
             print(f"  {implication}")
-    if base.tentative_objects:
+    if base.tentative_implications:
         print("\nUndecided Implications Rejected Tentatively (still open):")
-        for implication in base.tentative_objects.values():
+        for implication in base.tentative_implications:
             print(f"  {implication}")
     if conflicts:
         print("\nUnconfirmed Implications Contradicting an Object or a Rejected Implication Only Together:")
@@ -666,8 +733,9 @@ def run_magma_exploration(
                 f"{background_premise_size or 'any'}"
             )
         prover = expert.fallback if isinstance(expert, CompletionExpert) else expert
+        proofs = [json.loads(line) for line in seeded_proofs] + list(getattr(prover, "proofs", ()))
         save_results(base, equations, Path(results_dir), settings, [i for i, _ in refuted], words=associative,
-                     proofs=getattr(prover, "proofs", ()))
+                     proofs=proofs)
         print(f"\nResults saved to {results_dir}.")
 
     return state, base
@@ -730,8 +798,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="S",
         help=(
-            "Seconds Vampire gets, on all cores, for its first attempt at the whole "
-            "question (default: the proving time limit; 3 is enough)."
+            "Seconds Vampire gets, on all cores (--vampire-workers), for its first "
+            "attempt at the whole question (default: the proving time limit; 3 is enough)."
+        ),
+    )
+    parser.add_argument(
+        "--vampire-workers",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "Cores the Vampire expert uses: Vampire's in its first attempt, and "
+            "the provers and model searches it runs at once (default: all cores). "
+            "Cached undecided answers are given again only with the same number."
         ),
     )
     parser.add_argument(
@@ -778,7 +857,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Seconds the Mace4 model finder gets in all, alongside Vampire's "
             "second search, for finite counterexamples to the laws of the "
-            "conclusion not proved, sweeping the sizes on all cores, one law "
+            "conclusion not proved, sweeping the sizes on all cores (--vampire-workers), one law "
             "and one size per search (default: 0, Mace4 not used)."
         ),
     )
@@ -921,7 +1000,9 @@ def build_parser() -> argparse.ArgumentParser:
             "Files of magmas, as for --seed-magmas, evaluated on every "
             "equation and added to the context before the exploration "
             "starts, after dropping those whose rows the others account "
-            "for. No question that they refute is asked."
+            "for. No question that they refute is asked. A JSON file of "
+            "rows in the format of free_magmas.json (premise, positive, "
+            "negative) adds free magmas known on those laws only."
         ),
     )
     parser.add_argument(
@@ -986,6 +1067,31 @@ def build_parser() -> argparse.ArgumentParser:
             "reject each law of it tentatively, by an object standing for it "
             "that only steers the enumeration, so that larger premises are "
             "asked about."
+        ),
+    )
+    parser.add_argument(
+        "--seed-confirmed",
+        type=Path,
+        nargs="+",
+        default=[],
+        metavar="RESULTS_DIR",
+        help=(
+            "Results of earlier explorations with --expert vampire or "
+            "completion: their confirmed implications, all proved, are "
+            "accepted as confirmed before the exploration starts and given "
+            "to the expert as known, and their proofs join the run's."
+        ),
+    )
+    parser.add_argument(
+        "--answer-cache",
+        metavar="FILE",
+        help=(
+            "A JSON Lines file of the Vampire expert's answers, read at the "
+            "start and added to as the run goes: a proof found earlier "
+            "answers a question with a larger premise and a smaller "
+            "conclusion, and an undecided answer is given again only to the "
+            "same question with the same settings and the same premises for "
+            "the model searches."
         ),
     )
     parser.add_argument(
@@ -1123,6 +1229,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         parser.error("--etp-refutations needs --etp-graph")
     if not 1 <= args.min_search_size <= args.max_search_size:
         parser.error("search sizes must satisfy 1 <= --min-search-size <= --max-search-size")
+    if args.vampire_workers is not None and args.vampire_workers < 1:
+        parser.error("--vampire-workers must be at least 1")
     results_dir = args.results_dir or (
         RESULTS_PATH / f"{args.equations.stem}_{datetime.now():%Y-%m-%d_%H%M%S}"
     )
@@ -1152,6 +1260,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                 expert_kind=args.expert,
                 vampire_prove_time_limit=args.vampire_prove_time_limit,
                 vampire_first_time_limit=args.vampire_first_time_limit,
+                vampire_workers=args.vampire_workers,
                 vampire_model_time_limit=args.vampire_model_time_limit,
                 vampire_quick_model_time_limit=args.vampire_quick_model_time_limit,
                 vampire_row_time_limit=args.vampire_row_time_limit,
@@ -1167,6 +1276,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                 axioms=args.axiom,
                 background_files=args.background,
                 undecided=args.undecided,
+                answer_cache=args.answer_cache,
+                seed_confirmed=args.seed_confirmed,
             )
         finally:
             sys.stdout = sys.__stdout__

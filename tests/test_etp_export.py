@@ -113,3 +113,32 @@ def test_the_magmas_are_written_with_their_facts(tmp_path, monkeypatch):
     assert (tmp_path / "data" / "laws.txt").read_text().splitlines()[2] == "3: x = (x ◇ x)"
     # The one-element magma's row is the intersection of no others: kept.
     assert len(export.magmas(reduce=True)) == 2
+
+
+def test_a_free_magma_does_not_replace_a_magma_with_a_table(tmp_path, monkeypatch):
+    monkeypatch.setattr(etp_export, "EtpLaws", FakeLaws)
+    run = results(tmp_path)
+    # The free magma F1 has no table and comes first with the row of the left-zero magma M3,
+    # which is written: F1 is not.
+    (run / "context.cxt").write_text(
+        "B\n\n4\n5\n\nM1\nM2\nF1\nM3\nEq1\nEq2\nEq3\nEq8\nEq23\nX....\nXXXXX\nX.XXX\nX.XXX\n")
+    (run / "magmas.json").write_text(json.dumps([{"name": "M1", "table": [[0, 0], [0, 0]]},
+                                                 {"name": "M2", "table": [[0]]},
+                                                 {"name": "M3", "table": [[0, 0], [1, 1]]}]))
+    export = etp_export.Export(run, tmp_path / "equations.json", [], tmp_path)
+    assert [table for table, _, _ in export.magmas(reduce=True)] == [[[0, 0], [0, 0]], [[0]], [[0, 0], [1, 1]]]
+
+
+def test_free_magmas_have_rewrite_systems_where_completion_succeeded(tmp_path, monkeypatch):
+    monkeypatch.setattr(etp_export, "EtpLaws", FakeLaws)
+    run = results(tmp_path)
+    (run / "free_magmas.json").write_text(json.dumps([
+        {"name": "F1", "premise": [3], "positive": [1, 3, 8, 23], "negative": [2]},
+        {"name": "F2", "premise": [1], "positive": [1], "negative": [2, 3, 8, 23]}]))
+    (run / "free_magma_certificates.json").write_text(json.dumps([
+        {"premise": [3], "order": "kbo", "rules": ["(x0 * x0) -> x0"], "certified": [2], "uncertified": []},
+        {"premise": [1], "failed": "time limit", "uncertified": [2, 3, 8, 23]}]))
+    listed = etp_export.Export(run, tmp_path / "equations.json", [], tmp_path).free_magmas()
+    assert listed[0]["rewrite_system"] == ["(x0 * x0) -> x0"] and listed[0]["certified_refutations"] == [2]
+    assert listed[0]["termination_order"] == "kbo"
+    assert "rewrite_system" not in listed[1] and listed[1]["refutes"] == [2, 3, 8, 23]

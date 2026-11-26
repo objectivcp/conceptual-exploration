@@ -1,7 +1,7 @@
 """Check the result of an exploration of laws from its evidence.
 
-usage: verify.py RESULTS_DIR CERTIFICATES [--classes] [--equations FILE --axiom LAW ...]
-       verify.py RESULTS_DIR --lean LEAN_DIR ... --etp ETP_DIR [--classes] [--free-rows]
+usage: verify.py RESULTS_DIR CERTIFICATES [--classes] [--free-rows] [--open FILE] [--equations FILE --axiom LAW ...]
+       verify.py RESULTS_DIR --lean LEAN_DIR ... --etp ETP_DIR [--classes] [--free-rows] [--open FILE]
 
 RESULTS_DIR is an exploration's output (settings.toml, context.cxt,
 magmas.json, and free_magma_tables.json if some free magmas have finite
@@ -26,6 +26,20 @@ one JSON object a line, compressed with xz if it ends in .xz. The checks:
    possibly by x = x alone), and certificates
    prove each law of a class equivalent to the class's law. The classes are
    then distinct by 3, two laws with different columns being inequivalent.
+
+With --open FILE, for an exploration that ended with open questions, as one
+that rejected undecided implications tentatively, FILE lists the sets of
+laws closed under the implications that no object settles, each with its
+open laws, as JSON: a list of {"closure": [...], "open": [...]}, laws by ETP
+number or by name. The objects are then read from partial_context.cxt, with
+the laws each certainly satisfies and certainly violates, and check 3
+becomes: every object respects the implications, and the closed sets that
+the objects do not settle (some law outside is violated by no object
+satisfying the set) are exactly the listed ones, with their open laws. So
+every implication between the laws is proved, refuted by an object, or
+listed as open. With --free-rows, the objects without a table, the free
+magmas, are taken as the context has them; their entries rest on other
+evidence (Vampire's saturation, completion.py).
 
 None of this uses the code of the exploration: certificates.py checks the
 proofs, the evaluation here the tables, and the library's verification
@@ -64,7 +78,8 @@ if __package__ in (None, ""):
     _ROOT = Path(__file__).resolve().parent.parent.parent
     sys.path[:0] = [str(_ROOT / "src"), str(_ROOT)]
 
-from conceptual_exploration.verification import VerificationError, check_closure_systems
+from conceptual_exploration.verification import (
+    VerificationError, check_closure_systems, check_open_closure_systems)
 from explorations.equational_theories.certificates import CertificateError, check_certificate, parse_law, word_law
 
 
@@ -219,6 +234,41 @@ def irreducible(rows: dict[str, int]) -> set[str]:
     return names
 
 
+def read_open(path: Path, index: dict[str, int]) -> dict[int, int]:
+    """The open sets of --open FILE, as masks over `index`: each listed closed
+    set, its open laws."""
+    def mask(laws: Sequence[int | str]) -> int:
+        bits = 0
+        for law in laws:
+            name = f"Eq{law}" if isinstance(law, int) else law
+            if name not in index:
+                raise VerificationError(f"{path}: {name} is not a law of the exploration")
+            bits |= 1 << index[name]
+        return bits
+    open_sets: dict[int, int] = {}
+    for entry in json.loads(path.read_text(encoding="utf-8")):
+        premise = mask(entry["closure"])
+        if premise in open_sets:
+            raise VerificationError(f"{path} lists a set twice")
+        open_sets[premise] = mask(entry["open"])
+    return open_sets
+
+
+def row_masks(attributes: Sequence[str], row: str, index: dict[str, int]) -> tuple[int, int]:
+    """The laws a row of a context certainly has and certainly lacks, as
+    masks over `index`."""
+    has = sum(1 << index[a] for a, entry in zip(attributes, row) if entry == "X")
+    lacks = sum(1 << index[a] for a, entry in zip(attributes, row) if entry == ".")
+    return has, lacks
+
+
+def check_open(attributes: int, rows: Sequence[tuple[int, int]], implications: list[tuple[int, int]],
+               open_path: Path, index: dict[str, int]) -> None:
+    count, settled = check_open_closure_systems(attributes, rows, implications, read_open(open_path, index))
+    print(f"Every implication is proved, refuted by an object or listed as open: {count} closed sets, "
+          f"{settled} of them settled by the objects and {count - settled} listed as open", flush=True)
+
+
 def read_certificates(path: Path) -> list[dict]:
     opener = lzma.open if path.suffix == ".xz" else open
     with opener(path, "rt", encoding="utf-8") as file:
@@ -296,10 +346,11 @@ def check_classes(equations: list[dict], laws: dict, attributes: Sequence[str], 
 
 
 def verify(results: Path, certificates_path: Path, classes: bool, root: Path,
-           equations_path: Path | None = None, axiom_ids: Sequence[str] | None = None) -> None:
+           equations_path: Path | None = None, axiom_ids: Sequence[str] | None = None,
+           free_rows: bool = False, open_path: Path | None = None) -> None:
     started = time.monotonic()
     equations, laws, axioms, associative = _setting(results, root, equations_path, axiom_ids)
-    objects, attributes, rows = read_context(results / "context.cxt")
+    objects, attributes, rows = read_context(results / ("partial_context.cxt" if open_path else "context.cxt"))
     if sorted(attributes) != sorted(laws):
         raise VerificationError("The context's attributes are not the laws of the equations file")
     index = {name: i for i, name in enumerate(attributes)}
@@ -310,11 +361,18 @@ def verify(results: Path, certificates_path: Path, classes: bool, root: Path,
 
     # 1. The objects.
     tables = object_tables(results)
-    intents = []
+    full = (1 << len(attributes)) - 1
+    intents, known_rows, free = [], [], 0
     for name, row in zip(objects, rows):
         table = tables.get(name)
         if table is None:
-            raise VerificationError(f"No table for object {name}")
+            if not free_rows:
+                raise VerificationError(f"No table for object {name}")
+            has, lacks = row_masks(attributes, row, index)
+            intents.append(has)
+            known_rows.append((has, lacks))
+            free += 1
+            continue
         if not all(len(r) == len(table) and all(0 <= x < len(table) for x in r) for r in table):
             raise VerificationError(f"{name} is not a table of a magma")
         if associative and not is_associative(table):
@@ -327,7 +385,9 @@ def verify(results: Path, certificates_path: Path, classes: bool, root: Path,
                 raise VerificationError(f"{name}, {attribute}: the context says {entry!r}")
             intent |= value << index[attribute]
         intents.append(intent)
-    print(f"{len(objects)} objects: their rows are right", flush=True)
+        known_rows.append((intent, full & ~intent))
+    print(f"{len(objects) - free} objects: their rows are right"
+          + (f"; {free} free magmas, their rows taken from the context" if free else ""), flush=True)
 
     # 2. The certificates.
     certificates = read_certificates(certificates_path)
@@ -348,8 +408,12 @@ def verify(results: Path, certificates_path: Path, classes: bool, root: Path,
     # 3. The closure systems.
     always = sum(1 << index[a] for a in axioms) | sum(
         1 << index[a] for a in attributes if laws[a][0] == laws[a][1])
-    count = check_closure_systems(len(attributes), intents, implications + [(0, always)], os.cpu_count() or 1)
-    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the context", flush=True)
+    if open_path:
+        check_open(len(attributes), known_rows, implications + [(0, always)], open_path, index)
+    else:
+        count = check_closure_systems(len(attributes), intents, implications + [(0, always)], os.cpu_count() or 1)
+        print(f"The implications are a basis of the theory: {count} closed sets, the intents of the context",
+              flush=True)
 
     # 4. The classes.
     if classes:
@@ -369,7 +433,7 @@ _FACTS = re.compile(r"^@\[equational_result\]\ntheorem «Facts from ([^»]*)» :
 
 def verify_lean(results: Path, lean: Sequence[Path], etp: Path, classes: bool, root: Path,
                 equations_path: Path | None = None, axiom_ids: Sequence[str] | None = None,
-                free_rows: bool = False) -> None:
+                free_rows: bool = False, open_path: Path | None = None) -> None:
     started = time.monotonic()
     equations, laws, axioms, associative = _setting(results, root, equations_path, axiom_ids)
     attributes = list(laws)
@@ -442,19 +506,26 @@ def verify_lean(results: Path, lean: Sequence[Path], etp: Path, classes: bool, r
                 raise VerificationError(f"{name}: the implications do not give its row from its facts")
             intents.append(intent)
     print(f"{len(intents)} magmas: their facts give their rows", flush=True)
+    known_rows = [(intent, full & ~intent) for intent in intents]
     if free_rows:
         # The free magmas, as the context has them: finite magmas need facts.
-        objects, context_attributes, rows = read_context(results / "context.cxt")
+        # With --open, the partial context also has those known on some laws only.
+        objects, context_attributes, rows = read_context(results / ("partial_context.cxt" if open_path else "context.cxt"))
         tables, added = object_tables(results), 0
         for name, row in zip(objects, rows):
             if name not in named and name not in tables:
-                intents.append(sum(1 << index[a] for a, entry in zip(context_attributes, row) if entry == "X"))
+                has, lacks = row_masks(context_attributes, row, index)
+                intents.append(has)
+                known_rows.append((has, lacks))
                 added += 1
         print(f"{added} free magmas, their rows taken from the context", flush=True)
 
-    count = check_closure_systems(len(attributes), intents, with_axioms, os.cpu_count() or 1)
-    print(f"The implications are a basis of the theory: {count} closed sets, the intents of the objects",
-          flush=True)
+    if open_path:
+        check_open(len(attributes), known_rows, with_axioms, open_path, index)
+    else:
+        count = check_closure_systems(len(attributes), intents, with_axioms, os.cpu_count() or 1)
+        print(f"The implications are a basis of the theory: {count} closed sets, the intents of the objects",
+              flush=True)
     if classes:
         if not associative:
             raise VerificationError("Classes are checked for semigroup laws only")
@@ -477,17 +548,20 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--equations", type=Path, default=None, help="the equations file, if no settings.toml")
     parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
     parser.add_argument("--free-rows", action="store_true",
-                        help="with --lean, take the rows of the free magmas without finite stand-ins "
-                             "from the context")
+                        help="take the rows of the free magmas without finite stand-ins from the context")
+    parser.add_argument("--open", type=Path, default=None, metavar="FILE",
+                        help="for an exploration that ended with open questions: the closed sets that no object "
+                             "settles, each with its open laws, to check against the implications and the objects")
     args = parser.parse_args(argv)
     if (args.certificates is None) == (args.lean is None) or (args.lean is None) != (args.etp is None):
         parser.error("give CERTIFICATES, or --lean and --etp")
     try:
         if args.lean is not None:
             verify_lean(args.results, args.lean, args.etp, args.classes, args.root, args.equations, args.axiom,
-                        args.free_rows)
+                        args.free_rows, args.open)
         else:
-            verify(args.results, args.certificates, args.classes, args.root, args.equations, args.axiom)
+            verify(args.results, args.certificates, args.classes, args.root, args.equations, args.axiom,
+                   args.free_rows, args.open)
     except (VerificationError, CertificateError) as error:
         sys.exit(f"verify.py: {error}")
 

@@ -20,6 +20,7 @@ sizes that Vampire's model builder does not reach in time.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -224,6 +225,23 @@ class VampireExpert(MagmaExpert):
     refutations are remembered by the pool and the context. So is each law
     whose model search in step 6 ran out of time, with its premise, so that
     the next question about them skips that search.
+
+    With `answer_cache`, a JSON Lines file, answers are also kept across
+    runs: each proof found, with the question it answered, and each answer
+    that left a question undecided, rejected or not, with the question, the
+    proved part, the proofs of it, the settings and the premises the model
+    searches used. A proof answers any question with a larger premise and a
+    smaller conclusion, whatever the settings. An undecided answer is given
+    again only to the same question, with the same settings (the time
+    limits, the cores and the Vampire version) and the same premises for
+    the model searches: asked otherwise, even equivalently, a question may
+    be easier for the provers. An entry imported from an earlier run's log
+    (import_answers.py), which does not record the premises of the model
+    searches, is given again whatever they are. Laws are identified by their
+    ETP number, or
+    by their text if they have none. Answers given from the cache are
+    counted as "cached proof", "cached unconfirmed" and "cached rejected",
+    and their proofs join `proofs`.
     """
 
     def __init__(
@@ -246,6 +264,7 @@ class VampireExpert(MagmaExpert):
         first_time_limit: int | None = None,
         model_premise: str = "full",
         truncation_words: int = 0,
+        answer_cache: str | Path | None = None,
     ) -> None:
         super().__init__(attributes=attributes, initial_magmas=initial_magmas)
         executable = shutil.which(vampire)
@@ -293,14 +312,109 @@ class VampireExpert(MagmaExpert):
         # those that no truncated free semigroup refuted.
         self._searched: set[tuple[frozenset[Equation], Equation]] = set()
         self._truncated: set[tuple[frozenset[Equation], Equation]] = set()
+        self.answer_cache = None if answer_cache is None else Path(answer_cache)
+        self._fresh = False
+        self._cached_proofs: list[tuple[frozenset, frozenset, list[dict]]] = []
+        self._cached_answers: dict[tuple[frozenset, frozenset], list[dict]] = {}
+        self._replayed: set[str] = set()
+        if self.answer_cache is not None:
+            self._cache_settings = self._settings()
+            if self.answer_cache.exists():
+                for line in self.answer_cache.read_text(encoding="utf-8").splitlines():
+                    entry = json.loads(line)
+                    key = frozenset(entry["premise"]), frozenset(entry["conclusion"])
+                    if entry["answer"] == "proved":
+                        self._cached_proofs.append((*key, entry["proofs"]))
+                    else:
+                        self._cached_answers.setdefault(key, []).append(entry)
+
+    def _settings(self) -> dict:
+        """What an undecided answer depends on besides the question and the
+        premises of the model searches."""
+        version = subprocess.run([self.vampire, "--version"], capture_output=True, text=True).stdout
+        return {
+            "vampire": version.splitlines()[0] if version else None,
+            "workers": self.workers,
+            "first_time_limit": self.first_time_limit,
+            "prove_time_limit": self.prove_time_limit,
+            "quick_model_time_limit": self.quick_model_time_limit,
+            "model_time_limit": self.model_time_limit,
+            "row_time_limit": self.row_time_limit,
+            "mace4_time_limit": self.mace4_time_limit,
+            "eprover_time_limit": self.eprover_time_limit,
+            "prover9_time_limit": self.prover9_time_limit,
+            "model_premise": self.model_premise,
+            "truncation_words": self.truncation_words,
+        }
+
+    @staticmethod
+    def _key(law: Equation) -> int | str:
+        return law.id if law.id else str(law)
+
+    def _keys(self, laws: Iterable[Equation]) -> list[int | str]:
+        return sorted((self._key(law) for law in laws), key=lambda k: (isinstance(k, str), k))
+
+    def _model_premise_keys(self, premise: Iterable[Equation]) -> list[list[int | str]]:
+        return [self._keys(searched) for searched in self._model_premises(frozenset(premise))]
+
+    def _replay(self, proofs: list[dict]) -> None:
+        for proof in proofs:
+            text = json.dumps(proof, sort_keys=True)
+            if text not in self._replayed:
+                self._replayed.add(text)
+                self.proofs.append(proof)
+
+    def _from_cache(self, implication: Implication[Equation]) -> tuple[bool, Undecided | None]:
+        """(True, the answer) if the cache answers `implication`, else
+        (False, None)."""
+        if self.answer_cache is None:
+            return False, None
+        premise, conclusion = frozenset(self._keys(implication.premise)), frozenset(self._keys(implication.conclusion))
+        for proved_premise, proved_conclusion, proofs in self._cached_proofs:
+            if proved_premise <= premise and conclusion <= proved_conclusion:
+                self._replay(proofs)
+                self._prove(implication)
+                self._fresh = False
+                self.last_status = "cached proof"
+                return True, None
+        for entry in self._cached_answers.get((premise, conclusion), []):
+            if entry["settings"] == self._cache_settings and entry.get("model_premises") in (
+                    None, self._model_premise_keys(implication.premise)):
+                proved = set(entry["proved"])
+                answer = Undecided(frozenset(law for law in implication.conclusion if self._key(law) in proved),
+                                   None, entry["answer"] == "rejected")
+                self._replay(entry["proofs"])
+                self._undecided[implication] = answer
+                self.last_status = f"cached {entry['answer']}"
+                return True, answer
+        return False, None
+
+    def _save(self, implication: Implication[Equation], answer, proofs: list[dict]) -> None:
+        """Append the answer just found to the cache, if it is a proof or an
+        undecided answer."""
+        entry = {"premise": self._keys(implication.premise), "conclusion": self._keys(implication.conclusion)}
+        if not self._fresh:
+            return
+        if self.last_status == "proved":
+            entry |= {"answer": "proved", "proofs": proofs}
+        else:
+            entry |= {"answer": "rejected" if answer.rejected else "unconfirmed",
+                      "proved": self._keys(answer.proved), "settings": self._cache_settings,
+                      "model_premises": self._model_premise_keys(implication.premise), "proofs": proofs}
+        with self.answer_cache.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(entry) + "\n")
 
     def validate(
         self,
         implication: Implication[Equation],
         attributes: Iterable[Equation] | None = None,
     ) -> PartialObject | Undecided | None:
+        start = len(self.proofs)
+        self._fresh = False
         result = self._validate(implication, attributes)
         self.answers[self.last_status] += 1
+        if self.answer_cache is not None:
+            self._save(implication, result, self.proofs[start:])
         return result
 
     def _validate(
@@ -329,6 +443,9 @@ class VampireExpert(MagmaExpert):
         if implication in self._undecided:
             answer = self._undecided[implication]
             self.last_status = "rejected" if answer.rejected else "unconfirmed"
+            return answer
+        cached, answer = self._from_cache(implication)
+        if cached:
             return answer
 
         problem = tptp_problem(implication.premise, implication.conclusion)
@@ -388,10 +505,12 @@ class VampireExpert(MagmaExpert):
         self.last_status = "rejected" if rejected else "unconfirmed"
         answer = Undecided(frozenset(implication.conclusion & free.positive), None, rejected)
         self._undecided[implication] = answer
+        self._fresh = True
         return answer
 
     def _prove(self, implication: Implication[Equation]) -> None:
         self.last_status = "proved"
+        self._fresh = True
         self._proved.append(implication)
         self._known.add(implication)
         return None

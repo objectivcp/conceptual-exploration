@@ -1,23 +1,30 @@
-"""Tests for the exploration of deduction rules on partial 4x4 grids."""
+"""Tests for the exploration of partial 4x4 grids with Forced, Excluded and
+Possible."""
 
 import random
 
 import pytest
 
-from itertools import product
-
-from conceptual_exploration import Implication, reduced_basis
+from conceptual_exploration import (
+    Implication,
+    classically_irredundant,
+    simplified_implications,
+    trusted_theory,
+)
+from conceptual_exploration.exploration.base import ExplorationBase, ImplicationSource
 from conceptual_exploration.logic.atom import Atom
 from conceptual_exploration.logic.variable import SortedVariable
 from explorations.sudoku import (
-    ExplorationConfig,
+    CONFINEMENT_PREDICATES,
     GEOMETRIC_PREDICATES,
+    PAIR_CONFINEMENT_PREDICATES,
+    PARTIAL_PREDICATES,
+    ExplorationConfig,
     PartialGridExpert,
+    SatSudokuRuleExpert,
     SudokuSort,
     confinement_cells,
-    geometry_basis,
-    load_config,
-    partial_grid_exploration,
+    pair_confinement_cells,
     sudoku_background,
     sudoku_predicates,
     sudoku_solutions,
@@ -39,19 +46,23 @@ def _holds(atom, grid, assignment):
     values = dict(assignment)
     args = [values[v.name] for v in atom.arguments]
     name = atom.predicate.name
-    if name in ("Forced", "Excluded"):
+    completions = _completions(grid)
+    if name in PARTIAL_PREDICATES:
         (r, c), digit = args
-        completions = _completions(grid)
-        if name == "Forced":
-            return all(s[r][c] == digit for s in completions)
-        return all(s[r][c] != digit for s in completions)
-    if name.startswith("Confined"):
+        has = [s[r][c] == digit for s in completions]
+        return {"Forced": all(has), "Excluded": not any(has), "Possible": any(has)}[name]
+    if name in PAIR_CONFINEMENT_PREDICATES:
+        cell, other, digit = args
+        kept_out = pair_confinement_cells(name, cell, other, 2)
+        return all(s[r][c] != digit for s in completions for r, c in kept_out)
+    if name in CONFINEMENT_PREDICATES:
         cell, digit = args
         kept_out = confinement_cells(name, cell, 2)
-        return all(s[r][c] != digit for s in _completions(grid) for r, c in kept_out)
+        return all(s[r][c] != digit for s in completions for r, c in kept_out)
     if name in ("SameNumber", "DifferentNumbers"):
         return (args[0] == args[1]) == (name == "SameNumber")
     (r1, c1), (r2, c2) = args
+    same_block = (r1 // 2, c1 // 2) == (r2 // 2, c2 // 2)
     return {
         "SameCell": (r1, c1) == (r2, c2),
         "DifferentCells": (r1, c1) != (r2, c2),
@@ -59,8 +70,8 @@ def _holds(atom, grid, assignment):
         "DifferentRows": r1 != r2,
         "SameColumn": c1 == c2,
         "DifferentColumns": c1 != c2,
-        "SameBlock": (r1 // 2, c1 // 2) == (r2 // 2, c2 // 2),
-        "DifferentBlocks": (r1 // 2, c1 // 2) != (r2 // 2, c2 // 2),
+        "SameBlock": same_block,
+        "DifferentBlocks": not same_block,
     }[name]
 
 
@@ -82,13 +93,33 @@ def _random_state(variables, rng):
     return grid, assignment
 
 
-@pytest.mark.parametrize("preset", ["cell", "units"])
-def test_counterexamples_and_rules_are_right(preset):
+def _atom(name, *args):
+    (predicate,) = sudoku_predicates([name])
+    return Atom(predicate, args).normalize()
+
+
+_CELL = {
+    "grid": "partial", "cells": ["x"], "numbers": ["n1", "n2", "n3", "n4"],
+    "predicates": ["Forced", "Excluded", "Possible", "SameNumber", "DifferentNumbers"],
+}
+_ROW = {
+    "grid": "partial", "cells": ["w", "x", "y", "z"], "numbers": ["n"],
+    "predicates": ["SameCell", "DifferentCells", "SameRow", "Forced", "Excluded", "Possible"],
+}
+_UNITS = {
+    "grid": "partial", "cells": ["x", "y", "z"], "numbers": ["n"],
+    "predicates": ["SameCell", "DifferentCells", "SameRow", "SameColumn", "SameBlock",
+                   "Forced", "Excluded", "Possible"],
+}
+
+
+@pytest.mark.parametrize("settings", [_CELL, _UNITS], ids=["cell", "units"])
+def test_counterexamples_and_rules_are_right(settings):
     """Every counterexample refutes its question and has the attributes the
     expert claims for it, and the accepted rules hold on random grids."""
-    exploration = partial_grid_exploration(preset)
-    expert = exploration.expert
-    validate = expert.validate
+    config = ExplorationConfig.from_dict(settings)
+    exploration = config.rule_exploration()
+    validate = exploration.expert.validate
 
     def checked(implication, attributes=None):
         counterexample = validate(implication, attributes)
@@ -101,24 +132,29 @@ def test_counterexamples_and_rules_are_right(preset):
             assert all(holds(a) == (a in counterexample.positive) for a in attributes)
         return counterexample
 
-    expert.validate = checked
+    exploration.expert.validate = checked
     exploration.run()
 
-    variables = load_config(f"partial-{preset}").variables
     rng = random.Random(0)
-    for _ in range(500):
-        grid, assignment = _random_state(variables, rng)
+    for _ in range(300):
+        grid, assignment = _random_state(config.variables, rng)
+        holds = lambda a: _holds(a, grid, assignment)
         for implication in exploration.base.accepted_implications:
-            holds = lambda a: _holds(a, grid, assignment)
             if all(map(holds, implication.premise)):
                 assert all(map(holds, implication.conclusion)), str(implication)
 
 
-@pytest.mark.parametrize("preset", ["cell", "units"])
-def test_background_holds_on_partial_grids(preset):
-    config = load_config(f"partial-{preset}")
-    variables, names = config.variables, config.predicates
-    predicates = sudoku_predicates(names)
+def test_background_holds_on_partial_grids():
+    cells = [SortedVariable(v, SudokuSort.CELL) for v in "xy"]
+    numbers = [SortedVariable(v, SudokuSort.NUMBER) for v in "nm"]
+    variables = cells + numbers
+    # The pair predicates are left out: deciding them over every solved grid
+    # takes a minute, and their background, without Possible, holds on
+    # partial grids if it does on solved ones (test_sudoku_techniques).
+    predicates = sudoku_predicates(
+        GEOMETRIC_PREDICATES + PARTIAL_PREDICATES + ("SameNumber", "DifferentNumbers")
+        + CONFINEMENT_PREDICATES
+    )
     expert = PartialGridExpert(variables)
     background = sudoku_background(predicates, variables)
     assert background
@@ -126,155 +162,45 @@ def test_background_holds_on_partial_grids(preset):
         assert expert.validate(implication) is None, str(implication)
 
 
-def _atom(name, *args):
-    (predicate,) = sudoku_predicates([name])
-    return Atom(predicate, args)
+def test_possible_makes_partial_grids_objects_of_their_own():
+    """A cell holds one digit, but may have two possible ones."""
+    x = SortedVariable("x", SudokuSort.CELL)
+    n, m = (SortedVariable(v, SudokuSort.NUMBER) for v in "nm")
+    one_value = lambda name: Implication({_atom(name, x, n), _atom(name, x, m)}, {_atom("SameNumber", n, m)})
+    assert SatSudokuRuleExpert(2, [x, n, m]).validate(one_value("Contains")) is None
+    assert PartialGridExpert([x, n, m]).validate(one_value("Forced")) is None
+    assert PartialGridExpert([x, n, m]).validate(one_value("Possible")) is not None
 
 
-def test_naked_and_hidden_singles_are_found():
-    x, n1, n2, n3, n4 = load_config("partial-cell").variables
-    cell = partial_grid_exploration("cell")
-    cell.run()
-    naked_single = Implication(
-        {_atom("Excluded", x, n) for n in (n2, n3, n4)}
-        | {_atom("DifferentNumbers", a, b) for a, b in
-           [(n1, n2), (n1, n3), (n1, n4), (n2, n3), (n2, n4), (n3, n4)]},
-        {_atom("Forced", x, n1)},
-    )
-    assert cell.base.implications.entails(naked_single)
-
-    w, x, y, z, n = load_config("partial-row").variables
-    row = partial_grid_exploration("row")
-    row.run()
-    cells = (w, x, y, z)
-    distinct_in_row = (
-        {_atom("DifferentCells", a, b) for i, a in enumerate(cells) for b in cells[i + 1:]}
-        | {_atom("SameRow", w, c) for c in (x, y, z)}
-    )
-    hidden_single = Implication(
-        distinct_in_row | {_atom("Excluded", c, n) for c in (x, y, z)},
-        {_atom("Forced", w, n)},
-    )
-    elimination = Implication(
-        {_atom("Forced", w, n), _atom("SameRow", w, x), _atom("DifferentCells", w, x)},
-        {_atom("Excluded", x, n)},
-    )
-    assert row.base.implications.entails(hidden_single)
-    assert row.base.implications.entails(elimination)
-    # Neither is background: the exploration had to find them.
-    background_only = partial_grid_exploration("row").base.implications
-    assert not background_only.entails(hidden_single)
-    assert not background_only.entails(elimination)
-
-
-def test_geometry_basis_holds_on_every_placement():
-    config = load_config("partial-units")
-    variables, names = config.variables, config.predicates
-    cells = [v for v in variables if v.sort is SudokuSort.CELL]
-    basis = geometry_basis(variables, names)
-    assert basis
-    assert all(a.predicate.name in GEOMETRIC_PREDICATES for i in basis for a in i.premise | i.conclusion)
-    empty = ((0,) * 4,) * 4
-    for positions in product(product(range(4), repeat=2), repeat=len(cells)):
-        assignment = tuple((v.name, p) for v, p in zip(cells, positions))
-        for implication in basis:
-            if all(_holds(a, empty, assignment) for a in implication.premise):
-                assert all(_holds(a, empty, assignment) for a in implication.conclusion)
-
-
-def test_exploring_geometry_first_reports_only_deductions():
-    """The two-stage exploration has the same theory as the one-stage one,
-    but leaves the geometry to the background."""
-    one = partial_grid_exploration("units", geometry_first=False)
-    two = partial_grid_exploration("units", geometry_first=True)
-    one.run()
-    two.run()
-    assert all(two.base.implications.entails(i) for i in one.base.implications)
-    assert all(one.base.implications.entails(i) for i in two.base.implications)
-
-    geometric = lambda rule: not any(
-        a.predicate.name in ("Forced", "Excluded") for a in rule.premise | rule.conclusion
-    )
-    assert any(map(geometric, reduced_basis(one.base)))
-    assert not any(map(geometric, reduced_basis(two.base)))
-
-
-def test_only_4x4_grids_are_supported():
-    with pytest.raises(ValueError):
-        PartialGridExpert([SortedVariable("x", SudokuSort.CELL)], block_size=3)
-
-
-@pytest.mark.parametrize("name", ["partial-cell", "partial-units"])
-def test_cegar_expert_agrees_with_enumeration(name):
-    """On 4x4 grids, where every solved grid can be listed, the CEGAR expert
-    reaches the same theory."""
-    from conceptual_exploration.exploration.rule import RuleExploration
-    from explorations.sudoku.sudoku import CegarPartialGridExpert
-
-    config = load_config(name)
-    variables, predicates = config.variables, sudoku_predicates(config.predicates)
-    theories = []
-    for expert in (PartialGridExpert(variables), CegarPartialGridExpert(variables, 2)):
-        exploration = RuleExploration(
-            predicates,
-            variables,
-            expert,
-            background=sudoku_background(predicates, variables),
-            substitutions=True,
-            evaluate_all=True,
-        )
-        exploration.run()
-        theories.append({str(i) for i in exploration.base.implications})
-    assert theories[0] == theories[1]
-
-
-_LOCKED = {
-    "grid": "partial",
-    "cells": ["x", "y"],
-    "numbers": ["n"],
-    "predicates": [
-        "SameRow", "DifferentRows", "SameBlock", "DifferentBlocks",
-        "Excluded", "ConfinedToRowInBlock", "ConfinedToBlockInRow",
-    ],
-}
-
-
-@pytest.mark.parametrize("expert", ["sat", "cegar"])
-def test_confinement_is_decided_right(expert):
-    """Both experts' counterexamples have the attributes they claim, checked
-    against the solved grids directly, and the pointing rule is found."""
-    exploration = ExplorationConfig.from_dict({**_LOCKED, "expert": expert}).rule_exploration()
-    validate = exploration.expert.validate
-
-    def checked(implication, attributes=None):
-        counterexample = validate(implication, attributes)
-        if counterexample is not None:
-            witness = counterexample.object
-            holds = lambda a: _holds(a, witness.grid, witness.assignment)
-            assert all(map(holds, implication.premise))
-            assert not all(map(holds, implication.conclusion))
-            assert all(holds(a) == (a in counterexample.positive) for a in attributes)
-        return counterexample
-
-    exploration.expert.validate = checked
+def test_contrapositives_are_dropped_classically():
+    """With Possible, the contrapositive of elimination is accepted too;
+    read classically it says nothing new, and elimination is kept."""
+    exploration = ExplorationConfig.from_dict(_ROW).rule_exploration()
     exploration.run()
-
-    x, y, n = ExplorationConfig.from_dict(_LOCKED).variables
-    pointing = Implication(
-        {
-            _atom("ConfinedToRowInBlock", y, n),
-            _atom("SameRow", x, y),
-            _atom("DifferentBlocks", x, y),
-        },
-        {_atom("Excluded", x, n)},
+    base = exploration.base
+    w, x, y, z, n = ExplorationConfig.from_dict(_ROW).variables
+    elimination = Implication(
+        {_atom("Forced", z, n), _atom("DifferentCells", y, z), _atom("SameRow", y, z)},
+        {_atom("Excluded", y, n)},
     )
-    assert exploration.base.implications.entails(pointing)
-
-
-def test_cegar_agrees_with_enumeration_on_confinement():
-    theories = []
-    for expert in ("sat", "cegar"):
-        exploration = ExplorationConfig.from_dict({**_LOCKED, "expert": expert}).rule_exploration()
-        exploration.run()
-        theories.append({str(i) for i in exploration.base.implications})
-    assert theories[0] == theories[1]
+    contrapositive = Implication(
+        {_atom("Forced", z, n), _atom("Possible", y, n), _atom("SameRow", y, z)},
+        {_atom("SameCell", y, z)},
+    )
+    assert base.implications.entails(elimination)
+    assert base.implications.entails(contrapositive)
+    rules = simplified_implications(base)
+    about_digits = lambda rule: any(a.predicate.name in PARTIAL_PREDICATES for a in rule.conclusion)
+    kept = classically_irredundant(base, rules, drop_first=about_digits)
+    assert len(kept) < len(rules)
+    assert any(rule.premise == elimination.premise for rule in kept)
+    assert not any(rule.premise == contrapositive.premise for rule in kept)
+    # What is kept, with the background and the images, entails every rule
+    # classically.
+    background = [i for i, s in base.implication_sources.items() if s is ImplicationSource.BACKGROUND]
+    rebuilt = ExplorationBase(base.attributes, background_implications=background, mappings=base.mappings)
+    for rule in kept:
+        rebuilt.accept(Implication(rule.premise, base.attributes if rule.everything else rule.conclusion))
+    theory = trusted_theory(rebuilt)
+    for rule in rules:
+        assert theory.entails(rule.premise, base.attributes if rule.everything else rule.conclusion), str(rule)

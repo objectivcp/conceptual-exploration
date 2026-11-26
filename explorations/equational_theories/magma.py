@@ -15,9 +15,12 @@ from dataclasses import dataclass
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
-import z3
+# Z3 is imported where the z3 expert searches with it, so that the Vampire
+# expert, which never does, runs without z3-solver.
+if TYPE_CHECKING:
+    import z3
 
 from conceptual_exploration.core.bitset import bits
 from conceptual_exploration.core.context import PartialObject
@@ -680,6 +683,8 @@ class MagmaExpert(Expert[Magma, Equation]):
         # PYTHONHASHSEED. That order reaches Z3 as the order of its constraints, and
         # Z3 may answer a reordered query with a different (equally valid) model, so
         # sorting is what makes a whole exploration reproducible across runs.
+        import z3
+
         premises_list = sorted(premises)
         conclusions_list = sorted(conclusions)
 
@@ -713,6 +718,8 @@ class MagmaExpert(Expert[Magma, Equation]):
         are only `size ** len(vars)` instances), turning validity of the
         implication for this size into a plain SMT satisfiability query.
         """
+        import z3
+
         op = z3.Function(f"magma_op_{size}", z3.IntSort(), z3.IntSort(), z3.IntSort())
         solver = z3.Solver()
         if self.z3_timeout_ms is not None:

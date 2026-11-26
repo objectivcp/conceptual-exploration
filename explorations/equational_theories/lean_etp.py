@@ -279,10 +279,12 @@ def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict],
     laws and as few others as needed for the implications of the
     certificates to give the rest of its row, the cheapest first, as
     satisfied; with `reduce`, only those whose rows are not intersections of
-    the rows of other objects."""
+    the rows of other objects with tables: a free magma without a finite
+    stand-in is not written, so it does not replace one that is."""
     objects, names, rows = read_context(results / "context.cxt")
+    tables = object_tables(results)
     kept = irreducible({name: sum(1 << j for j, entry in enumerate(row) if entry == "X")
-                        for name, row in zip(objects, rows)}) if reduce else set(objects)
+                        for name, row in zip(objects, rows) if name in tables}) if reduce else set(objects)
     index = {name: i for i, name in enumerate(names)}
     by_key = {law_key(attributes[name], False): name for name in names}
     implications = []
@@ -304,7 +306,6 @@ def facts(results: Path, attributes: dict[str, tuple], certificates: list[dict],
                     changed = True
         return mask
 
-    tables = object_tables(results)
     result = []
     seen = set()
     for name, row in zip(objects, rows):
@@ -469,7 +470,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--root", type=Path, default=Path("."),
                         help="the directory the exploration was run from (default: the current one)")
     parser.add_argument("--reduce", action="store_true",
-                        help="only the magmas whose rows are not intersections of the rows of other objects")
+                        help="only the magmas whose rows are not intersections of the rows of other magmas")
     parser.add_argument("--equations", type=Path, default=None, help="the equations file, if no settings.toml")
     parser.add_argument("--axiom", nargs="*", default=None, help="the axioms, if no settings.toml")
     args = parser.parse_args(argv)

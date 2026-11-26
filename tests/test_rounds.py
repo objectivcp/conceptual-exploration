@@ -86,9 +86,13 @@ class Random(Expert):
     hidden, the rest rejected as a whole, or, the first time only, an
     unknown rest; for a true one, a confirmation or an unknown rest."""
 
-    def __init__(self, attributes, swap, implications, seed):
+    def __init__(self, attributes, swap, implications, seed, rejecting=True, proving=False):
+        """With `proving`, an unknown rest comes with a random part of the
+        conclusion that holds proved."""
         import random
         self.rng = random.Random(seed)
+        self.rejecting = rejecting
+        self.proving = proving
         self.attributes = attributes
         rows = [self._close({a for a in attributes if self.rng.random() < 0.3}, implications)
                 for _ in range(12)]
@@ -103,19 +107,26 @@ class Random(Expert):
                 return row
             row |= new
 
+    def _unknown(self, implication):
+        if not self.proving:
+            return Undecided()
+        rows = [row for row in self.world if implication.premise <= row]
+        holds = implication.conclusion.intersection(*rows)
+        return Undecided(frozenset(a for a in sorted(holds) if self.rng.random() < 0.5))
+
     def validate(self, implication, attributes=None):
         for k, row in enumerate(self.world):
             if implication.premise <= row and not implication.conclusion <= row:
                 if implication not in self.hidden and self.rng.random() < 0.3:
                     self.hidden.add(implication)
-                    return Undecided()
-                if self.rng.random() < 0.2:
+                    return self._unknown(implication)
+                if self.rejecting and self.rng.random() < 0.2:
                     return Undecided(rejected=True)
                 failing = self.rng.choice(sorted(implication.conclusion - row))
                 hidden = {a for a in self.attributes if self.rng.random() < 0.4} - implication.premise - {failing}
                 return PartialObject(f"g{k}", set(row) - hidden, set(self.attributes) - row - hidden)
         if self.rng.random() < 0.4:
-            return Undecided()
+            return self._unknown(implication)
         return None
 
 
@@ -171,6 +182,39 @@ def test_no_unconfirmed_implication_contradicts_the_objects_or_the_rejected_ones
                     assert not contradicts([v for v in conflict.implications if v != u], item), seed
 
 
+def test_rejecting_tentatively_leaves_every_implication_proved_refuted_or_open():
+    """Without rejected implications, every implication of the final context,
+    tentative objects included, follows from the trusted implications, in a
+    single round: each true one is proved, or is at least as strong as one
+    rejected tentatively, after settling the tentative objects that later
+    proofs and objects decided."""
+    import random
+    from itertools import combinations as subsets
+
+    attributes = list("abcdefgh")
+    swap = dict(zip("abcdefgh", "efghabcd"))
+    settled = 0
+    for seed in range(40):
+        rng = random.Random(seed)
+        implications = [(set(rng.sample(attributes, 2)), rng.choice(attributes)) for _ in range(5)]
+        implications += [({swap[a] for a in p}, swap[c]) for p, c in implications]
+        expert = Random(attributes, swap, implications, seed, rejecting=False, proving=True)
+        result = explore_in_rounds(attributes, expert, mappings=[lambda a: swap[a]], undecided="reject")
+        base = result.base
+        assert result.rounds == 1 and not base.rejected_implications, seed
+        settled += len(base.settled_tentative)
+        for implication in base.trusted_implications:
+            assert all(implication.conclusion <= row for row in expert.world if implication.premise <= row), seed
+        for implication in base.tentative_implications:
+            assert not base.trusted_implications.entails(implication), seed
+            assert not base.known_false(implication), seed
+        for r in range(len(attributes) + 1):
+            for subset in subsets(attributes, r):
+                mask = base.index.encode(set(subset))
+                assert base.context_closure_mask(mask) == base.trusted_implications.closure_mask(mask), (seed, subset)
+    assert settled > 20
+
+
 DUAL = {"a": "c", "c": "a", "b": "d", "d": "b"}
 # Closed under a -> b and its dual c -> d.
 DUAL_WORLD = [set(), {"b"}, {"d"}, {"b", "d"}, {"a", "b"}, {"c", "d"}, {"a", "b", "d"}, {"b", "c", "d"},
@@ -194,14 +238,13 @@ class Unsure(Expert):
         return None
 
 
-def test_a_tentative_object_contradicted_by_an_image_is_dropped_and_the_exploration_resumed():
-    from conceptual_exploration import Tentative
-
+def test_a_tentative_object_entailed_by_an_image_is_dropped_without_resuming():
     result = explore_in_rounds("abcd", Unsure(), mappings=[lambda x: DUAL[x]], undecided="reject")
     # a -> b, confirmed after c -> d was rejected tentatively, has it as image.
     c_to_d = Implication(frozenset("c"), frozenset("d"))
-    assert result.refuted == [(Tentative(c_to_d), c_to_d)]
-    assert result.rounds == 2
+    assert result.base.settled_tentative == {c_to_d: True}
+    assert result.refuted == []
+    assert result.rounds == 1
     assert not result.base.tentative_objects
     for r in range(5):
         for subset in combinations("abcd", r):

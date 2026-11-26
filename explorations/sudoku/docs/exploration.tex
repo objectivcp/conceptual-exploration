@@ -1,0 +1,839 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyvrb}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\code}[1]{\texttt{#1}}
+% A claim to be confirmed: the text in red, the reason in a footnote.
+\newcommand{\tocheck}[2]{\textcolor{red}{#1}\footnote{\textcolor{red}{To check: #2}}}
+\newcommand{\cl}{\mathcal{L}}
+\newcommand{\pos}{^{+}}
+\newcommand{\nega}{^{-}}
+\newcommand{\pred}[1]{\mathsf{#1}}
+\newcommand{\Contains}{\pred{Contains}}
+\newcommand{\NotContains}{\pred{NotContains}}
+\newcommand{\Forced}{\pred{Forced}}
+\newcommand{\Excluded}{\pred{Excluded}}
+\newcommand{\Bad}{\operatorname{Out}}
+\newcommand{\sat}{\models}
+% A rule as printed by the library: premise atoms, an arrow, conclusion atoms.
+\newcommand{\rul}[2]{\texttt{#1}\;\(\to\)\;\texttt{#2}}
+
+\fvset{fontsize=\small,frame=single,framesep=2mm}
+\setlist{itemsep=2pt,topsep=4pt}
+
+\title{Conceptual Exploration of Sudoku\\[4pt]
+\large Rules of solved grids and deduction techniques: implementation, results, and directions}
+\author{The \code{conceptual-exploration} library}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document describes how the \code{conceptual-exploration} library explores Sudoku. It is written for a reader who knows attribute and rule exploration as presented in Ganter and Obiedkov's \emph{Conceptual Exploration}, and it concentrates on what is specific to this application. Sudoku is explored in three ways: with first-order rules about \emph{solved} grids, where the exploration rediscovers the constraints of the game; with the same rules extended by a predicate for a digit a cell does not hold and by predicates confining a digit within a unit, which read on \emph{partial} grids are solving techniques such as naked and hidden singles and locked candidates; and propositionally, with cell assignments as attributes. A partial grid has exactly the properties its completions share, so solved grids are the only objects needed; they are decided by a SAT encoding at any block size (or by the Z3 SMT solver), the propositional exploration by a SAT solver of its own. Partial grids become objects of their own with a predicate for a digit that is still \emph{possible}; on $4 \times 4$ grids, in the vocabularies tried, this adds no knowledge beyond the techniques, only shorter statements of it. With variables for sets of cells and of digits, a few generic predicates yield the naked and hidden subsets of every size on $9 \times 9$ grids. Printed rules are reduced classically, with complements total, which removes contrapositive forms. The document also describes the features of the general library that the application led to: declared properties of predicates, variable substitutions whose images may be truth values, bit-set closures, and the simplified form in which implications are printed. It closes with a user's guide, the limits met so far, and directions for further work.
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Introduction}
+%======================================================================
+
+A Sudoku grid of \emph{block size} $k$ has $n = k^2$ rows and $n$ columns. Its $n^2$ cells are partitioned into $n$ \emph{rows}, $n$ \emph{columns} and $n$ \emph{blocks} of $k \times k$ cells; these are the \emph{units}. Rows are grouped into $k$ \emph{bands} of $k$ consecutive rows, and columns into $k$ \emph{stacks}; a block is the intersection of a band and a stack. A \emph{solved grid} assigns a digit from $\{1, \dots, n\}$ to every cell so that every unit contains every digit exactly once; a \emph{partial grid} assigns digits, the \emph{givens}, to some cells, and a \emph{completion} of it is a solved grid that agrees with its givens. The classic puzzle has $k = 3$; most experiments below use $k = 2$ as well, where there are $288$ solved grids and everything can be checked by brute force.
+
+The aim is to find, by conceptual exploration, the implicational knowledge about Sudoku that can be expressed in a given vocabulary, and to see what kinds of knowledge different vocabularies give access to. Five explorations are implemented.
+\begin{description}
+  \item[Solved grids (Section~\ref{sec:solved}).] First-order rules over variables for cells and digits, with predicates such as \emph{same row} and \emph{same value}. Given what holds in any grid whatever its digits, the exploration finds exactly the constraints of the game: two cells holding the same digit in a row, column or block are the same cell.
+  \item[Deduction techniques (Section~\ref{sec:techniques}).] The same rules, with a predicate for a digit a cell does not hold and predicates confining a digit within a unit. Read on a partial grid as holding in all its completions, these say that a digit is \emph{forced} in a cell or \emph{excluded} from it, and the rules become solving techniques; the exploration finds naked and hidden singles, elimination and locked candidates, and the X-wing can be stated and confirmed. Partial grids add nothing as objects (Proposition~\ref{prop:reduction}).
+  \item[Sets of cells and digits (Section~\ref{sec:sets}).] Variables for non-empty sets of cells and of digits, with predicates saying that the digits of a set of cells lie within or include a set of digits, comparing sizes, and placing sets in units. The exploration finds a principle of sizes from which the naked and hidden subsets of every size follow, and finds the same rules on $4 \times 4$ and $9 \times 9$ grids.
+  \item[Possibility (Section~\ref{sec:possible}).] Partial $4 \times 4$ grids with a predicate for a digit some completion has in a cell. In the vocabularies tried, it adds no knowledge beyond the techniques.
+  \item[Propositional (Section~\ref{sec:propositional}).] The attributes are the assignments ``cell $(r,c)$ holds digit $d$'' of the $4 \times 4$ grid, the constraints of the game are background knowledge, and the symmetry group of the grid acts on everything. Four implications are found, each a concrete deduction.
+\end{description}
+
+Section~\ref{sec:library} describes the rule exploration of the general library, in particular the features that this application led to. Sections~\ref{sec:solved}--\ref{sec:propositional} describe the five explorations, their experts and their results. Section~\ref{sec:verification} explains how the results were checked, Section~\ref{sec:guide} how to run explorations, Section~\ref{sec:limits} what does not work (yet), and Section~\ref{sec:future} how the project could develop.
+
+A companion document, \emph{Conceptual Exploration of Equational Theories of Magmas}, describes the general exploration loop in more detail, including its handling of experts that cannot always decide; that part plays no role here, since all Sudoku experts decide every question.
+
+%======================================================================
+\section{Rule exploration as implemented}\label{sec:library}
+%======================================================================
+
+\subsection{The exploration loop}
+
+The library implements attribute exploration as in the book: premises are the sets closed under the implications known so far, enumerated with NextClosure in lectic order, and for each premise $P$ the expert is asked about $P \to P^{\diamond} \setminus P$, where $P^{\diamond}$ is the largest set of attributes not refuted by the objects at hand. Objects are partial rows $(g\pos, g\nega)$; in all Sudoku explorations the experts return complete rows (the option \code{evaluate\_all}), so $P^{\diamond}$ is the ordinary closure $P''$ of the context. Background implications and a set $\Phi$ of attribute maps (``mappings'') complete the picture: accepted implications and added objects are added together with their images under every $\varphi \in \Phi$. The companion document describes this loop in full.
+
+\subsection{Atoms, variables and objects}
+
+Rule exploration \tocheck{in the sense of the book~\cite{GO16}}{that the book's formulation (objects as structures with variable assignments, substitutions of variables) matches this description} is attribute exploration in which the attributes are \emph{atoms} $p(v_1, \dots, v_m)$ over a finite set $V$ of variables, and an object is a structure together with an assignment of elements to the variables; it has the atom $p(\vec v)$ if the structure satisfies $p$ for the assigned elements. An implication $P \to C$ between atoms then stands for the universal Horn sentence
+\[
+  \forall \vec v \;\Bigl(\bigwedge P \;\to\; \bigwedge C\Bigr),
+\]
+and it holds in the class of structures exactly if no structure with an assignment refutes it.
+
+In the library, \code{RuleExploration} takes a list of predicates and of variables and builds the atoms (\code{atoms\_over}): every predicate applied to every tuple of variables of the right length. Variables may be \emph{sorted} (\code{SortedVariable}); a predicate declares the sorts of its argument positions, and only atoms of matching sorts are built. The Sudoku explorations have four sorts, \code{CELL} and \code{NUMBER} and non-empty sets of each, \code{CELLSET} and \code{NUMBERSET}. The structure of an object is a solved grid, and the assignment sends cell variables to cells, number variables to digits, and set variables to sets of them.
+
+\subsection{Variable maps}\label{sec:maps}
+
+A map $\sigma \colon V \to V$ that respects sorts induces a map on atoms, $p(v_1, \dots, v_m) \mapsto p(\sigma v_1, \dots, \sigma v_m)$, and a rule that holds remains true when its variables are renamed or identified. \code{RuleExploration} therefore uses as mappings the maps induced by sort-respecting maps $\sigma$: all \emph{permutations} of the variables of each sort, or, with \code{substitutions=True} (always used for Sudoku), all maps of each sort into itself. With $c$ cell and $d$ number variables there are $c^c d^d - 1$ non-identical maps; for three cells and two numbers, $107$.
+
+On objects, a map acts the other way: the image of an object with assignment $\alpha$ under $\sigma$ is the object with assignment $\alpha \circ \sigma$, which has the atom $p(\vec v)$ exactly when the original object has $p(\sigma \vec v)$. This is the copy with row $(\varphi^{-1}(g\pos), \varphi^{-1}(g\nega))$ of the general loop. Non-injective substitutions are what make rule exploration efficient: a rule accepted for distinct variables is at once specialized to every identification of them, and an object is at once available with all of its assignments that identify variables.
+
+The general loop maps each implication and each object once by each mapping, never by a composition; the set of mappings must therefore be closed under composition. The maps of all substitutions (a monoid) and of all permutations (a group) both are.
+
+\paragraph{Images that are truth values.}
+A substitution may send an atom to an atom whose truth is fixed: identifying $x$ and $y$ sends $\pred{SameRow}(x, y)$ to $\pred{SameRow}(x, x)$, which every object has. When predicates declare such facts (next subsection), the library does not keep these atoms as attributes, and a mapping may send an attribute to a truth value (\code{Truth.TRUE} or \code{Truth.FALSE}). The image of an implication is then formed as follows: a true atom drops out of either side; a false atom in the premise makes the image say nothing, and it is skipped; a false atom in the conclusion means that the image of the premise cannot hold, and the image concludes every attribute. In the image of an object, an attribute sent to a truth value takes that value.
+
+\subsection{Declared properties of predicates}\label{sec:properties}
+
+A binary predicate can declare itself \emph{symmetric}, \emph{reflexive} or \emph{irreflexive}, and name its \emph{complement}, a predicate that holds exactly where it does not. These declarations do three things.
+\begin{enumerate}
+  \item \emph{Canonical atoms.} Of the two atoms $p(x, y)$ and $p(y, x)$ of a symmetric predicate, only the one with sorted arguments is an attribute; $p(x, x)$ is not an attribute if $p$ is reflexive or irreflexive. \code{Atom.normalize} maps every atom to its canonical form or to its truth value, and the variable maps normalize their images, so that the image of an attribute is always an attribute or a truth value.
+  \item \emph{Normalized background.} Background implications may be written without regard to canonical forms; \code{normalize\_implication} rewrites them over the canonical atoms (with the same rules for truth values as for images) and drops those that become trivial.
+  \item \emph{Complements.} For each pair of complementary predicates, the background is extended by $\{p(\vec v), q(\vec v)\} \to M$ for every canonical atom, where $M$ is the set of all attributes: no object has both. Horn implications cannot say that one of the two holds; that half of the complement relation remains implicit, but the experts respect it.
+\end{enumerate}
+In the solved-grid exploration with three cell and two number variables, declared properties reduce the attributes from $73$ to $28$.
+
+\subsection{Data structures}\label{sec:datastructures}
+
+Attribute sets, implications and rows are integer bit masks over a numbering of the attributes. Two closures are needed at every step of NextClosure: the closure $\cl(X)$ under the implications, and the context closure $X^{\diamond}$. Both are computed on \emph{transposed} bit sets.
+\begin{itemize}
+  \item For the implications, every attribute $m$ carries a bit mask $\pi_m$ over the implications (by number) whose premise contains $m$, and a mask $\kappa_m$ over those whose conclusion contains it. One round of the closure of $X$ computes the implications that can fire, $F = \overline{\bigcup_{m \notin X} \pi_m}$, and adds every $m \notin X$ with $\kappa_m \cap F \neq \emptyset$; rounds are repeated until nothing is added. Ruling out the implications whose premise has an absent attribute is similar to Wild's closure algorithm; the conclusion masks are added so that what fires is read off per attribute as well. A round costs a big-integer operation per attribute rather than a step per implication.
+  \item For the context, the distinct rows are numbered (objects sharing a row share an entry), and every attribute carries masks of the rows that have it and of those that lack it. The rows containing $X$ are the intersection of the masks of the attributes of $X$, and an attribute belongs to $X^{\diamond}$ unless one of these rows lacks it.
+\end{itemize}
+Accepting an implication adds its images under all mappings before the objects are brought up to date, and complete objects on which no new implication fires are not touched. An implication the theory already contains is recognized in constant time and not mapped again; with mappings closed under composition its images are already present, so a background made of whole orbits is mapped once per orbit.
+
+\subsection{Reading the result}\label{sec:reduced}
+
+Together with the background and the mappings, the accepted implications are complete for the theory, but they are hard to read: conclusions are full closures, and much of what they say follows from other implications. For display, \code{simplified\_implications} rewrites them. It uses only the \emph{trusted} implications: the background, the confirmed implications and their images. All Sudoku experts decide every question, so every accepted implication here is confirmed, and the procedure is as follows (the companion document describes how implications accepted without a decision are treated).
+\begin{enumerate}
+  \item Each premise is cut to the atoms that the rest of it does not entail. This is always safe: the simplified implication is valid and stronger.
+  \item Each conclusion is set to the closure of the premise minus the premise, and then cut, one atom at a time, to the atoms that do not follow from the premise by way of the background, the \emph{other} simplified implications, and the images of all of these under the mappings. The implications are cut one after another against the others as already cut, and the images of an implication are not used in cutting it, since they would let it derive its own conclusion. Atoms are tried for removal weakest first, by the size of their own closure, so that the atom the others follow from is kept ($\pred{SameCell}$ rather than $\pred{SameRow}$ and $\pred{SameColumn}$).
+  \item An implication left with an empty conclusion is redundant and is dropped.
+\end{enumerate}
+Read together with the background and the mappings, the simplified implications entail exactly what the accepted implications do; the tests check this by rebuilding a theory from them. A premise that entails every attribute is printed as concluding \emph{everything}, unless what is left of its conclusion entails every attribute on its own. It is not printed as $\bot$: no object has such a premise unless it has every attribute, which need not be impossible. The result is non-redundant rather than maximally readable: content that appears only after a substitution making a premise atom true is not repeated separately.
+
+In a rule exploration, each simplified implication stands for a universal Horn sentence, a first-order rule; Sections~\ref{sec:solved} and~\ref{sec:techniques} therefore call them rules. In the propositional exploration of Section~\ref{sec:propositional} they are implications.
+
+\subsection{Classical reduction}\label{sec:classical}
+
+The simplified implications are non-redundant under Horn closure, which uses declared complements only to rule out that both hold. Read as propositional clauses, with complements total (of two complementary atoms on the same arguments, every object has exactly one), implications entail more: contrapositives and case distinctions. A simplified implication may then follow from the others. On the partial grids of Section~\ref{sec:possible}, for instance,
+\begin{quote}\small\raggedright
+\texttt{Forced(z,~n)}, \allowbreak \texttt{Possible(y,~n)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(y,~z)}
+\end{quote}
+is the contrapositive of elimination, \texttt{Forced(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{Excluded(y,~n)}, since $\pred{Possible}$ is the complement of $\pred{Excluded}$ and $\pred{SameCell}$ that of $\pred{DifferentCells}$; Horn closure derives neither from the other.
+
+\code{classically\_irredundant} drops such implications. The background and each simplified implication, with their images under the mappings, become clauses, one per conclusion attribute; an implication concluding everything becomes one clause through an auxiliary variable that implies every attribute, not a contradiction. For each pair of complementary atoms met, the clauses $a \vee a'$ and $\neg a \vee \neg a'$ are added. The implications are tried one at a time and one is dropped if a SAT solver shows that it follows from the background and the implications still kept; the clauses of each implication are guarded by an activation literal, so that one incremental solver serves every test. Unconfirmed implications are neither dropped nor used. The SAT solver is that of \code{python-sat}, imported only here, so that the library itself keeps no dependencies.
+
+Which of two classically equivalent implications is kept depends on the order in which they are tried. The Sudoku explorations try first the rules concluding only where cells are or which numbers are equal, mostly contrapositive forms, so that the rules concluding about digits are kept (\code{classical\_rules}). What is kept entails classically everything the simplified implications do, but no longer necessarily by Horn closure; the exploration itself still reasons with Horn closure and asks the contrapositive forms. The Sudoku runner prints the reduced rules by default (\code{classical = false} prints them all). In the four-cell exploration of solved grids, 20 of 81 rules remain (Appendix~\ref{app:full}): the three eliminations, and $17$ rules that hold on $4 \times 4$ grids only, among them the three hidden singles.
+
+\code{trusted\_theory} reads the trusted implications of a base in the same way, to ask whether an implication follows from them classically; Section~\ref{sec:possible} uses it to compare two explorations.
+
+%======================================================================
+\section{Solved grids}\label{sec:solved}
+%======================================================================
+
+\subsection{Vocabulary}
+
+Table~\ref{tab:predicates} lists the predicates. The \emph{cell equivalences} describe where cells are ($\pred{SameCell}$, $\pred{SameRow}$, $\pred{SameColumn}$, $\pred{SameBlock}$, $\pred{SameBand}$, $\pred{SameStack}$) and whether they hold the same value ($\pred{Same}$); $\pred{Contains}(x, n)$ relates a cell to a digit, and $\pred{SameNumber}$ is equality of digits. Together these are the \emph{primitive} vocabulary used by default. The predicates $\pred{Peers}$ (distinct cells sharing a unit), $\pred{Apart}$ (cells sharing no unit), $\pred{Different}$ and $\pred{DifferentNumbers}$ are available as well. Each of them is a negation or a disjunction of primitives, which Horn rules cannot define; an earlier version of the exploration that used them found $42$ rules, most of which restated how they relate to each other.
+
+\begin{table}[t]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}Xll@{}}
+\toprule
+Predicate & Sorts & Declared properties \\
+\midrule
+$\pred{SameCell}$, $\pred{SameRow}$, $\pred{SameColumn}$, $\pred{SameBlock}$ & cell, cell & symmetric, reflexive, complemented \\
+$\pred{SameBand}$, $\pred{SameStack}$, $\pred{Same}$ & cell, cell & symmetric, reflexive$^{\ast}$ \\
+$\pred{DifferentCells}$, $\pred{DifferentRows}$, $\pred{DifferentColumns}$, $\pred{DifferentBlocks}$ & cell, cell & symmetric, irreflexive, complemented \\
+$\pred{Peers}$, $\pred{Apart}$, $\pred{Different}$ & cell, cell & symmetric, irreflexive$^{\ast}$ \\
+$\pred{Contains}$ & cell, number & complemented \\
+$\pred{SameNumber}$, $\pred{DifferentNumbers}$ & number, number & symmetric, (ir)reflexive, complemented \\
+\midrule
+$\NotContains$ & cell, number & complemented \\
+four $\pred{Confined}$ predicates & cell, number & --- (SAT expert only) \\
+$\pred{ConfinedToPairInRow}$, $\pred{ConfinedToPairInColumn}$ & cell, cell, number & --- (SAT expert only) \\
+$\Forced$ & cell, number & --- (partial grids only) \\
+$\Excluded$, $\pred{Possible}$ & cell, number & complemented (partial grids only) \\
+$\pred{DigitsWithin}$, $\pred{DigitsInclude}$, $\pred{SameSize}$ & cell set, number set & --- (SAT expert only) \\
+$\pred{WithinUnit}$, $\pred{SharesUnit}$ & cell set (, cell) & --- (SAT expert only) \\
+$\pred{CellIn}$, $\pred{CellNotIn}$, $\pred{NumberIn}$, $\pred{NumberNotIn}$ & element, set & complemented (SAT expert only) \\
+\bottomrule
+\end{tabularx}
+\caption{The predicates. $^{\ast}$\,$\pred{Same}$ and $\pred{Different}$ are complements of each other. The predicates below the line are explained in Sections~\ref{sec:techniques}, \ref{sec:sets} and~\ref{sec:possible}.}
+\label{tab:predicates}
+\end{table}
+
+\subsection{Background knowledge}\label{sec:solved-background}
+
+\code{sudoku\_background} produces implications that hold in every grid whatever its digits; given as background, they leave the exploration to find only what the constraints of Sudoku add. For the predicates and variables present they are:
+\begin{itemize}
+  \item the laws of equivalences (reflexivity and symmetry, which declared properties absorb, and transitivity) for the seven cell equivalences and for $\pred{SameNumber}$;
+  \item how the regions nest: $\pred{SameCell}(u, v)$ implies every cell equivalence; $\pred{SameRow}(u, v) \wedge \pred{SameColumn}(u, v) \to \pred{SameCell}(u, v)$; a row lies in a band and a column in a stack; $\pred{SameBlock}$ is $\pred{SameBand} \wedge \pred{SameStack}$;
+  \item that a cell holds one value: $\pred{Contains}(u, n) \wedge \pred{Same}(u, v) \to \pred{Contains}(v, n)$, $\pred{Contains}(u, n) \wedge \pred{Contains}(v, n) \to \pred{Same}(u, v)$, and the like for $\pred{SameNumber}$;
+  \item contrapositive forms that Horn rules cannot derive from complements: for instance, if $\pred{SameRow}(u, v)$ and $\pred{DifferentRows}(v, w)$, then $\pred{DifferentRows}(u, w)$.
+\end{itemize}
+Every background implication is checked against the experts in the tests.
+
+\subsection{Experts}\label{sec:solved-experts}
+
+\paragraph{SAT.}
+\code{SatSudokuRuleExpert} decides a question $P \to C$ by searching for a solved grid with an assignment that satisfies $P$ and violates some atom of $C$. The grid is encoded as usual with $n^3$ Boolean variables $g_{r,c,d}$ (exactly one digit per cell, every digit exactly once per unit; \code{sudoku2sat}). Each cell variable $x$ gets one-hot variables $R^x_r$ and $C^x_c$ for its row and column, and each number variable $m$ one-hot variables $Q^m_d$ for its digit. Atoms are defined by fresh variables with Tseitin equivalences, so that they may be used negated:
+\begin{align*}
+  \pred{SameRow}(x, y) &\equiv \textstyle\bigvee_r (R^x_r \wedge R^y_r), \qquad
+  \pred{SameBand}(x, y) \equiv \bigvee_b \bigl(\bigvee_{r \in b} R^x_r \wedge \bigvee_{r \in b} R^y_r\bigr),\\
+  \pred{SameBlock} &\equiv \pred{SameBand} \wedge \pred{SameStack}, \qquad
+  \pred{SameCell} \equiv \pred{SameRow} \wedge \pred{SameColumn},\\
+  V^x_d &\equiv \textstyle\bigvee_{r,c} (R^x_r \wedge C^x_c \wedge g_{r,c,d}) \quad\text{(cell $x$ holds $d$)},\\
+  \pred{Same}(x, y) &\equiv \textstyle\bigvee_d (V^x_d \wedge V^y_d), \qquad
+  \pred{Contains}(x, m) \equiv \bigvee_d (V^x_d \wedge Q^m_d),
+\end{align*}
+and the complements and derived predicates as negations and combinations of these. A question is one call to an incremental solver with the premise literals as assumptions and an activation literal $a$ for the clause $\neg a \vee \bigvee_{c \in C} \neg c$. A model gives the grid and the assignment, from which all attributes are read off. The expert works for any block size and decides every question.
+
+\paragraph{Z3.}
+\code{Z3SudokuExpert} encodes the grid as an uninterpreted function $\mathit{value}(r, c)$ with range and \code{Distinct} constraints, cell variables as pairs of integer terms, and predicates as Z3 formulas. It agrees with the SAT expert (the tests compare the theories they produce) and is comparable in speed on $4 \times 4$ grids, but it is too slow on $9 \times 9$ grids, where proving even a two-cell rule took minutes.
+
+\paragraph{Checking across grid sizes.}
+\code{check\_rules} re-checks accepted rules with the SAT expert on grids of another block size and returns a counterexample for each rule that fails there. Since atoms are interpreted by predicate name, rules found on $4 \times 4$ grids can be checked on $9 \times 9$ grids unchanged.
+
+\subsection{Results}\label{sec:solved-results}
+
+Table~\ref{tab:solved} summarizes the shipped configurations for solved grids.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}llrrrrrrrr@{}}
+\toprule
+Configuration & Grid & Atoms & Maps & Questions & Accepted & Rules & Classical & Fail & Time \\
+\midrule
+\code{solved-pairs} & $4\times4$ & 7 & 3 & 13 & 3 & 3 & 3 & 0 & ${<}\,0.01$\,s \\
+\code{solved-pairs} & $9\times9$ & 7 & 3 & 14 & 3 & 3 & 3 & 0 & 0.2\,s \\
+\code{solved-triples} & $4\times4$ & 28 & 107 & 22 & 3 & 3 & 3 & 0 & 0.1\,s \\
+\code{solved-quads} & $4\times4$ & 42 & 255 & 30 & 12 & 9 & 9 & 9 & 1.0\,s \\
+\code{solved-quads} & $9\times9$ & 42 & 255 & 42 & 3 & 3 & 3 & 0 & 1.2\,s \\
+\bottomrule
+\end{tabular}
+\caption{Solved-grid explorations (SAT expert, primitive vocabulary, background on). ``Rules'' counts the simplified rules, ``classical'' those left by the classical reduction (Section~\ref{sec:classical}), which the runner prints; ``fail'' the accepted implications that fail on the other grid size. Times are indicative (one run on the laptop of Table~\ref{tab:techniques}). Question counts vary slightly between runs, with the counterexamples the SAT solver happens to find; the theories do not.}
+\label{tab:solved}
+\end{table}
+
+With two cells, or three cells and two digits, the exploration finds exactly the constraints of the game, as rules:
+\begin{quote}\small\raggedright
+\texttt{Same(x,~y)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{SameCell(x,~y)}\\
+\texttt{Same(x,~y)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{SameCell(x,~y)}\\
+\texttt{Same(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameCell(x,~y)}
+\end{quote}
+With four cells on $4 \times 4$ grids, it also finds rules about two pairs of cells with equal values, for instance
+\begin{quote}\small\raggedright
+\texttt{Same(w,~y)}, \allowbreak \texttt{Same(x,~z)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameColumn(w,~x)}
+\end{quote}
+These hold only because a $4 \times 4$ block has two columns, and the re-check on $9 \times 9$ grids marks each of them with a counterexample. The three rules stating the constraints of the game are accepted here too, but they are not printed: on $4 \times 4$ grids they follow from the nine others by identifying variables, and the simplified rules are non-redundant (Section~\ref{sec:reduced}). A reader of the $4 \times 4$ output alone would not see them. On $9 \times 9$ grids, four cells again yield only the three rules above: with these predicates and up to four cells, the rules of the game are the whole theory of solved $9 \times 9$ grids.
+
+%======================================================================
+\section{Deduction techniques}\label{sec:techniques}
+%======================================================================
+
+\subsection{Partial grids read through their completions}\label{sec:reading}
+
+Solving techniques are about partial grids: from the givens, a solver concludes that a digit must be in a cell or cannot be. The exploration does not need partial grids as objects for this, only a way of reading its rules on them. The vocabulary of Section~\ref{sec:solved} is extended by the complement of $\Contains$,
+\[
+  S \sat \NotContains(x, n) \iff \text{the solved grid $S$ does not have $n$ in $x$,}
+\]
+and by the confinement predicates of Section~\ref{sec:confined}; the objects remain solved grids with an assignment of cells and digits to the variables. A partial grid $G$ with at least one completion is read as satisfying an atom about digits if all its completions do,
+\[
+  G \sat p(\vec x, n) \iff S \sat p(\vec x, n) \text{ for every completion $S$ of $G$,}
+\]
+and a geometric atom as before, since it does not depend on the grid. Read this way, $\Contains(x, n)$ says that the givens \emph{force} $n$ into $x$, and $\NotContains(x, n)$ that they \emph{exclude} it from $x$; a rule between such atoms is a law of deduction, valid for every partial grid.
+
+\begin{proposition}\label{prop:reduction}
+Under an assignment of the variables, a partial grid satisfies exactly the atoms that all its completions satisfy. Hence an implication holds in every partial grid if and only if it holds in every solved grid, and an exploration of partial grids has the same canonical basis as the exploration of solved grids with the same vocabulary and background.
+\end{proposition}
+
+\begin{proof}
+The first statement is the reading itself for atoms about digits, and holds trivially for geometric atoms. If $P \to C$ holds in every solved grid and $G$ satisfies $P$, then every completion of $G$ satisfies $P$, hence $C$, and so $G$ satisfies $C$. Conversely, a solved grid is a partial grid whose only completion is itself. Equal sets of valid implications have equal canonical bases relative to the same background.
+\end{proof}
+
+In terms of the formal context, a partial grid is a reducible object: its intent is the intersection of the intents of its completions. It may serve as a counterexample, but it refutes nothing that one of its completions does not refute as well. What the exploration of partial grids needs is therefore not partial objects but a predicate for a digit a cell does not hold, without which ``excluded'' cannot be read off at all. Partial grids are needed only for predicates of another form; Section~\ref{sec:possible} explores one, and Section~\ref{sec:future} discusses others.
+
+An earlier version of the library explored partial grids directly, with predicates $\pred{Forced}$ and $\pred{Excluded}$ decided over the completions by two experts of their own: one listed the $288$ solved $4 \times 4$ grids, and one decided the $\exists\forall$ questions of $9 \times 9$ grids by counterexample-guided refinement~\cite{CGJLV00} with two SAT solvers. With $\pred{Forced}$ read as $\Contains$ and $\pred{Excluded}$ as $\NotContains$, every exploration of solved grids below finds exactly the rules of the corresponding exploration of partial grids (Table~\ref{tab:techniques}); the proposition explains why.
+
+The reading also bounds what new predicates can say.
+
+\begin{proposition}\label{prop:onlyplace}
+In a solved grid, $n$ is in no cell of $x$'s row other than $x$ if and only if $x$ holds $n$; the same holds for columns and blocks; and $x$ holds $n$ if and only if it holds no digit other than $n$. Read on partial grids, $n$ is excluded from every other cell of $x$'s row if and only if it is forced in $x$, and likewise for the other statements.
+\end{proposition}
+
+\begin{proof}
+Every unit holds every digit once, and every cell one digit. On a partial grid, each of the other cells avoids $n$ in every completion if and only if every completion has $n$ in $x$.
+\end{proof}
+
+Predicates such as ``$x$ is the only place for $n$ in its row'' (hidden single) or ``$n$ is the only digit for $x$'' (naked single) would therefore just restate $\Contains$, and the library does not provide them. Hidden and naked singles appear instead as rules between $\NotContains$ and $\Contains$ atoms when the vocabulary has a variable for every cell of a unit, or for every digit, which is practical for $4 \times 4$ grids only.
+
+\subsection{Confinement predicates}\label{sec:confined}
+
+What $\Contains$ and $\NotContains$ over few variables cannot express are statements about where a digit lies within a unit. All predicates about digits but $\Contains$ have the form
+\[
+  S \sat p(x_1, \dots, x_k, n) \iff \text{$S$ has $n$ in no cell of } \Bad_p(x_1, \dots, x_k),
+\]
+for a set $\Bad_p$ of cells determined by the positions of the cell arguments, and $\Contains$ has it too by Proposition~\ref{prop:onlyplace}:
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Predicate & $\Bad_p$: the cells $n$ is kept out of \\
+\midrule
+$\NotContains(x, n)$ & $\{x\}$ \\
+$\Contains(x, n)$ & the cells of $x$'s row other than $x$ \\
+$\pred{ConfinedToRowInBlock}(x, n)$ & the cells of $x$'s block outside $x$'s row \\
+$\pred{ConfinedToColumnInBlock}(x, n)$ & the cells of $x$'s block outside $x$'s column \\
+$\pred{ConfinedToBlockInRow}(x, n)$ & the cells of $x$'s row outside $x$'s block \\
+$\pred{ConfinedToBlockInColumn}(x, n)$ & the cells of $x$'s column outside $x$'s block \\
+$\pred{ConfinedToPairInRow}(x, y, n)$ & the cells of $x$'s row other than $x$ and $y$ \\
+$\pred{ConfinedToPairInColumn}(x, y, n)$ & the cells of $x$'s column other than $x$ and $y$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+On a solved grid, $\pred{ConfinedToRowInBlock}(x, n)$ says that the cell of $x$'s block holding $n$ lies in $x$'s row; read on a partial grid, that it does in every completion, which is what a solver knows once $n$ is excluded from the other rows of the block. The first two Confined predicates are the premises of \emph{pointing}, the next two those of \emph{claiming} (together: locked candidates), and the pair predicates those of the \emph{X-wing}. Their conclusions need the complements $\pred{DifferentRows}$, $\pred{DifferentColumns}$ and $\pred{DifferentBlocks}$ (``in the same row, but another block''), which were added to the geometric vocabulary for this purpose.
+
+A pair predicate is about $x$'s row: $\pred{ConfinedToPairInRow}(x, y, n)$ with $y$ outside that row says that $x$ holds $n$. It is therefore symmetric in $x$ and $y$ only when they share the row, and the background says exactly that (an unconditional symmetry, tried first, contradicted the very first counterexample of the brute-force check of Section~\ref{sec:verification}).
+
+\subsection{Background knowledge}
+
+The background of Section~\ref{sec:solved-background} is extended by what single-valuedness and equality give for the new predicates. $\Contains$ and $\NotContains$ are declared complements, so $\Contains(u, n) \wedge \NotContains(u, n) \to M$ is added; a digit a cell holds differs from every digit it does not hold, and the cell differs from every cell not holding it; cells holding different digits are different; equal cells and equal digits are interchangeable in every predicate about digits; $\pred{ConfinedToPairInRow}(u, u, n)$ is equivalent to $\Contains(u, n)$. Read on partial grids, these say for instance that a cell has at most one forced digit, never also excluded. Rules that are techniques, such as the naked single, are deliberately left out of the background.
+
+\paragraph{Geometry first.}
+With several cell variables and all geometric predicates, many accepted rules are facts about where cells can be, such as ``if $w$ and $x$ share a block and \dots, then $y$ and $z$ share a block''. With \code{geometry\_first}, the geometric predicates are first explored alone over the same cell variables (\code{geometry\_basis}), and the accepted rules are added to the background. The final theory is the same; only rules involving digits are reported. In the four-cell configuration this removes $50$ of $131$ simplified rules.
+
+\subsection{The expert}\label{sec:techniques-expert}
+
+\code{SatSudokuRuleExpert} (Section~\ref{sec:solved-experts}) decides the new predicates over its grid variables $g_{r,c,d}$. $\NotContains$ is the negation of $\Contains$. A Confined predicate holds if, wherever $x$ is and whatever digit $m$ stands for, the grid has that digit in none of the cells the predicate keeps it out of:
+\[
+  p(x, m) \equiv \bigwedge_{r, c, d} \Bigl(\neg(R^x_r \wedge C^x_c) \vee \neg Q^m_d \vee \bigwedge_{(r', c') \in \Bad_p(r, c)} \neg g_{r', c', d}\Bigr).
+\]
+For $\pred{ConfinedToPairInRow}(x, y, m)$, the conjunction runs over rows $r$, columns $c$ and digits $d$: if $x$ is in row $r$, $m$ stands for $d$, and the grid has $d$ at $(r, c)$, then $x$ is in column $c$ or $y$ is at $(r, c)$; columns are alike. The expert works at any block size, so the rules found on $4 \times 4$ grids are re-checked on $9 \times 9$ grids by \code{check\_rules} like any others, and the techniques can be explored on $9 \times 9$ grids directly. The Z3 expert has no encoding of the Confined predicates.
+
+\subsection{Results}\label{sec:techniques-results}
+
+Table~\ref{tab:techniques} summarizes the shipped configurations for deduction techniques.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}llrrrrrrrrr@{}}
+\toprule
+Configuration & Grid & Atoms & Maps & Questions & Accepted & Rules & Classical & Fail & Time & Earlier \\
+\midrule
+\code{solved-cell} & $4\times4$ & 20 & 255 & 5 & 2 & 2 & 1 & 2 & 0.02\,s & 0.2\,s \\
+\code{solved-row} & $4\times4$ & 26 & 255 & 19 & 6 & 5 & 2 & 2 & 0.3\,s & 0.6\,s \\
+\code{solved-column} & $4\times4$ & 26 & 255 & 21 & 6 & 5 & 2 & 2 & 0.4\,s & 0.6\,s \\
+\code{solved-block} & $4\times4$ & 26 & 255 & 22 & 6 & 5 & 2 & 2 & 0.3\,s & 0.6\,s \\
+\code{solved-units} & $4\times4$ & 21 & 26 & 49 & 16 & 16 & 6 & 4 & 0.07\,s & 0.4\,s \\
+\code{solved-full} & $4\times4$ & 38 & 255 & 191 & 84 & 81 & 20 & 52 & 25.9\,s & 27.9\,s \\
+\code{solved-locked} & $4\times4$ & 20 & 3 & 67 & 46 & 44 & 14 & 14 & 0.08\,s & 6.0\,s \\
+\code{solved-locked} & $9\times9$ & 20 & 3 & 59 & 32 & 30 & 10 & 0 & 7.9\,s & 62.3\,s \\
+\bottomrule
+\end{tabular}
+\caption{Explorations of deduction techniques (SAT expert, background on). ``Classical'' counts the rules left by the classical reduction (Section~\ref{sec:classical}); ``fail'' the accepted implications that fail on the other grid size. ``Earlier'' is the time of the earlier exploration of partial grids with $\pred{Forced}$ and $\pred{Excluded}$ in place of $\Contains$ and $\NotContains$, which found the same rules; it used the enumerating expert on $4 \times 4$ grids and the refinement expert on $9 \times 9$ grids. Times are indicative (one run of each version on the same laptop). Question counts vary slightly between runs, with the counterexamples the SAT solver happens to find; the theories do not.}
+\label{tab:techniques}
+\end{table}
+
+Where the enumeration of closed sets takes most of the time, as in \code{solved-full}, the two versions take about as long; where the expert does, deciding over solved grids is much faster than deciding over completions, by a factor of eight for locked candidates on $9 \times 9$ grids.
+
+\paragraph{Singles and elimination ($4 \times 4$).}
+With one cell and four digits (\code{solved-cell}) the exploration finds the naked single in Horn form:
+\begin{quote}\small\raggedright
+\texttt{DifferentNumbers(n1,~n2)}, \allowbreak \texttt{\ldots,~DifferentNumbers(n3,~n4)}, \allowbreak \texttt{NotContains(x,~n2)}, \allowbreak \texttt{NotContains(x,~n3)}, \allowbreak \texttt{NotContains(x,~n4)} \;$\to$\; \texttt{Contains(x,~n1)}
+\end{quote}
+With the four cells of a row, column or block, it finds the hidden single (a digit excluded from three distinct cells of a unit is forced in the fourth), elimination, and that a digit is forced in at most one cell of a unit:
+\begin{quote}\small\raggedright
+\texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(y,~n)}\\
+\texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(y,~z)}
+\end{quote}
+The naked and hidden singles fail on $9 \times 9$ grids, where a cell has nine candidate digits and a unit nine cells, and the re-check marks them with counterexamples; elimination holds there. The full four-cell vocabulary (\code{solved-full}, explored geometry first) yields 81 rules, listed in Appendix~\ref{app:full}: these techniques, interactions of blocks and lines that need a fourth cell, and many rules in contrapositive Horn form. Of its $84$ accepted implications, $52$ fail on $9 \times 9$ grids.
+
+\paragraph{Locked candidates ($9 \times 9$).}
+With two cells, one digit, the geometry and the Confined predicates (\code{solved-locked} with block size $3$), the exploration finds pointing directly,
+\begin{quote}\small\raggedright
+\texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentBlocks(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+\end{quote}
+and likewise for columns. Claiming follows from two rules,
+\begin{quote}\small\raggedright
+\texttt{ConfinedToBlockInRow(y,~n)} \;$\to$\; \texttt{ConfinedToRowInBlock(y,~n)}\\
+\texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentRows(x,~y)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+\end{quote}
+the first of which holds because a digit occurs once per block: if its place within a row lies in a block, that place is its cell in the block. Also found: confinement to $x$'s row and to $x$'s column within $x$'s block puts the digit in $x$. Appendix~\ref{app:locked} lists all 30 rules. On $4 \times 4$ grids the same configuration accepts $46$ implications, of which $14$ fail on $9 \times 9$ grids.
+
+\paragraph{The X-wing ($9 \times 9$).}
+The X-wing can be stated with five cell variables and the pair predicates:
+\begin{quote}\small\raggedright
+\texttt{ConfinedToPairInRow(a,~b,~n)}, \allowbreak \texttt{ConfinedToPairInRow(c,~d,~n)}, \allowbreak \texttt{SameColumn(a,~c)}, \allowbreak \texttt{SameColumn(b,~d)}, \allowbreak \texttt{DifferentRows(a,~c)}, \allowbreak \texttt{SameColumn(a,~e)}, \allowbreak \texttt{DifferentRows(a,~e)}, \allowbreak \texttt{DifferentRows(c,~e)} \;$\to$\; \texttt{NotContains(e,~n)}
+\end{quote}
+Asked directly, the SAT expert confirms it on $9 \times 9$ grids in seconds and refutes, with concrete counterexamples, the variants without $\pred{DifferentRows}(a, c)$, without $\pred{SameColumn}(b, d)$, and without the second pair. An exploration that would discover it, however, does not finish: see Section~\ref{sec:limits}.
+
+%======================================================================
+\section{Sets of cells and digits}\label{sec:sets}
+%======================================================================
+
+\subsection{Vocabulary}
+
+Techniques such as naked and hidden pairs speak about several cells and digits at once. Predicates shaped after one technique, such as the pair predicates of Section~\ref{sec:confined} or ``$x$ holds $a$ or $b$'', give its premise away and cover a single size: pairs, but not triples or quadruples. The explorations of this section instead have variables of two more sorts, \emph{non-empty sets of cells} and \emph{non-empty sets of digits}, and a few generic predicates about them (Table~\ref{tab:sets}). One rule over set variables then covers every size.
+
+\begin{table}[t]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Predicate & On a solved grid & Read on a partial grid \\
+\midrule
+$\pred{DigitsWithin}(C, D)$ & every cell of $C$ holds a digit of $D$ & the candidates of $C$'s cells lie in $D$ \\
+$\pred{DigitsInclude}(C, D)$ & every digit of $D$ is held by a cell of $C$ & every digit of $D$ is forced into $C$; for $C$ within a unit, its places there lie in $C$ \\
+$\pred{SameSize}(C, D)$ & $\lvert C\rvert = \lvert D\rvert$ & the same \\
+$\pred{WithinUnit}(C)$ & some unit holds all of $C$ & the same \\
+$\pred{SharesUnit}(C, z)$ & some unit holds all of $C$ and the cell $z$ & the same \\
+$\pred{CellIn}(x, C)$, $\pred{CellNotIn}(x, C)$ & membership and its complement & the same \\
+$\pred{NumberIn}(n, D)$, $\pred{NumberNotIn}(n, D)$ & membership and its complement & the same \\
+\bottomrule
+\end{tabularx}
+\caption{Predicates of a set of cells $C$ and a set of digits $D$.}
+\label{tab:sets}
+\end{table}
+
+$\pred{DigitsWithin}$ and $\pred{DigitsInclude}$ say that the digits of $C$ lie within $D$ or include $D$: the two inclusions between the set of digits in $C$ and $D$. Read through completions, they hold in a partial grid if they hold in all its completions, so Proposition~\ref{prop:reduction} still applies and solved grids remain the only objects needed. $\pred{DigitsInclude}(C, D)$ mentions no unit, since ``the places of $D$'s digits lie in $C$'' would otherwise require $C$ to contain every occurrence of each digit, one per row; for $C$ within a unit, where each digit occurs once, it says just that.
+
+Sets may have any size. A bound would bring artefacts of its own, rules that hold only because the sets are small, as rules hold on $4 \times 4$ grids only because the grid is small; and the SAT solver chooses a set as freely as a cell, so a larger set does not mean more atoms or questions.
+
+There are two unit predicates rather than three for rows, columns and blocks: the rules found do not need to tell the kinds of unit apart. They are a unary and a binary one because the size principle below needs only that $C$ lies in some unit. With the binary predicate alone, the exploration stated this as $\pred{SharesUnit}(C, z)$ for a cell $z$ occurring nowhere else in the rule: a variable that can only stand for ``some cell''.
+
+\paragraph{Background.} Membership and $\pred{SharesUnit}$ do not tell equal cells or digits apart, and a member and a non-member differ. The unit predicates are linked by
+\[
+  \pred{SharesUnit}(C, z) \to \pred{WithinUnit}(C), \qquad
+  \pred{WithinUnit}(C) \wedge \pred{CellIn}(x, C) \to \pred{SharesUnit}(C, x),
+\]
+and a member of a set sharing a unit with $z$ is a peer of $z$ or $z$ itself. From the definition of $\pred{DigitsWithin}$, a cell of $C$ holds no digit outside $D$:
+\[
+  \pred{DigitsWithin}(C, D) \wedge \pred{CellIn}(x, C) \wedge \pred{NumberNotIn}(n, D) \to \NotContains(x, n),
+\]
+together with its contrapositive form. How the size of a set bears on its digits is left to the exploration.
+
+\subsection{The expert}
+
+\code{SatSudokuRuleExpert} gives each set variable one membership variable per cell ($n^2$ of them) or per digit ($n$), with a clause requiring one of them. Membership atoms are disjunctions over positions, the unit predicates disjunctions over the $3n$ units of conjunctions saying that no member lies outside the unit, and $\pred{SameSize}$ compares unary counters of the members (``at least $k$'', each count an equivalence). For a set of cells $C$, a vector of $n$ variables says which digits its cells hold, and $\pred{DigitsWithin}(C, D)$ and $\pred{DigitsInclude}(C, D)$ are the inclusions between this vector and the members of $D$.
+
+\paragraph{Counting.} The rules about sizes are counting arguments, and SAT solvers prove counting arguments, such as the pigeonhole principle, badly. In a first version, three questions about sizes were still undecided after $200\,000$ conflicts on $9 \times 9$ grids, one of them after more than a minute. The expert therefore adds three facts that hold in every solved grid:
+\begin{enumerate}
+  \item a set of cells holds at most as many digits as it has cells;
+  \item a set within a unit holds exactly as many;
+  \item a set holding as many digits as cells holds no digit twice (an at-most-one constraint per digit, guarded by the equality of the counts).
+\end{enumerate}
+Since every solved grid satisfies them, the models of the encoding, and with them the answers of the expert, stay the same; only the proofs get shorter. With them, the whole exploration of $9 \times 9$ grids takes seconds. A wrong fact of this kind would silently reject genuine counterexamples, so the tests were also run with the second fact stated for every set rather than for sets within a unit: the expert then accepted a false rule, which the test of accepted rules on random grids caught.
+
+\subsection{Results}\label{sec:sets-results}
+
+Configuration \code{solved-sets} has two cells $x$, $z$, a digit $n$, a set of cells $C$ and a set of digits $D$, with the predicates of Table~\ref{tab:sets} together with $\pred{SameCell}$, $\pred{DifferentCells}$, $\Contains$ and $\NotContains$: $18$ atoms and $3$ mappings. On $4 \times 4$ grids it asks $204$ questions in $0.1$\,s, and all $16$ accepted implications hold on $9 \times 9$ grids as well (checked in $2.9$\,s); explored on $9 \times 9$ grids directly, it asks $224$ questions in $3.4$\,s. It finds the same six rules on both sizes, so none of them depends on the size of the grid:
+\begin{quote}\small\raggedright
+[1] \texttt{CellNotIn(z,~C)}, \allowbreak \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{NumberIn(n,~D)}, \allowbreak \texttt{SharesUnit(C,~z)} \;$\to$\; \texttt{NotContains(z,~n)}\\
+{}[2] \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{SameSize(C,~D)} \;$\to$\; \texttt{DigitsWithin(C,~D)}\\
+{}[3] \texttt{DigitsWithin(C,~D)}, \allowbreak \texttt{SameSize(C,~D)}, \allowbreak \texttt{WithinUnit(C)} \;$\to$\; \texttt{DigitsInclude(C,~D)}\\
+{}[4] \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{DigitsWithin(C,~D)}, \allowbreak \texttt{WithinUnit(C)} \;$\to$\; \texttt{SameSize(C,~D)}\\
+{}[5] \texttt{CellIn(x,~C)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{SharesUnit(C,~z)} \;$\to$\; \texttt{NotContains(x,~n)}\\
+{}[6] \texttt{CellIn(x,~C)}, \allowbreak \texttt{CellIn(z,~C)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DigitsInclude(C,~D)}, \allowbreak \texttt{SameSize(C,~D)} \;$\to$\; \texttt{NotContains(x,~n)}
+\end{quote}
+Rules [2]--[4] are a principle of sizes: within a unit, a set of cells and a set of digits of the same size satisfy $\pred{DigitsWithin}$ exactly when they satisfy $\pred{DigitsInclude}$, and a set whose digits are exactly $D$ has the size of $D$. [2] needs no unit, since $\lvert D\rvert$ different digits occupy $\lvert D\rvert$ different cells; [3] does, since only within a unit do the cells hold different digits. [1] is elimination over sets: a digit forced into $C$ is excluded from the rest of $C$'s unit. [5] is the elimination of Section~\ref{sec:techniques}, stated through $C$'s unit, and [6] says that a set with as many digits as cells holds none twice.
+
+The techniques follow from these by Horn closure, at any size of the sets:
+\begin{itemize}
+  \item the \emph{naked subset} (pair, triple, \dots): the candidates of $k$ cells of a unit lie within $k$ digits, so those digits are excluded from the rest of the unit; by [3], then [1];
+  \item the \emph{hidden subset}: $k$ digits can go, within a unit, only in $k$ cells, so those cells hold no other digit; by [2], then the background;
+  \item \emph{locked candidates}: [1] with $D$ a single digit and $C$ within a block and a row, its places in the block confined to $C$, excludes it from the rest of the row; likewise for claiming.
+\end{itemize}
+The tests check the naked and hidden subsets on $9 \times 9$ grids, and that neither follows without $\pred{SameSize}$. Of the $16$ accepted implications, the classical reduction keeps these six.
+
+%======================================================================
+\section{Possibility}\label{sec:possible}
+%======================================================================
+
+\subsection{Partial grids as objects}
+
+By Proposition~\ref{prop:reduction}, partial grids add nothing as objects while every predicate about digits is read as holding in all completions. The simplest predicate of another form says that a digit is a \emph{candidate} for a cell:
+\[
+  G \sat \pred{Possible}(x, n) \iff \text{some completion of $G$ has $n$ in $x$.}
+\]
+The experiment of this section asks whether knowledge about candidates goes beyond the techniques of Section~\ref{sec:techniques}.
+
+With partial grids as objects, the vocabulary needs names of its own. On a partial grid, ``holds'' and ``does not hold'' split into four predicates: $\Forced(x, n)$, every completion has $n$ in $x$; $\pred{Possible}(x, n)$, some completion does; $\Excluded(x, n)$, none does; and $\pred{Unforced}(x, n)$, some completion does not. On solved grids, $\Forced$ and $\pred{Possible}$ are $\Contains$, and $\Excluded$ and $\pred{Unforced}$ are $\NotContains$. On partial grids the complements are $\pred{Possible}$ and $\Excluded$, and $\Forced$ and $\pred{Unforced}$, while $\Forced$ and $\Excluded$ are not complements, since a cell may be neither. $\Contains$ and $\NotContains$, declared complements, therefore apply to solved grids only, and partial grids (\code{grid = "partial"}) have $\Forced$, $\Excluded$ and $\pred{Possible}$, with $\pred{Possible}$ and $\Excluded$ declared complements; $\pred{Unforced}$ is left for later.
+
+A partial grid satisfies $\pred{Possible}(x, n)$ if one of its completions has $n$ in $x$, so its atoms are no longer those that all its completions share. For instance, $\pred{Possible}(x, n) \wedge \pred{Possible}(x, m) \to \pred{SameNumber}(n, m)$ holds in every solved grid but fails in a partial grid where $x$ is undecided between two digits.
+
+\paragraph{Background.} The facts of Section~\ref{sec:techniques} about $\Contains$ and $\NotContains$ hold for $\Forced$ and $\Excluded$, and $\Forced(u, n) \wedge \Excluded(u, n) \to M$ is added explicitly, since the two are not complements. A forced digit is possible. The contrapositive forms that Horn rules cannot derive are given too: a digit forced in a cell is the only possible one, $\Forced(u, n) \wedge \pred{Possible}(u, m) \to \pred{SameNumber}(n, m)$; a possible and an excluded digit of a cell differ; and a cell where a digit is possible differs from one where it is excluded.
+
+\paragraph{The expert.} \code{PartialGridExpert}, the enumerating expert of the earlier version (Section~\ref{sec:reading}), lists the $288$ solved $4 \times 4$ grids $s_1, \dots, s_{288}$. The givens are Boolean variables $g_{r,c,d}$, at most one per cell, and
+\[
+  \mathit{cons}_i \equiv \bigwedge_{r, c} \bigwedge_{d \neq s_i(r,c)} \neg g_{r,c,d}
+\]
+says that $s_i$ completes them; the clause $\bigvee_i \mathit{cons}_i$ requires a completion. With $\mathit{in}_i(x, n)$ saying that $s_i$ has the digit of $n$ at the position of $x$,
+\begin{align*}
+  \Forced(x, n) &\equiv \textstyle\bigwedge_i \bigl(\neg\mathit{cons}_i \vee \mathit{in}_i(x, n)\bigr), &
+  \Excluded(x, n) &\equiv \textstyle\bigwedge_i \bigl(\neg\mathit{cons}_i \vee \neg\mathit{in}_i(x, n)\bigr),\\
+  \pred{Possible}(x, n) &\equiv \neg\Excluded(x, n),
+\end{align*}
+and the Confined predicates are conjunctions over the consistent grids in the same way. Since the solved grids are listed, only $4 \times 4$ grids are supported. On $9 \times 9$ grids, the refinement expert of the earlier version would need a witness completion for each $\pred{Possible}$ atom of a premise; it has not been extended.
+
+\subsection{What a candidate can add}
+
+An implication concluding $\pred{Possible}(x, n)$ holds if and only if its premise is impossible together with $\Excluded(x, n)$, and the vocabulary without $\pred{Possible}$ can state that already. In a premise, $\pred{Possible}$ is new: read classically, $P \wedge \pred{Possible}(x, n) \to C$ is the clause ``given $P$, either $C$ holds or $n$ is excluded from $x$''. Horn rules over $\Forced$ and $\Excluded$ cannot state such a disjunction unless one of its parts follows from $P$ alone. Knowledge that needs $\pred{Possible}$ is therefore a valid implication of this kind that the theory without $\pred{Possible}$ does not entail classically, by contraposition or by cases.
+
+The runner tests this when a configuration lists \code{compare\_without = ["Possible"]}. It explores the same vocabulary again without $\pred{Possible}$, reads the trusted implications of that exploration classically (\code{trusted\_theory}, Section~\ref{sec:classical}), and marks each printed rule they do not entail as \texttt{[NEW]}. The printed rules entail, classically, everything the exploration with $\pred{Possible}$ accepted, so a theory entailing each of them entails all of it: no mark means nothing new.
+
+\subsection{Results}\label{sec:possible-results}
+
+Table~\ref{tab:possible} compares five vocabularies on $4 \times 4$ partial grids with and without $\pred{Possible}$.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrrrrrrr@{}}
+\toprule
+& \multicolumn{5}{c}{Without $\pred{Possible}$} & \multicolumn{5}{c}{With $\pred{Possible}$} \\
+\cmidrule(lr){2-6}\cmidrule(l){7-11}
+Vocabulary & Atoms & Questions & Rules & Class. & Time & Questions & Rules & Class. & New & Time \\
+\midrule
+\code{cell} & 20 & 4 & 2 & 1 & 0.1\,s & 9 & 2 & 1 & 0 & 0.4\,s \\
+\code{row} & 26 & 25 & 5 & 2 & 0.6\,s & 50 & 8 & 3 & 1 & 4.4\,s \\
+\code{units} & 21 & 51 & 16 & 6 & 0.4\,s & 108 & 24 & 6 & 0 & 0.8\,s \\
+\code{two-digits} & 23 & 30 & 6 & 2 & 0.9\,s & 81 & 11 & 2 & 0 & 2.1\,s \\
+\code{rows-columns} & 44 & 123 & 54 & 14 & 46\,s & 310 & 79 & 14 & 0 & 271\,s \\
+\bottomrule
+\end{tabular}
+\caption{Partial $4 \times 4$ grids with and without $\pred{Possible}$ (configurations \code{partial-}\textit{vocabulary}, enumerating expert, background on). $\pred{Possible}$ adds one atom for each cell and number variable. ``Class.'' counts the rules left by the classical reduction, ``new'' those that the exploration without $\pred{Possible}$ does not entail classically. Times are indicative (one run on the laptop of Table~\ref{tab:techniques}).}
+\label{tab:possible}
+\end{table}
+
+In four of the five vocabularies nothing is new, and the classical reduction leaves as many rules with $\pred{Possible}$ as without it: the further rules that $\pred{Possible}$ brings follow classically from the others, mostly as contrapositive forms such as the one in Section~\ref{sec:classical}. In \code{partial-row}, the four cells of a row, one rule is new:
+\begin{quote}\small\raggedright
+\texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{Forced(x,~n)}, \allowbreak \texttt{Forced(y,~n)}, \allowbreak \texttt{Forced(z,~n)}, \allowbreak \texttt{Possible(w,~n)} \;$\to$\; \texttt{Forced(w,~n)}
+\end{quote}
+Once a digit is forced in three distinct cells, every cell is decided for it, forced or excluded: on $4 \times 4$ grids a digit has four places, and three fix the fourth. The rule is new only for this vocabulary. With rows alone, the rules cannot say where the fourth place is, so the disjunction cannot be split into cases. With columns and the complements $\pred{DifferentRows}$ and $\pred{DifferentColumns}$ (\code{partial-rows-columns}), the rules without $\pred{Possible}$ cover each case, and the rule follows from them.
+
+What $\pred{Possible}$ does give is shorter statements. A rule such as ``$n$ is forced in three cells of different rows, so where it is possible it is forced'' stands for a distinction of cases that takes several rules without $\pred{Possible}$; this is why rules with $\pred{Possible}$ survive the classical reduction while being new to no theory. They cost two to three times as many questions and up to seven times as much time.
+
+In these vocabularies, then, what is possible adds nothing to what is forced and excluded. Larger vocabularies, $9 \times 9$ grids, and $\pred{Unforced}$ remain to be tried; Section~\ref{sec:future} describes other predicates that would make partial grids objects of their own.
+
+%======================================================================
+\section{Propositional exploration}\label{sec:propositional}
+%======================================================================
+
+The propositional exploration of $4 \times 4$ grids has the $64$ attributes $(r, c, d)$, ``cell $(r,c)$ holds $d$''; its objects are solved grids, and \code{SudokuExpert} answers with a SAT solver, returning a solved grid that contains the premise and misses some conclusion attribute.
+
+\paragraph{Background.} The constraints of the game are given as background (\code{get\_sudoku\_\allowbreak background\_\allowbreak implications}): two digits in a cell, or one digit twice in a unit, imply every attribute; and when the other cells of a unit hold the other digits, the remaining cell holds the remaining digit. There are $(n-1)!$ premises of the second kind per cell, digit and unit, $1472$ background implications in all for $n = 4$, which is practical for $4 \times 4$ grids only.
+
+\paragraph{Symmetries.} The symmetry group of Sudoku grids is generated by permutations of the bands, of the rows within each band, of the stacks and of the columns within each stack, transposition, and relabelling of the digits. Since the general loop maps by each mapping once and never by compositions (Section~\ref{sec:maps}), the mappings must be the whole group rather than generators. For $4 \times 4$ grids it has $8 \cdot 8 \cdot 2 \cdot 24 = 3072$ elements; for $9 \times 9$ grids $(3!^4)^2 \cdot 2 \cdot 9! \approx 1.2 \cdot 10^{12}$, which is why only block size $2$ is supported. The background is a union of orbits, so it is mapped once per orbit (Section~\ref{sec:datastructures}).
+
+\paragraph{Results.} The exploration asks 6 questions, sees all $288$ solved grids, and accepts 4 implications beyond the background, each standing for its images under the group:
+\begin{quote}\small\raggedright
+\texttt{(2,~3,~4)}, \allowbreak \texttt{(3,~1,~3)} \;$\to$\; \texttt{(3,~0,~4)}\\
+\texttt{(1,~3,~4)}, \allowbreak \texttt{(3,~1,~4)} \;$\to$\; \texttt{(2,~2,~4)}\\
+\texttt{(1,~3,~4)}, \allowbreak \texttt{(3,~0,~3)}, \allowbreak \texttt{(3,~1,~2)} \;$\to$\; \texttt{(3,~3,~1)}\\
+\texttt{(1,~1,~4)}, \allowbreak \texttt{(1,~3,~3)}, \allowbreak \texttt{(2,~3,~2)}, \allowbreak \texttt{(3,~1,~2)}, \allowbreak \texttt{(3,~2,~3)} \;$\to$\; \texttt{(3,~3,~1)}
+\end{quote}
+They are deductions that go beyond the background: in the first, row 3 needs a 4; the bottom-right block has its 4 at $(2, 3)$, so the 4 of row 3 is not in that block, and $(3, 1)$ holds a 3, so it must be at $(3, 0)$ (rows and columns are numbered from $0$). Nearly all of the running time goes into enumerating the closed sets, the partial grids from which nothing more follows, rather than into questions.
+
+%======================================================================
+\section{How the results were checked}\label{sec:verification}
+%======================================================================
+
+The experts are programs, and an error in an encoding would silently produce a wrong theory. The test suite (\code{tests/}) checks the experts and the results in several independent ways.
+\begin{itemize}
+  \item \textbf{Brute force.} For the deduction techniques, every counterexample the expert returns is re-evaluated against its grid directly, on $4 \times 4$ and $9 \times 9$ grids: the premise must hold, the conclusion must fail, and every attribute must have the value the expert claims. Accepted rules are tested on random solved $4 \times 4$ grids and assignments. For partial grids with $\pred{Possible}$, counterexamples are re-evaluated against the completions among the $288$ solved grids, and accepted rules are tested on random partial grids. Declared properties of predicates are checked on solved grids of both sizes, and background implications against the experts.
+  \item \textbf{Agreement of experts.} The SAT and Z3 experts must produce identical theories on the same vocabulary. The explorations of Section~\ref{sec:techniques} reproduce exactly the rules of the earlier version that explored partial grids with experts of its own (Section~\ref{sec:techniques-results}).
+  \item \textbf{Across sizes.} Rules found on $4 \times 4$ grids are re-checked on $9 \times 9$ grids; for the propositional exploration, the accepted implications and all their images under the group are checked against all $288$ grids.
+  \item \textbf{The simplified implications.} A theory is rebuilt from them together with the background and the mappings, and must entail and be entailed by the accepted implications.
+  \item \textbf{Sets.} Counterexamples of the set exploration are re-evaluated against their grids on $4 \times 4$ and $9 \times 9$ grids, accepted rules are tested on random $4 \times 4$ grids with random sets (half of them within a unit), the background is checked against the expert on both sizes, and the counting facts of Section~\ref{sec:sets} were mutated to make sure that the tests notice.
+  \item \textbf{The classical reduction.} Tests check contraposition and case distinction through complements, guarded clauses, images under the mappings, and that unconfirmed implications are kept; on partial grids, that the rules kept, with the background and the images, entail every simplified rule classically; and that the four cells of a row have exactly the one new rule of Section~\ref{sec:possible-results}.
+  \item \textbf{Mutation checks.} The tests were run against deliberately broken code ($\Contains$ and $\NotContains$ swapped in an encoding, wrong confinement cells, a missing update of the transposed rows, a wrong closure condition, an implication allowed to cut itself with its own images) to make sure they fail.
+\end{itemize}
+On $9 \times 9$ grids, accepted rules rest on the SAT encoding alone, without a brute-force check. The evidence for them is that the same encoding passes the checks above on $4 \times 4$ grids, and that the locked candidates it finds on $9 \times 9$ grids are exactly those that the independent refinement expert of the earlier version found.
+
+%======================================================================
+\section{User's guide}\label{sec:guide}
+%======================================================================
+
+\subsection{Running an exploration}
+
+Explorations are described by TOML files. The runner takes one or several, by path or by the name of a configuration shipped in \path{explorations/sudoku/configs}:
+\begin{Verbatim}
+python explorations/sudoku/explore.py solved-row
+python explorations/sudoku/explore.py my-exploration.toml --block-size 3
+python explorations/sudoku/explore.py solved-locked --block-size 3 --output locked.txt
+\end{Verbatim}
+\code{-{}-block-size}, \code{-{}-no-background} and \code{-{}-no-classical} override the configuration; \code{-{}-output} also writes the result to a file, preceded by the configuration that produced them. All configurations are checked before any of them runs, and each run prints its numbers of atoms and mappings first, since these decide how long it takes. The project requires Python~3.11 (for \code{tomllib}), \code{python-sat}, and \code{z3-solver} for the Z3 expert.
+
+\subsection{Configuration files}
+
+\begin{Verbatim}
+grid = "solved"           # "solved", "partial" or "propositional"
+block_size = 2            # 3 for 9x9 grids
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+cell_sets = []            # variables for non-empty sets of cells
+number_sets = []          # and of digits
+predicates = ["SameCell", "DifferentCells", "SameRow", "Contains", "NotContains"]
+background = true         # what holds in any grid
+geometry_first = false    # explore the geometry first, add it to the background
+classical = true          # drop rules that follow classically from the others
+compare_without = []      # mark the rules not entailed when these are left out
+expert = "sat"            # solved grids: or "z3", which lacks the Confined predicates
+check_block_size = 3      # solved grids: re-check the rules there; 0 skips
+\end{Verbatim}
+A propositional configuration takes only \code{block\_size}, \code{background} and \code{symmetries}. Partial grids take block size $2$ and $\Forced$, $\Excluded$ and $\pred{Possible}$ in place of $\Contains$ and $\NotContains$. Settings that cannot run are reported with a reason: unknown keys, unknown predicates, predicates that do not apply to the kind of grid, a confinement predicate with the Z3 expert, a predicate without a variable of a sort it needs, \code{compare\_without} naming a predicate not explored, and so on. The shipped configurations are listed in Table~\ref{tab:configs}.
+
+\begin{table}[t]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+Name & Content \\
+\midrule
+\code{solved-pairs} & two cells, cell equivalences \\
+\code{solved-triples} & three cells, two digits, primitive vocabulary \\
+\code{solved-quads} & four cells, cell equivalences \\
+\code{solved-cell} & one cell, four digits: naked singles \\
+\code{solved-row}, \code{-column}, \code{-block} & the four cells of a unit: hidden singles, elimination \\
+\code{solved-units} & three cells, all geometry: interaction of units \\
+\code{solved-full} & four cells, all geometry, geometry first \\
+\code{solved-locked} & two cells with the Confined predicates: locked candidates \\
+\code{solved-sets} & a set of cells, a set of digits, two cells and a digit: naked and hidden subsets \\
+\code{partial-cell}, \code{-row}, \code{-units}, \code{-two-digits}, \code{-rows-columns} & partial grids with $\pred{Possible}$, compared without it (Table~\ref{tab:possible}) \\
+\code{propositional} & cell assignments of the $4 \times 4$ grid \\
+\bottomrule
+\end{tabularx}
+\caption{Shipped configurations.}
+\label{tab:configs}
+\end{table}
+
+\subsection{From Python}
+
+\code{sudoku\_rule\_exploration} builds any rule exploration with the same checks; \code{load\_config} reads a configuration, and \code{simplified\_implications} prints the result:
+\begin{Verbatim}
+from explorations.sudoku import load_config, sudoku_rule_exploration
+from conceptual_exploration import simplified_implications
+
+exploration = sudoku_rule_exploration(
+    3, cells=["x", "y"], numbers=["n"],
+    predicates=["SameRow", "DifferentBlocks", "NotContains", "ConfinedToRowInBlock"])
+exploration.run()
+for rule in simplified_implications(exploration.base):
+    print(rule)
+\end{Verbatim}
+\code{classical\_rules(exploration.base, rules)} applies the classical reduction to a list of simplified rules.
+
+\subsection{Where the code is}
+
+\begin{description}
+  \item[\path{src/conceptual_exploration}] the general library: \code{logic/} (atoms, predicates with properties, variables, variable maps), \code{core/} (bit sets, implication theories, truth values), \code{exploration/} (the exploration base, the loop, rule exploration, rounds, the simplified implications and their classical reduction).
+  \item[\path{explorations/sudoku/sudoku.py}] the domain: SAT encoding of grids, the propositional expert and symmetries, the Z3 expert, the predicate tables, the background, the SAT experts for rules about solved and partial grids, and \code{sudoku\_rule\_exploration}.
+  \item[\path{explorations/sudoku/config.py}, \path{explore.py}, \path{configs/}] configurations and the runner.
+\end{description}
+
+%======================================================================
+\section{Limits met so far}\label{sec:limits}
+%======================================================================
+
+\paragraph{The number of closed sets.}
+The exploration enumerates every set closed under the current theory, and in most explorations here this, not the expert, takes nearly all the time. The X-wing vocabulary over five cells has about $50$ atoms and $3124$ substitution maps; in a run of half an hour, the exploration asked about $45$ questions, and profiling showed NextClosure taking hundreds of thousands of steps per question while the expert (then the refinement expert for partial grids) used a few percent of the time. The propositional exploration of $4 \times 4$ grids asks only $6$ questions and spends its time in the same way. Faster closures (Section~\ref{sec:datastructures}) moved this limit but cannot remove it.
+
+\paragraph{Horn form.}
+Rules are universal Horn sentences over positive atoms. Many interesting statements are disjunctive or negative, and complements recover only part of them. A consequence is that many printed rules are contrapositive forms of simpler ones, for instance ``if $y$ and $z$ are distinct cells holding the same digit and $w$, $x$ lie in their rows, then $w$ and $x$ are distinct'', a restatement of the fact that a digit is in at most one cell of a unit. They are correct but make long outputs hard to read. The classical reduction (Section~\ref{sec:classical}) removes them from what is printed, $81$ of the four-cell rules leaving 20, but the exploration still asks them.
+
+\paragraph{Variables per unit.}
+A technique that speaks about a whole unit needs a variable for each of its cells unless a predicate quantifies over the unit or a set variable stands for several cells (Section~\ref{sec:sets}). For $4 \times 4$ grids four variables suffice and hidden singles appear as rules, which the re-check marks as failing on $9 \times 9$ grids; there they would need nine. Predicates quantifying over a unit coincide with $\Contains$ (Proposition~\ref{prop:onlyplace}), so the techniques that become accessible on $9 \times 9$ grids are those with genuinely new premises, such as confinement.
+
+\paragraph{Artefacts of small grids.}
+On $4 \times 4$ grids, bands and blocks have two rows, and many rules hold for that reason only (Section~\ref{sec:solved-results}); confinement to a block within a row then even implies confinement to a row within the block, so claiming collapses into pointing. Rules found on $4 \times 4$ grids should be re-checked on $9 \times 9$ grids, which the runner does by default (\code{check\_rules}); of the $84$ implications accepted by \code{solved-full}, $52$ fail there.
+
+%======================================================================
+\section{Directions for further development}\label{sec:future}
+%======================================================================
+
+\paragraph{Sets of units.}
+The X-wing generalizes to the swordfish and the jellyfish: when a digit's places in $k$ rows lie within $k$ columns, it is excluded from the rest of those columns, and likewise with rows and columns exchanged. Variables for sets of rows and of columns, with predicates in the manner of Section~\ref{sec:sets}, should give these by a principle of sizes as well, one rule for every $k$, instead of one configuration per technique.
+
+\paragraph{Exploring around a fixed configuration.}
+The X-wing, swordfish and similar techniques have a fixed geometric configuration. Instead of discovering the configuration together with the technique, the expert could be restricted to placements of the variables in that configuration, and only the atoms about digits explored, with the symmetries of the configuration (for the X-wing, exchanging the two rows or the two columns where this preserves the other relations) as mappings in place of substitutions. This would reduce the X-wing vocabulary from about $50$ to about $30$ atoms with strong structure. Configurations could also be enumerated systematically, up to symmetry, for a given number of cells.
+
+\paragraph{Targeted exploration.}
+Often only rules with a particular conclusion are wanted, say those concluding $\NotContains(e, n)$. Rather than the whole canonical basis, the exploration could compute the minimal premises for a given conclusion atom, or explore only premises from a chosen set of atoms. Both avoid enumerating the closed sets of the full vocabulary, which is what makes larger vocabularies infeasible now.
+
+\paragraph{Partial symmetry of arguments.}
+$\pred{ConfinedToPairInRow}(x, y, n)$ is symmetric in $x$ and $y$ when they share the row. The library supports declared symmetry only for binary predicates; declaring symmetry of selected argument positions, possibly under a condition, would remove duplicate atoms from vocabularies with pair predicates.
+
+\paragraph{Partial grids as objects.}
+By Proposition~\ref{prop:reduction}, partial grids add nothing as long as every predicate about digits is read as holding in all completions. Predicates of other forms make them genuine objects; three kinds have come up.
+\begin{itemize}
+  \item \emph{Possibility.} $\pred{Possible}(x, n)$, that some completion has $n$ in $x$, is explored in Section~\ref{sec:possible}; on $4 \times 4$ grids, in the vocabularies tried, it adds no knowledge. Larger vocabularies, $9 \times 9$ grids, for which the refinement expert of the earlier version would need a witness completion for each $\pred{Possible}$ atom of a premise, and the dual $\pred{Unforced}$ remain open.
+  \item \emph{Properties of the givens.} Uniqueness-based techniques rely on the puzzle having one solution. In the \emph{unique rectangle}, four cells at the corners of a rectangle spanning two rows, two columns and two blocks can never be left with the same two candidates $\{a, b\}$: $a$ and $b$ could then be swapped in all four to give a second solution. So if three corners have the candidates $\{a, b\}$ only, the fourth holds neither $a$ nor $b$. Read through completions, this cannot even be stated: givens with a unique completion force every digit, and every candidate set has one element.
+  \item \emph{States of knowledge.} Completion semantics describes what follows, not how it is found: a partial grid knows at once everything its givens imply. Objects could instead be the states of a solver, grids with candidate sets closed under a fixed repertoire of deduction steps. With singles alone, a state may keep $n$ as a candidate in a cell from which locked candidates would remove it; with locked candidates added, it may not. Rules would then describe what a repertoire derives, and exploring with and without a technique would show what it adds. The unique rectangle needs such states, since its premise is about candidates that remain at some point of solving.
+\end{itemize}
+
+\paragraph{Grids of other sizes and shapes.}
+Rules about solved grids could be checked for $16 \times 16$ grids as well, and rules holding for all block sizes separated from those of particular sizes. Variants of Sudoku change the units: diagonal Sudoku adds two units, Jigsaw Sudoku has irregular blocks, Killer Sudoku adds cages with sums. The experts generalize directly, since the units enter only through the SAT encoding; the predicates and the symmetry groups have to be adapted.
+
+\paragraph{Larger theories.}
+For the propositional exploration, the remaining cost is the enumeration of closed sets. Exploring a part of the grid (one band, or a row and a block), using canonical representatives of orbits instead of storing all images, or computing closures with compiled code would extend what is feasible.
+
+\paragraph{Using the rules.}
+The rules found are inference rules for Sudoku. They could be turned into a solver that applies them, with each step justified by a rule; exploring which rules are needed for given puzzles would then relate the exploration to the grading of puzzles by difficulty.
+
+\paragraph{Readability.}
+The simplified rules are non-redundant, which makes some of their content appear only through substitutions or contrapositives. The classical reduction drops contrapositive forms; optional post-processing could still group rules by the configuration of their cells, or print the images that shorten premises.
+
+\begin{thebibliography}{9}
+\bibitem{GO16} B.~Ganter and S.~Obiedkov. \emph{Conceptual Exploration}. Springer, 2016.
+\bibitem{CGJLV00} E.~Clarke, O.~Grumberg, S.~Jha, Y.~Lu, and H.~Veith. Counterexample-guided abstraction refinement. In \emph{Computer Aided Verification (CAV 2000)}, LNCS 1855, Springer, 2000.
+\end{thebibliography}
+
+\appendix
+
+\section{Rules of the four-cell exploration}\label{app:full}
+
+Configuration \code{solved-full} ($4 \times 4$ grids, four cells, all geometry, explored geometry first). Read on partial grids, $\Contains$ is ``forced'' and $\NotContains$ ``excluded''. Rules marked $^{\dagger}$ fail on $9 \times 9$ grids; those marked $^{\ast}$ are the ones the classical reduction keeps.
+
+{\small\raggedright
+\begin{enumerate}[label={[\arabic*]},leftmargin=2.6em,itemsep=1pt]
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{SameBlock(y,~z)} \;$\to$\; \texttt{SameCell(y,~z)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameCell(y,~z)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(y,~z)}
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(y,~z)} \;$\to$\; \texttt{NotContains(y,~n)}\,$^{\ast}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{NotContains(y,~n)}\,$^{\ast}$
+  \item \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{NotContains(x,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(y,~n)}\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(x,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(x,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(x,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~z)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~z)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~z)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(x,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(x,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~x)} \;$\to$\; \texttt{DifferentCells(w,~z)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~x)} \;$\to$\; \texttt{DifferentCells(w,~z)}
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~x)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(w,~x)} \;$\to$\; \texttt{DifferentCells(w,~y)}
+  \item \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(w,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{SameCell(x,~y)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameCell(x,~y)}\,$^{\dagger}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameCell(x,~y)}\,$^{\dagger}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(x,~y)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{SameColumn(y,~z)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameBlock(y,~z)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameRow(y,~z)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameBlock(y,~z)}\,$^{\dagger}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameColumn(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{SameRow(w,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{DifferentCells(w,~x)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{NotContains(x,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{SameColumn(w,~y)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameBlock(w,~y)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameRow(w,~y)}\,$^{\dagger}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameColumn(x,~y)}, \allowbreak \texttt{SameRow(w,~z)} \;$\to$\; \texttt{SameBlock(y,~z)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(w,~y)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(w,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameBlock(y,~z)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameBlock(w,~y)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)} \;$\to$\; \texttt{SameCell(w,~x)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameColumn(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameBlock(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{SameCell(w,~x)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameColumn(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameRow(w,~x)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(w,~x)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(y,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{SameRow(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{SameColumn(w,~x)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{SameColumn(x,~y)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~y)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{SameRow(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameRow(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~x)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)}, \allowbreak \texttt{SameRow(w,~x)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameRow(w,~x)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameBlock(w,~z)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(y,~z)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)} \;$\to$\; \texttt{SameCell(w,~x)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameCell(w,~x)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameBlock(y,~z)} \;$\to$\; \texttt{Contains(w,~n)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameColumn(y,~z)} \;$\to$\; \texttt{Contains(w,~n)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameRow(w,~x)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{SameBlock(w,~y)}, \allowbreak \texttt{SameBlock(x,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameRow(w,~x)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameColumn(w,~y)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{Contains(z,~n)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{SameColumn(w,~y)}\,$^{\dagger}$\,$^{\ast}$
+  \item \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(w,~n)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(y,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~x)}, \allowbreak \texttt{SameBlock(y,~z)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameColumn(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{Contains(w,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{NotContains(w,~n)}\,$^{\dagger}$
+  \item \texttt{Contains(w,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameBlock(w,~z)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{Contains(x,~n)}\,$^{\dagger}$
+  \item \texttt{DifferentCells(w,~x)}, \allowbreak \texttt{DifferentCells(w,~y)}, \allowbreak \texttt{DifferentCells(w,~z)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{DifferentCells(x,~z)}, \allowbreak \texttt{DifferentCells(y,~z)}, \allowbreak \texttt{NotContains(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{NotContains(z,~n)}, \allowbreak \texttt{SameRow(w,~z)}, \allowbreak \texttt{SameRow(x,~z)}, \allowbreak \texttt{SameRow(y,~z)} \;$\to$\; \texttt{Contains(w,~n)}\,$^{\dagger}$\,$^{\ast}$
+\end{enumerate}}
+
+\section{Rules of locked candidates on \texorpdfstring{$9 \times 9$}{9x9} grids}\label{app:locked}
+
+Configuration \code{solved-locked} with \code{-{}-block-size 3}. Rules marked $^{\ast}$ are the ones the classical reduction keeps.
+
+{\small\raggedright
+\begin{enumerate}[label={[\arabic*]},leftmargin=2.6em,itemsep=1pt]
+  \item \texttt{ConfinedToBlockInColumn(y,~n)} \;$\to$\; \texttt{ConfinedToColumnInBlock(y,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToBlockInRow(y,~n)} \;$\to$\; \texttt{ConfinedToRowInBlock(y,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)} \;$\to$\; \texttt{Contains(y,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{NotContains(y,~n)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{NotContains(y,~n)} \;$\to$\; \texttt{DifferentCells(x,~y)}
+  \item \texttt{Contains(y,~n)} \;$\to$\; \texttt{ConfinedToBlockInColumn(y,~n)}, \allowbreak \texttt{ConfinedToBlockInRow(y,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{SameColumn(x,~y)}
+  \item \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{SameRow(x,~y)}
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{SameBlock(x,~y)}
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{ConfinedToBlockInColumn(x,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{SameBlock(x,~y)}
+  \item \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{ConfinedToBlockInRow(x,~n)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{Contains(x,~n)}, \allowbreak \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(x,~y)} \;$\to$\; \texttt{DifferentBlocks(x,~y)}
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{DifferentBlocks(x,~y)} \;$\to$\; \texttt{DifferentColumns(x,~y)}\,$^{\ast}$
+  \item \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentBlocks(x,~y)} \;$\to$\; \texttt{DifferentRows(x,~y)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{DifferentColumns(x,~y)}
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{DifferentRows(x,~y)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentCells(x,~y)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{DifferentColumns(x,~y)} \;$\to$\; \texttt{DifferentBlocks(x,~y)}\,$^{\ast}$
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{DifferentColumns(x,~y)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentRows(x,~y)} \;$\to$\; \texttt{DifferentBlocks(x,~y)}\,$^{\ast}$
+  \item \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentRows(x,~y)}, \allowbreak \texttt{SameBlock(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToColumnInBlock(x,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{DifferentBlocks(x,~y)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentRows(x,~y)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{DifferentBlocks(x,~y)}, \allowbreak \texttt{SameColumn(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToColumnInBlock(y,~n)}, \allowbreak \texttt{ConfinedToRowInBlock(x,~n)}, \allowbreak \texttt{NotContains(y,~n)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{DifferentBlocks(x,~y)}
+  \item \texttt{Contains(y,~n)}, \allowbreak \texttt{DifferentColumns(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+  \item \texttt{ConfinedToRowInBlock(y,~n)}, \allowbreak \texttt{DifferentBlocks(x,~y)}, \allowbreak \texttt{SameRow(x,~y)} \;$\to$\; \texttt{NotContains(x,~n)}
+\end{enumerate}}
+
+\end{document}

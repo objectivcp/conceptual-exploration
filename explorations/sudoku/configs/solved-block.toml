@@ -1,0 +1,8 @@
+# Solved 4x4 grids, the four cells of a block: read on partial grids,
+# hidden singles and elimination.
+grid = "solved"
+block_size = 2
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+predicates = ["SameCell", "DifferentCells", "SameBlock", "Contains", "NotContains"]
+background = true

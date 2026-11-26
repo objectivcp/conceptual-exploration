@@ -48,13 +48,22 @@ class NextClosure(Generic[A]):
         on with the closed sets lectically after it. Any set will do, since
         the step from a set to the next closed one does not need it to be
         closed itself; this is how an enumeration is resumed.
+
+        Sending True back for a yielded set says that the closure has
+        changed, so that the set may no longer be closed. Its new closure is
+        then yielded next if it is the next closed set, which it is when it
+        adds no attribute lectically before the one that gave the set;
+        otherwise the enumeration goes on with the closed sets after it.
         """
         closure = self.mask_closure_operator
 
         if start is None:
             s = closure(0)
-            if (yield s):  # closure of s changed by caller
-                s = closure(s)
+            while (yield s):  # the closure changed: the new first closed set
+                t = closure(s)
+                if t == s:
+                    break
+                s = t
         else:
             s = start
             if closure(s) == s:
@@ -69,14 +78,21 @@ class NextClosure(Generic[A]):
             prefix = bit - 1
             if s & bit:
                 s ^= bit
-            else:
-                t = closure(s | bit)
-                if (t & ~s) & prefix == 0:
-                    if (yield t):
-                        t_closed = closure(t)
-                        if (t_closed & ~t) & prefix == 0:
-                            s = t_closed
-                            i = len(self.attributes)
-                    else:
-                        s = t
-                        i = len(self.attributes)
+                continue
+            t = closure(s | bit)
+            if (t & ~s) & prefix:
+                continue
+            while (yield t):
+                # The closure changed. If the closure of t adds no attribute
+                # before the one that gave t, it is the next closed set and
+                # is visited in turn; otherwise the search goes on from s.
+                t_closed = closure(t)
+                if t_closed == t:
+                    break
+                if (t_closed & ~t) & prefix:
+                    t = None
+                    break
+                t = t_closed
+            if t is not None:
+                s = t
+                i = len(self.attributes)

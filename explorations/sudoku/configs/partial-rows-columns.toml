@@ -1,0 +1,14 @@
+# Partial 4x4 grids, four cells, rows and columns with their complements,
+# with Possible: the rule partial-row finds new follows here from the rules
+# without Possible. Takes several minutes.
+grid = "partial"
+block_size = 2
+cells = ["w", "x", "y", "z"]
+numbers = ["n"]
+predicates = [
+    "SameCell", "DifferentCells", "SameRow", "DifferentRows",
+    "SameColumn", "DifferentColumns", "Forced", "Excluded", "Possible",
+]
+background = true
+geometry_first = true
+compare_without = ["Possible"]

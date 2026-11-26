@@ -1,16 +1,16 @@
-# Partial 4x4 grids, two cells and a digit, with the Confined predicates:
+# Solved 4x4 grids, two cells and a digit, with the Confined predicates:
 # locked candidates. When n's place in a block is confined to one row, n is
-# excluded from the rest of that row (pointing), and when n's place in a row
-# is confined to one block, n is excluded from the rest of that block
-# (claiming); likewise for columns.
-grid = "partial"
+# not in the rest of that row (pointing), and when n's place in a row is
+# confined to one block, n is not in the rest of that block (claiming);
+# likewise for columns. --block-size 3 explores 9x9 grids.
+grid = "solved"
 block_size = 2
 cells = ["x", "y"]
 numbers = ["n"]
 predicates = [
     "SameCell", "DifferentCells", "SameRow", "DifferentRows",
     "SameColumn", "DifferentColumns", "SameBlock", "DifferentBlocks",
-    "Forced", "Excluded",
+    "Contains", "NotContains",
     "ConfinedToRowInBlock", "ConfinedToColumnInBlock",
     "ConfinedToBlockInRow", "ConfinedToBlockInColumn",
 ]

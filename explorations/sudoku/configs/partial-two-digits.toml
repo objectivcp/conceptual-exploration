@@ -1,0 +1,11 @@
+# Partial 4x4 grids, three cells and two digits in rows, with Possible.
+grid = "partial"
+block_size = 2
+cells = ["x", "y", "z"]
+numbers = ["n", "m"]
+predicates = [
+    "SameCell", "DifferentCells", "SameRow", "Forced", "Excluded", "Possible",
+    "SameNumber", "DifferentNumbers",
+]
+background = true
+compare_without = ["Possible"]

@@ -2,10 +2,10 @@
 
 Runs the Sudoku explorations described by TOML configuration files (see
 `config.py`): first-order rule exploration of solved grids or of partial 4x4
-grids, or propositional attribute exploration of 4x4 grids. Each argument is
-a configuration file, or the name of one shipped in `configs/`:
+grids, or propositional attribute exploration of 4x4 grids. Each argument is a configuration file,
+or the name of one shipped in `configs/`:
 
-    python explorations/sudoku/explore.py partial-row
+    python explorations/sudoku/explore.py solved-row
     python explorations/sudoku/explore.py my-exploration.toml --block-size 3
 """
 
@@ -23,12 +23,13 @@ if str(REPO_ROOT / "src") not in sys.path:
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from conceptual_exploration import AttributeExploration, reduced_basis
+from conceptual_exploration import AttributeExploration, simplified_implications, trusted_theory
 from conceptual_exploration.exploration.base import ExplorationBase
 from explorations.sudoku.config import ExplorationConfig, available_configs, load_config
 from explorations.sudoku.sudoku import (
     SudokuExpert,
     check_rules,
+    classical_rules,
     get_sudoku_attributes,
     get_sudoku_background_implications,
     get_sudoku_symmetries,
@@ -38,8 +39,6 @@ from explorations.sudoku.sudoku import (
 def expert_label(config: ExplorationConfig) -> str:
     """How the configured expert decides the questions."""
     if config.grid == "partial":
-        if config.expert == "cegar":
-            return "CEGAR (counterexample-guided, two PySAT solvers)"
         return "SAT (PySAT), listing every solved 4x4 grid"
     return {"sat": "SAT (PySAT)", "z3": "SMT (Z3)"}[config.expert]
 
@@ -52,6 +51,9 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
     print("=" * 70)
     print(f"Cells:      {', '.join(config.cells) or '-'}")
     print(f"Numbers:    {', '.join(config.numbers) or '-'}")
+    if config.cell_sets or config.number_sets:
+        print(f"Cell sets:  {', '.join(config.cell_sets) or '-'}")
+        print(f"Num. sets:  {', '.join(config.number_sets) or '-'}")
     print(f"Predicates: {', '.join(config.predicates)}")
     print(f"Expert:     {expert_label(config)}")
     background = "on" if config.background else "off"
@@ -84,12 +86,20 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
         print(f"Checked on Block Size {check_size}:     "
               f"{failing} of {len(counterexamples)} fail ({elapsed:.2f}s)")
 
-    rules = reduced_basis(base)
+    rules = simplified_implications(base)
+    count = f"{len(rules)}"
+    if config.classical:
+        start_time = time.perf_counter()
+        horn = len(rules)
+        rules = classical_rules(base, rules)
+        count = f"{len(rules)} of {horn} classically irredundant, {time.perf_counter() - start_time:.2f}s"
+    new = compare_without(config, base, rules) if config.compare_without else set()
     lines = []
-    print(f"\nDiscovered Rules (Reduced, {len(rules)}):")
+    print(f"\nDiscovered Rules (Simplified, {count}):")
     for idx, rule in enumerate(rules, start=1):
         fails = counterexamples.get(rule.implication) is not None
         marker = f"   [FAILS FOR BLOCK SIZE {check_size}]" if fails else ""
+        marker += "   [NEW]" if idx - 1 in new else ""
         lines.append(f"{rule}{marker}")
         print(f"  [{idx}] {rule}{marker}")
 
@@ -106,9 +116,33 @@ def run_rule_exploration(config: ExplorationConfig, label: str) -> list[str]:
     return lines
 
 
+def compare_without(config: ExplorationConfig, base: ExplorationBase, rules: list) -> set[int]:
+    """Explore again without the predicates `compare_without` names, and
+    return the positions of the rules that the theory found then does not
+    entail classically: what needs those predicates to be said."""
+    left_out = ", ".join(config.compare_without)
+    reduced = config.with_overrides(
+        predicates=tuple(p for p in config.predicates if p not in config.compare_without),
+        compare_without=(),
+    )
+    start_time = time.perf_counter()
+    other = reduced.rule_exploration()
+    other.run()
+    theory = trusted_theory(other.base)
+    everything = base.index.decode(base.full_mask)
+    new = {
+        i for i, rule in enumerate(rules)
+        if not theory.entails(rule.premise, everything if rule.everything else rule.conclusion)
+    }
+    theory.close()
+    print(f"Compared without {left_out}:   {len(new)} of {len(rules)} rules new "
+          f"({time.perf_counter() - start_time:.2f}s)")
+    return new
+
+
 def run_propositional_exploration(config: ExplorationConfig, label: str) -> list[str]:
     """Run propositional attribute exploration of 4x4 grids and return its
-    rules as printed."""
+    simplified implications as printed."""
     print("=" * 70)
     print(f"SUDOKU PROPOSITIONAL EXPLORATION: {label} (4x4 grids)")
     print("=" * 70)
@@ -134,9 +168,9 @@ def run_propositional_exploration(config: ExplorationConfig, label: str) -> list
     print(f"Accepted Implications (Base): {len(base.accepted_implications)}")
     print(f"Discovered Objects/Configs:   {len(base.context.objects)}")
 
-    rules = reduced_basis(base)
-    lines = [str(rule) for rule in rules]
-    print(f"\nDiscovered Rules (Reduced, {len(rules)}), as (row, column, digit):")
+    implications = simplified_implications(base)
+    lines = [str(implication) for implication in implications]
+    print(f"\nSimplified Implications ({len(implications)}), as (row, column, digit):")
     for idx, line in enumerate(lines, start=1):
         print(f"  [{idx}] {line}")
     print()
@@ -149,8 +183,9 @@ def run(config: ExplorationConfig, label: str) -> list[str]:
     return run_rule_exploration(config, label)
 
 
-def write_rules(path: Path, label: str, config: ExplorationConfig, lines: list[str]) -> None:
-    """Write the rules, after the configuration that produced them."""
+def write_result(path: Path, label: str, config: ExplorationConfig, lines: list[str]) -> None:
+    """Write the rules or implications found, after the configuration that
+    produced them."""
     header = [f"# Sudoku exploration: {label}", "#"]
     header += [f"# {line}" for line in config.to_toml().splitlines()]
     path.write_text("\n".join(header + [""] + lines) + "\n", encoding="utf-8")
@@ -181,10 +216,17 @@ def main(argv: list[str] | None = None) -> None:
         help="explore without the background implications, so they are rediscovered too",
     )
     parser.add_argument(
+        "--no-classical",
+        dest="classical",
+        action="store_false",
+        default=None,
+        help="print all simplified rules, also those that follow classically from the others",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         metavar="PATH",
-        help="also write the rules to PATH, after the configuration that produced them",
+        help="also write the rules or implications found to PATH, after the configuration that produced them",
     )
     args = parser.parse_args(argv)
     if args.output is not None and len(args.configs) > 1:
@@ -195,6 +237,8 @@ def main(argv: list[str] | None = None) -> None:
         overrides["block_size"] = args.block_size
     if args.background is not None:
         overrides["background"] = args.background
+    if args.classical is not None:
+        overrides["classical"] = args.classical
 
     # Check every configuration before running any, so that a mistake in the
     # last one does not show up only after the first has run for minutes.
@@ -208,8 +252,8 @@ def main(argv: list[str] | None = None) -> None:
     for name, config in configs:
         lines = run(config, Path(name).stem)
         if args.output is not None:
-            write_rules(args.output, Path(name).stem, config, lines)
-            print(f"Rules written to {args.output}")
+            write_result(args.output, Path(name).stem, config, lines)
+            print(f"Result written to {args.output}")
 
 
 if __name__ == "__main__":

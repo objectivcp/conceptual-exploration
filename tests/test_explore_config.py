@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from explorations.equational_theories.explore import build_parser, parse_arguments, read_config, write_settings
+from explorations.equational_theories.explore import build_parser, main, parse_arguments, read_config, write_settings
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -26,6 +26,16 @@ def test_unknown_options_and_values_are_errors(tmp_path):
     config.write_text('expert = "prover9"\n')
     with pytest.raises(SystemExit):
         parse_arguments(build_parser(), ["--config", str(config)])
+
+
+def test_the_vampire_workers_read_from_a_config_and_must_be_positive(tmp_path):
+    config = tmp_path / "run.toml"
+    config.write_text('expert = "vampire"\nvampire-workers = 4\n')
+    assert parse_arguments(build_parser(), ["--config", str(config)]).vampire_workers == 4
+    assert parse_arguments(build_parser(), []).vampire_workers is None
+    with pytest.raises(SystemExit):
+        main(["--vampire-workers", "0", "--results-dir", str(tmp_path / "results")])
+    assert not (tmp_path / "results").exists()
 
 
 def test_seed_patterns_are_expanded(tmp_path):

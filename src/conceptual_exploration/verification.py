@@ -7,7 +7,10 @@ and each object to be an example, by a check of its row, this comparison is
 what remains to show that the implications are a basis of the theory.
 `check_closure_systems` does it on bitmasks, attribute i being bit i, with
 its own closures and NextClosure, so that it does not rest on the code that
-ran the exploration.
+ran the exploration. An exploration that ended with open questions, as one
+that rejects undecided implications tentatively, has instead a list of the
+closed sets that no object settles, each with its open attributes;
+`check_open_closure_systems` checks that list.
 """
 
 from __future__ import annotations
@@ -139,3 +142,81 @@ def check_closure_systems(
         raise VerificationError(f"The closures of {len(wrong)} sets under the implications are not intents, "
                                 f"the first {wrong[0]:#x}")
     return count
+
+
+def check_open_closure_systems(
+        attributes: int,
+        rows: Sequence[tuple[int, int]],
+        implications: Iterable[tuple[int, int]],
+        open_sets: dict[int, int],
+) -> tuple[int, int]:
+    """For an exploration that ended with open questions: the number of sets
+    closed under the implications, and how many of them the objects settle,
+    after checking that the others are exactly the keys of `open_sets`, each
+    with its open laws as the value; raises VerificationError if not.
+
+    A row is a pair of masks, the attributes an object certainly has and
+    those it certainly lacks, the rest unknown. Every row must respect every
+    implication: an object that has a premise lacks none of its conclusion.
+    The objects settle a closed set when each other attribute is lacked by
+    an object that has the set; its open attributes are those that no such
+    object lacks. NextClosure lists the closed sets of the implications.
+    Then every implication with a single attribute as conclusion follows
+    from the implications, is refuted by an object, or has as premise a
+    listed set, up to closure, and as conclusion one of its open attributes.
+    """
+    full = (1 << attributes) - 1
+    merged: dict[int, int] = {}
+    for premise, conclusion in implications:
+        merged[premise] = merged.get(premise, 0) | conclusion
+    merged_implications = [(premise, conclusion & ~premise) for premise, conclusion in merged.items()
+                           if conclusion & ~premise]
+    for k, (has, lacks) in enumerate(rows):
+        if has & lacks:
+            raise VerificationError(f"Object {k} both has and lacks an attribute")
+        for premise, conclusion in merged_implications:
+            if premise & ~has == 0 and conclusion & lacks:
+                raise VerificationError(f"Object {k} violates an implication")
+    closure = _Closure(attributes, merged_implications)
+
+    def open_attributes(mask: int) -> int:
+        lacked = 0
+        for has, lacks in rows:
+            if mask & ~has == 0:
+                lacked |= lacks
+        return full & ~mask & ~lacked
+
+    seen, count, settled = set(), 0, 0
+    closed = closure(0)
+    while True:
+        count += 1
+        remaining = open_attributes(closed)
+        if remaining:
+            if open_sets.get(closed) != remaining:
+                listed = open_sets.get(closed)
+                raise VerificationError(
+                    f"The closed set {closed:#x} has the open attributes {remaining:#x}, "
+                    + ("but is not listed" if listed is None else f"but is listed with {listed:#x}"))
+            seen.add(closed)
+        else:
+            if closed in open_sets:
+                raise VerificationError(f"The listed set {closed:#x} is settled by the objects")
+            settled += 1
+        if closed == full:
+            break
+        for i in range(attributes - 1, -1, -1):
+            bit = 1 << i
+            if closed & bit:
+                continue
+            lower = closed & (bit - 1)
+            candidate = closure(lower | bit)
+            if candidate & (bit - 1) == lower:
+                closed = candidate
+                break
+        else:
+            break
+    unseen = set(open_sets) - seen
+    if unseen:
+        raise VerificationError(f"{len(unseen)} listed sets are not closed under the implications, "
+                                f"the first {min(unseen):#x}")
+    return count, settled
